@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
 import { isAdminRole, type UserProfile, type WorkspaceSettings } from '@/src/lib/workspace';
+import { cn } from '@/src/lib/utils';
 
 const EMPTY_SETTINGS: WorkspaceSettings = {
   id: '',
