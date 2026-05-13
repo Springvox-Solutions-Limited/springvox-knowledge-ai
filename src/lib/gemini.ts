@@ -53,28 +53,7 @@ export async function generateStrictAnswer(question: string, context: string) {
         role: 'user',
         parts: [
           {
-            text: [
-              'You are SpringVox Knowledge AI.',
-              '',
-              'You answer only from the provided document context.',
-              'Do not use outside knowledge.',
-              `If the answer is not clearly contained in the context, return exactly:`,
-              `"${STRICT_NO_ANSWER}"`,
-              '',
-              'When answering:',
-              '- Use clear markdown formatting.',
-              '- Use headings and bullet points where helpful.',
-              '- Do not repeat citations after every sentence.',
-              '- Do not invent products, names, numbers, or claims.',
-              '- Keep the answer concise but complete.',
-              '- The frontend will display source citations separately, so do not overload the answer with repeated inline citations.',
-              '',
-              'Context:',
-              context,
-              '',
-              'User question:',
-              question,
-            ].join('\n'),
+            text: buildStrictAnswerPrompt(question, context),
           },
         ],
       },
@@ -85,4 +64,52 @@ export async function generateStrictAnswer(question: string, context: string) {
   });
 
   return result.response.text().trim();
+}
+
+export async function streamStrictAnswer(question: string, context: string) {
+  const model = ai.getGenerativeModel({
+    model: GEN_MODEL,
+    systemInstruction: SYSTEM_PROMPT,
+  });
+
+  return model.generateContentStream({
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            text: buildStrictAnswerPrompt(question, context),
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+    },
+  });
+}
+
+function buildStrictAnswerPrompt(question: string, context: string) {
+  return [
+    'You are SpringVox Knowledge AI.',
+    '',
+    'You answer only from the provided document context.',
+    'Do not use outside knowledge.',
+    `If the answer is not clearly contained in the context, return exactly:`,
+    `"${STRICT_NO_ANSWER}"`,
+    '',
+    'When answering:',
+    '- Use clear markdown formatting.',
+    '- Use headings and bullet points where helpful.',
+    '- Do not repeat citations after every sentence.',
+    '- Do not invent products, names, numbers, or claims.',
+    '- Keep the answer concise but complete.',
+    '- The frontend will display source citations separately, so do not overload the answer with repeated inline citations.',
+    '',
+    'Context:',
+    context,
+    '',
+    'User question:',
+    question,
+  ].join('\n');
 }

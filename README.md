@@ -94,6 +94,12 @@ npm install
 sql/workspace_mvp.sql
 ```
 
+Then run:
+
+```text
+sql/advanced_mvp_features.sql
+```
+
 4. Start the app:
 
 ```bash
@@ -111,6 +117,7 @@ http://localhost:3000
 The workspace/role migration is in:
 
 - [sql/workspace_mvp.sql](/home/water/Downloads/springvox-knowledge-ai/sql/workspace_mvp.sql)
+- [sql/advanced_mvp_features.sql](/home/water/Downloads/springvox-knowledge-ai/sql/advanced_mvp_features.sql)
 
 What it does:
 
@@ -128,6 +135,13 @@ What it does:
   - `workspace_id = default workspace`
   - `email = auth.users.email`
 - updates RLS policies for the workspace model
+
+The advanced MVP migration:
+
+- creates `knowledge_gaps`
+- adds indexes for workspace lookup and repeated unanswered questions
+- enables manager-only RLS for knowledge gaps
+- keeps existing data intact
 
 ## Promote A User To Admin
 
@@ -154,6 +168,18 @@ where email = 'MANAGER_EMAIL_HERE';
 - Viewers are assigned to the default workspace unless you move them to another one manually.
 - Viewers can ask questions from workspace documents uploaded by admins/content managers.
 - Viewers only see chat in the app shell.
+
+## Admin User Management
+
+- Admins can manage users at `/dashboard/users`.
+- Admins can promote or demote users between:
+  - `viewer`
+  - `content_manager`
+  - `admin`
+- Only admins can use the user management APIs.
+- Content managers cannot manage users.
+- Viewers cannot access the users page.
+- Self-demotion requires confirmation in the UI.
 
 ## Supabase Storage
 
@@ -204,6 +230,34 @@ Recommended Qdrant payload indexes:
 - `document_id` keyword
 
 The app now filters search and delete by `workspace_id`, and document delete also filters by `document_id`.
+
+## Chat Experience
+
+- Chat now streams answers progressively in the UI.
+- Safe status messages appear while SpringVox prepares the answer.
+- The app does not expose private model reasoning or chain-of-thought.
+- Sources remain attached after the answer completes.
+- The final chat message is saved after answer generation completes successfully.
+
+## Source Viewer
+
+- Source cards open a right-side source drawer.
+- Viewers see simple source labels and excerpts.
+- Admins and content managers can see extra metadata such as:
+  - `document_id`
+  - `uploaded_by`
+  - `chunk_index`
+- Source lookup stays scoped to the authenticated user workspace.
+
+## Knowledge Gaps
+
+- When SpringVox returns:
+  - `I don't know based on the uploaded documents.`
+- the app records or updates a `knowledge_gaps` entry for that workspace.
+- Questions are normalized and deduplicated by workspace.
+- Repeated unsupported questions increase `occurrence_count`.
+- Admins and content managers can review gaps at `/dashboard/knowledge-gaps`.
+- Knowledge gaps help show what users are asking that the current document set does not answer yet.
 
 ## Important Re-upload Note
 
@@ -276,6 +330,20 @@ where email = 'VIEWER_EMAIL_HERE';
    - `/dashboard/upload`
 10. Ask a question as viewer and confirm answers come from admin-uploaded workspace documents.
 11. Confirm viewer cannot upload or delete documents.
+
+## Advanced MVP Test Flow
+
+1. Ask a question in chat and confirm the answer streams into the UI.
+2. Confirm safe status messages appear while the answer is being prepared.
+3. Confirm sources appear after the answer finishes.
+4. Login as admin and open `/dashboard/users`.
+5. Change a viewer to `content_manager` and confirm they can upload.
+6. Change that user back to `viewer` and confirm they cannot upload.
+7. Open `/dashboard/knowledge-gaps` as admin or content manager.
+8. Ask an unsupported question in chat.
+9. Confirm the fallback answer appears and the question shows up in knowledge gaps.
+10. Ask the same unsupported question again and confirm `occurrence_count` increases.
+11. Click a source card in chat and confirm the source drawer opens.
 
 ## Notes
 

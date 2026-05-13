@@ -19,6 +19,10 @@ import { type UserProfile } from '@/src/lib/workspace';
 export default function DashboardOverview() {
   const [stats, setStats] = useState({ docs: 0, completed: 0, failed: 0, totalChunks: 0 });
   const [recentDocuments, setRecentDocuments] = useState<any[]>([]);
+  const [knowledgeGapSummary, setKnowledgeGapSummary] = useState({
+    openCount: 0,
+    topQuestion: '',
+  });
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,11 +50,29 @@ export default function DashboardOverview() {
       const completed = docs.filter((doc) => doc.status === 'completed').length;
       const failed = docs.filter((doc) => doc.status === 'failed').length;
       const totalChunks = docs.reduce((sum, doc) => sum + (doc.total_chunks || 0), 0);
+
+      const { data: gaps } = await supabase
+        .from('knowledge_gaps')
+        .select('question, occurrence_count, status')
+        .eq('workspace_id', currentProfile.workspace_id)
+        .order('occurrence_count', { ascending: false })
+        .limit(1);
+
+      const { count: openGapCount } = await supabase
+        .from('knowledge_gaps')
+        .select('*', { count: 'exact', head: true })
+        .eq('workspace_id', currentProfile.workspace_id)
+        .eq('status', 'open');
+
       setStats({
         docs: docs.length,
         completed,
         failed,
         totalChunks,
+      });
+      setKnowledgeGapSummary({
+        openCount: openGapCount || 0,
+        topQuestion: gaps?.[0]?.question || '',
       });
       setRecentDocuments(docs.slice(0, 5));
       setLoading(false);
@@ -154,6 +176,7 @@ export default function DashboardOverview() {
                   { href: '/dashboard/upload', icon: Upload, title: 'Upload document', copy: 'Add new PDF or TXT files to your secure index.' },
                   { href: '/dashboard/chat', icon: MessageSquare, title: 'Ask a question', copy: 'Query your uploaded documents and get source-backed answers.' },
                   { href: '/dashboard/documents', icon: FolderOpen, title: 'View documents', copy: 'Review ingestion status, chunks, and failures.' },
+                  { href: '/dashboard/knowledge-gaps', icon: AlertTriangle, title: 'Review knowledge gaps', copy: 'See what users are asking that your current documents do not answer yet.' },
                 ].map((action) => (
                   <Link
                     key={action.href}
@@ -173,6 +196,32 @@ export default function DashboardOverview() {
             </div>
             <div className="absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-accent blur-[120px] opacity-10" />
          </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <Link
+          href="/dashboard/knowledge-gaps"
+          className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-xl shadow-black/20 transition-colors hover:border-accent/20"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Open Knowledge Gaps</p>
+            <AlertTriangle size={16} className="text-accent" />
+          </div>
+          <p className="mt-4 font-mono text-4xl font-bold text-[#E2E8F0]">{knowledgeGapSummary.openCount}</p>
+          <p className="mt-2 text-sm text-slate-500">Questions your uploaded documents still do not clearly support.</p>
+        </Link>
+
+        <div className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-xl shadow-black/20">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Most Repeated Unanswered Question</p>
+          <div className="mt-5 rounded-2xl border border-[#2D3039] bg-[#101217] p-5">
+            <p className="text-sm font-semibold text-[#E2E8F0]">
+              {knowledgeGapSummary.topQuestion || 'No unanswered questions have been recorded yet.'}
+            </p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">
+              When users hit the strict fallback answer, SpringVox records the question here so admins can improve the document set.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

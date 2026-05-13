@@ -7,6 +7,8 @@ import {
   FileText, 
   MessageSquare, 
   Upload, 
+  Users,
+  CircleAlert,
   LogOut, 
   PanelLeftClose,
   PanelLeftOpen
@@ -14,7 +16,7 @@ import {
 import { getCurrentUserProfile } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
-import { isManagerRole, type UserProfile } from '@/src/lib/workspace';
+import { isAdminRole, isManagerRole, type UserProfile } from '@/src/lib/workspace';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -44,8 +46,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           return;
         }
 
-        if (!isManagerRole(currentProfile.role) && pathname !== '/dashboard/chat') {
-          router.replace('/dashboard/chat');
+        if (!isAllowedPath(currentProfile.role, pathname)) {
+          router.replace(getDefaultPathForRole(currentProfile.role));
           return;
         }
       } finally {
@@ -56,16 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     loadAuthContext();
   }, [pathname, router]);
 
-  const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-    { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-    { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
-    { name: 'Upload', href: '/dashboard/upload', icon: Upload },
-  ];
-  const visibleNavItems =
-    profile && !isManagerRole(profile.role)
-      ? navItems.filter((item) => item.href === '/dashboard/chat')
-      : navItems;
+  const navItems = profile ? getNavItems(profile.role) : [];
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -99,7 +92,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <nav className="space-y-2">
-            {visibleNavItems.map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -179,7 +172,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
         <div className="border-b border-[#2D3039] bg-[#0D0F12]/80 px-4 py-3 lg:hidden">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {visibleNavItems.map((item) => {
+            {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -206,4 +199,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </main>
     </div>
   );
+}
+
+function getDefaultPathForRole(role: UserProfile['role']) {
+  return isManagerRole(role) ? '/dashboard' : '/dashboard/chat';
+}
+
+function isAllowedPath(role: UserProfile['role'], pathname: string) {
+  if (!isManagerRole(role)) {
+    return pathname === '/dashboard/chat';
+  }
+
+  if (!isAdminRole(role) && pathname === '/dashboard/users') {
+    return false;
+  }
+
+  return true;
+}
+
+function getNavItems(role: UserProfile['role']) {
+  if (!isManagerRole(role)) {
+    return [{ name: 'Chat', href: '/dashboard/chat', icon: MessageSquare }];
+  }
+
+  const items = [
+    { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
+    { name: 'Documents', href: '/dashboard/documents', icon: FileText },
+    { name: 'Upload', href: '/dashboard/upload', icon: Upload },
+    { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
+  ];
+
+  if (isAdminRole(role)) {
+    items.push({ name: 'Users', href: '/dashboard/users', icon: Users });
+  }
+
+  items.push({ name: 'Knowledge Gaps', href: '/dashboard/knowledge-gaps', icon: CircleAlert });
+
+  return items;
 }

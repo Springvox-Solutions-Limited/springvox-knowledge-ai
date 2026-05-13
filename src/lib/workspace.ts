@@ -11,6 +11,10 @@ export type UserProfile = {
 export const ALL_ROLES: AppRole[] = ['admin', 'content_manager', 'viewer'];
 export const MANAGER_ROLES: AppRole[] = ['admin', 'content_manager'];
 
+export function isAdminRole(role: AppRole) {
+  return role === 'admin';
+}
+
 export function isManagerRole(role: AppRole) {
   return MANAGER_ROLES.includes(role);
 }
