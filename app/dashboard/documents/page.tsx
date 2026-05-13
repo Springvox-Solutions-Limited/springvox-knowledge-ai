@@ -98,11 +98,11 @@ export default function DocumentsPage() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="admin-page">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Document Control</p>
-          <h1 className="text-3xl font-bold tracking-tight text-[#E2E8F0]">Your Knowledge Base</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-700">Document Control</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950">Your Knowledge Base</h1>
           <p className="text-sm text-slate-500">Review ingestion status, source chunks, and any failed processing runs.</p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
@@ -111,13 +111,13 @@ export default function DocumentsPage() {
              <input 
                value={searchQuery}
                onChange={(event) => setSearchQuery(event.target.value)}
-               className="w-full rounded-xl border border-[#2D3039] bg-[#1A1C20] py-3 pl-10 pr-4 text-sm text-[#E2E8F0] focus:outline-none focus:border-accent/50"
+               className="admin-input pl-10 pr-4"
                placeholder="Search documents..."
              />
           </div>
           <Link
             href="/dashboard/upload"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-black"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-sm"
           >
             <Upload size={16} />
             Upload document
@@ -131,10 +131,10 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      <div className="rounded-3xl border border-[#2D3039] bg-[#15171C] overflow-hidden shadow-xl shadow-black/20">
+      <div className="admin-shell-card overflow-hidden">
         <table className="hidden w-full border-collapse text-left lg:table">
           <thead>
-            <tr className="bg-[#0D0F12]">
+            <tr className="bg-slate-50">
               <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">File Name</th>
               <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Status</th>
               <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Chunks</th>
@@ -142,7 +142,7 @@ export default function DocumentsPage() {
               <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#2D3039]">
+          <tbody className="divide-y divide-slate-200">
             {loading ? (
               [1,2,3].map(i => (
                 <tr key={i}>
@@ -166,10 +166,10 @@ export default function DocumentsPage() {
               <tr key={doc.id} className="hover:bg-white/[0.02] transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#0D0F12] border border-[#2D3039] flex items-center justify-center">
-                      <FileText size={18} className="text-accent" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
+                      <FileText size={18} className="text-cyan-700" />
                     </div>
-                    <span title={doc.filename} className="text-sm font-medium truncate max-w-[280px] text-slate-200">{doc.filename}</span>
+                    <span title={doc.filename} className="max-w-[280px] truncate text-sm font-medium text-slate-800">{doc.filename}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -178,12 +178,12 @@ export default function DocumentsPage() {
                     <span className={cn(
                       "rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]",
                       doc.status === 'completed' ? 'border-green-500/20 bg-green-500/10 text-green-400' : 
-                      doc.status === 'failed' ? 'border-red-500/20 bg-red-500/10 text-red-400' : 'border-accent/20 bg-accent/10 text-accent'
+                      doc.status === 'failed' ? 'border-red-200 bg-red-50 text-red-600' : 'border-cyan-200 bg-cyan-50 text-cyan-700'
                     )}>
                       {doc.status}
                     </span>
                     {doc.status === 'processing' && (
-                      <span className="text-xs text-slate-500">Still indexing. You can delete it if needed.</span>
+                    <span className="text-xs text-slate-500">Still indexing. You can delete it if needed.</span>
                     )}
                     {doc.status === 'failed' && doc.error_message && (
                       <span className="max-w-[260px] truncate text-xs text-red-300">{doc.error_message}</span>
@@ -203,7 +203,7 @@ export default function DocumentsPage() {
                      <button 
                        onClick={() => handleDelete(doc.id)}
                        disabled={deletingId === doc.id}
-                       className="inline-flex items-center gap-2 rounded-lg border border-red-500/10 px-3 py-2 text-xs font-semibold text-slate-400 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300 disabled:opacity-30"
+                     className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
                      >
                        {deletingId === doc.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                        Delete
@@ -218,12 +218,12 @@ export default function DocumentsPage() {
         <div className="space-y-4 p-4 lg:hidden">
           {loading ? (
             [1, 2, 3].map((index) => (
-              <div key={index} className="h-36 animate-pulse rounded-2xl bg-[#101217]" />
+              <div key={index} className="h-36 animate-pulse rounded-2xl bg-slate-200" />
             ))
           ) : filteredDocuments.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#2D3039] bg-[#101217] p-8 text-center">
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
               <Database size={32} className="mx-auto text-slate-700" />
-              <p className="mt-4 text-sm font-semibold text-[#E2E8F0]">
+              <p className="mt-4 text-sm font-semibold text-slate-950">
                 {documents.length === 0 ? 'No documents uploaded yet' : 'No matching documents found'}
               </p>
               <p className="mt-2 text-xs leading-6 text-slate-500">
@@ -232,10 +232,10 @@ export default function DocumentsPage() {
             </div>
           ) : (
             filteredDocuments.map((doc) => (
-              <div key={doc.id} className="rounded-2xl border border-[#2D3039] bg-[#101217] p-4">
+              <div key={doc.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p title={doc.filename} className="truncate text-sm font-semibold text-[#E2E8F0]">{doc.filename}</p>
+                    <p title={doc.filename} className="truncate text-sm font-semibold text-slate-900">{doc.filename}</p>
                     <p className="mt-1 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-500">
                       {new Date(doc.created_at).toLocaleDateString()} • {doc.total_chunks || 0} chunks
                     </p>
@@ -253,7 +253,7 @@ export default function DocumentsPage() {
                   <span className={cn(
                     "rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]",
                     doc.status === 'completed' ? 'border-green-500/20 bg-green-500/10 text-green-400' : 
-                    doc.status === 'failed' ? 'border-red-500/20 bg-red-500/10 text-red-400' : 'border-accent/20 bg-accent/10 text-accent'
+                    doc.status === 'failed' ? 'border-red-200 bg-red-50 text-red-600' : 'border-cyan-200 bg-cyan-50 text-cyan-700'
                   )}>
                     {doc.status}
                   </span>

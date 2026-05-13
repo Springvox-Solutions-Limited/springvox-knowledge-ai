@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/src/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 
 export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [email, setEmail] = useState('');
@@ -35,26 +36,28 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   };
 
   return (
-    <div className="w-full max-w-sm space-y-8 bg-[#15171C] p-8 rounded-2xl shadow-2xl border border-[#2D3039]">
+    <div className="w-full max-w-sm space-y-8 rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
       <div className="text-center space-y-3">
-        <div className="w-12 h-12 bg-[#FF6B00] rounded-xl mx-auto flex items-center justify-center font-bold text-black shadow-lg shadow-[#FF6B00]/20">S</div>
-        <h2 className="text-2xl font-bold tracking-tight text-[#E2E8F0]">
+        <div className="flex justify-center">
+          <SpringVoxLogo variant="full" theme="dark" imageClassName="h-10" />
+        </div>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-950">
           {mode === 'login' ? 'Welcome back' : 'Create an account'}
         </h2>
-        <p className="text-xs text-slate-500 uppercase tracking-widest font-semibold">
+        <p className="text-xs font-semibold uppercase tracking-widest text-cyan-700">
           {mode === 'login' ? 'Auth Required' : 'Knowledge Network'}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-1">
-          <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-600 block ml-1 mb-1">Email Address</label>
+          <label className="mb-1 ml-1 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Email Address</label>
           <div className="relative group">
-            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[#FF6B00] transition-colors" />
+            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-700" />
             <input
               type="email"
               required
-              className="w-full pl-10 pr-4 py-3 bg-[#0D0F12] border border-[#2D3039] rounded-xl text-sm text-[#E2E8F0] focus:outline-none focus:border-[#FF6B00]/50 transition-all"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 transition-all focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
               placeholder="name@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -63,13 +66,13 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-600 block ml-1 mb-1">Password</label>
+          <label className="mb-1 ml-1 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Password</label>
           <div className="relative group">
-            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-[#FF6B00] transition-colors" />
+            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-700" />
             <input
               type="password"
               required
-              className="w-full pl-10 pr-4 py-3 bg-[#0D0F12] border border-[#2D3039] rounded-xl text-sm text-[#E2E8F0] focus:outline-none focus:border-[#FF6B00]/50 transition-all"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 transition-all focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -78,14 +81,14 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         </div>
 
         {error && (
-          <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-xl text-[10px] text-red-400 font-mono italic">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 font-mono text-[10px] italic text-red-500">
             ERR: {error}
           </div>
         )}
 
         <button
           disabled={loading}
-          className="w-full bg-[#FF6B00] text-black py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#E66000] disabled:opacity-30 transition-all shadow-xl shadow-[#FF6B00]/10"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 py-4 font-bold text-slate-950 shadow-xl shadow-cyan-400/10 transition-all hover:from-teal-400 hover:to-cyan-400 disabled:opacity-30"
         >
           {loading ? <Loader2 className="animate-spin" size={18} /> : (
             <>
@@ -96,11 +99,11 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         </button>
       </form>
 
-      <div className="text-center text-[10px] text-slate-600 uppercase tracking-widest font-bold">
+      <div className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">
         {mode === 'login' ? (
-          <p>New here? <Link href="/register" className="text-[#FF6B00] hover:underline ml-1">Register</Link></p>
+          <p>New here? <Link href="/register" className="ml-1 text-cyan-700 hover:underline">Register</Link></p>
         ) : (
-          <p>Identified? <Link href="/login" className="text-[#FF6B00] hover:underline ml-1">Login</Link></p>
+          <p>Identified? <Link href="/login" className="ml-1 text-cyan-700 hover:underline">Login</Link></p>
         )}
       </div>
     </div>

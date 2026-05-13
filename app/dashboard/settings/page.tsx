@@ -12,7 +12,7 @@ const EMPTY_SETTINGS: WorkspaceSettings = {
   name: '',
   slug: '',
   logo_url: '',
-  primary_color: '#FF6B00',
+  primary_color: '#14B8A6',
   welcome_message: '',
   assistant_name: '',
   support_email: '',
@@ -22,7 +22,7 @@ const EMPTY_SETTINGS: WorkspaceSettings = {
 };
 
 const fieldClassName =
-  'w-full rounded-xl border border-[#2D3039] bg-[#101217] px-4 py-3 text-sm text-[#E2E8F0] focus:border-accent/50 focus:outline-none';
+  'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -116,30 +116,30 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="admin-page">
       <div className="space-y-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-accent">Company Branding</p>
-        <h1 className="text-3xl font-bold tracking-tight text-[#E2E8F0]">Workspace Settings</h1>
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-700">Company Branding</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-950">Workspace Settings</h1>
         <p className="text-sm text-slate-500">
           Configure how your workspace and assistant appear to users.
         </p>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-3 rounded-3xl border border-[#2D3039] bg-[#15171C] px-6 py-8 text-sm text-slate-400">
-          <Loader2 size={18} className="animate-spin text-accent" />
+        <div className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white px-6 py-8 text-sm text-slate-500 shadow-sm">
+          <Loader2 size={18} className="animate-spin text-cyan-700" />
           Loading workspace settings...
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
-            <div className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-xl shadow-black/20">
+            <div className="admin-shell-card p-6">
               <div className="mb-6 flex items-center gap-3">
-                <div className="rounded-2xl border border-[#2D3039] bg-[#101217] p-3">
-                  <Settings2 size={18} className="text-accent" />
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <Settings2 size={18} className="text-cyan-700" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-[#E2E8F0]">Workspace Profile</h2>
+                  <h2 className="text-lg font-semibold text-slate-950">Workspace Profile</h2>
                   <p className="text-sm text-slate-500">These details shape the in-app workspace experience.</p>
                 </div>
               </div>
@@ -155,7 +155,7 @@ export default function SettingsPage() {
                   <input value={settings.assistant_name || ''} onChange={(e) => handleChange('assistant_name', e.target.value)} className={fieldClassName} />
                 </Field>
                 <Field label="Primary color">
-                  <input value={settings.primary_color || ''} onChange={(e) => handleChange('primary_color', e.target.value)} className={fieldClassName} placeholder="#FF6B00" />
+                  <input value={settings.primary_color || ''} onChange={(e) => handleChange('primary_color', e.target.value)} className={fieldClassName} placeholder="#14B8A6" />
                 </Field>
                 <Field label="Support email">
                   <input value={settings.support_email || ''} onChange={(e) => handleChange('support_email', e.target.value)} className={fieldClassName} placeholder="support@company.com" />
@@ -183,9 +183,9 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-xl shadow-black/20">
+            <div className="admin-shell-card p-6">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Brand preview</p>
-              <div className="mt-5 rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(21,23,28,0.96),rgba(13,15,18,0.96))] p-5">
+              <div className="mt-5 rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff,#eff7fb)] p-5">
                 <div className="flex items-center gap-3">
                   {settings.logo_url ? (
                     <img
@@ -195,31 +195,31 @@ export default function SettingsPage() {
                     />
                   ) : (
                     <div
-                      className="flex h-11 w-11 items-center justify-center rounded-2xl font-bold text-black"
-                      style={{ backgroundColor: settings.primary_color || '#FF6B00' }}
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl font-bold text-slate-950"
+                      style={{ backgroundColor: settings.primary_color || '#14B8A6' }}
                     >
                       {(settings.name || 'S').slice(0, 1).toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <p className="text-sm font-semibold text-[#E2E8F0]">{settings.name || 'Workspace name'}</p>
+                    <p className="text-sm font-semibold text-slate-950">{settings.name || 'Workspace name'}</p>
                     <p className="text-xs text-slate-500">{settings.assistant_name || 'Assistant name'}</p>
                   </div>
                 </div>
-                <div className="mt-6 rounded-2xl border border-white/8 bg-[#101217] p-4">
+                <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Viewer welcome</p>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                  <p className="mt-3 text-sm leading-7 text-slate-700">
                     {settings.welcome_message || 'Ask questions from your approved company documents.'}
                   </p>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/8 bg-[#101217] p-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Support email</p>
-                    <p className="mt-2 text-sm text-slate-300">{settings.support_email || 'Not set'}</p>
+                    <p className="mt-2 text-sm text-slate-700">{settings.support_email || 'Not set'}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/8 bg-[#101217] p-4">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Industry</p>
-                    <p className="mt-2 text-sm text-slate-300">{settings.industry || 'Not set'}</p>
+                    <p className="mt-2 text-sm text-slate-700">{settings.industry || 'Not set'}</p>
                   </div>
                 </div>
               </div>
@@ -233,7 +233,7 @@ export default function SettingsPage() {
           )}
 
           <div className="flex justify-end">
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-2xl bg-accent px-5 py-3 text-sm font-semibold text-black">
+            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950">
               {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               Save settings
             </button>

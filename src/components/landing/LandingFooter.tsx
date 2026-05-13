@@ -1,20 +1,15 @@
 import Link from 'next/link';
+import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-white/6 bg-[#090A0C]">
+    <footer className="border-t border-slate-200 bg-[#eef4f8]">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:px-6 lg:grid-cols-[1.1fr,0.9fr] lg:px-8">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7C1F] to-[#FF6B00] text-base font-black text-black shadow-[0_12px_40px_rgba(255,107,0,0.25)]">
-              S
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.28em] text-[#8DA2C7]">SpringVox</p>
-              <p className="text-base font-semibold text-[#F7FAFC]">Knowledge AI</p>
-            </div>
+            <SpringVoxLogo variant="full" theme="dark" imageClassName="h-10 sm:h-11" />
           </div>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400">
+          <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600">
             A private AI knowledge assistant for approved documents, source-backed answers, and cleaner internal question answering.
           </p>
           <p className="mt-4 text-sm text-slate-500">
@@ -24,29 +19,29 @@ export function LandingFooter() {
 
         <div className="grid gap-8 sm:grid-cols-2">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#8DA2C7]">Product</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">Product</p>
             <div className="mt-4 grid gap-3">
-              <Link href="/login" className="text-sm text-slate-300 transition hover:text-white">
+              <Link href="/login" className="text-sm text-slate-700 transition hover:text-slate-950">
                 Login
               </Link>
-              <Link href="/register" className="text-sm text-slate-300 transition hover:text-white">
+              <Link href="/register" className="text-sm text-slate-700 transition hover:text-slate-950">
                 Register
               </Link>
-              <Link href="/dashboard" className="text-sm text-slate-300 transition hover:text-white">
+              <Link href="/dashboard" className="text-sm text-slate-700 transition hover:text-slate-950">
                 Dashboard
               </Link>
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#8DA2C7]">Explore</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">Explore</p>
             <div className="mt-4 grid gap-3">
-              <a href="#how-it-works" className="text-sm text-slate-300 transition hover:text-white">
+              <a href="#how-it-works" className="text-sm text-slate-700 transition hover:text-slate-950">
                 How it works
               </a>
-              <a href="#features" className="text-sm text-slate-300 transition hover:text-white">
+              <a href="#features" className="text-sm text-slate-700 transition hover:text-slate-950">
                 Features
               </a>
-              <a href="#roadmap" className="text-sm text-slate-300 transition hover:text-white">
+              <a href="#roadmap" className="text-sm text-slate-700 transition hover:text-slate-950">
                 Roadmap
               </a>
             </div>

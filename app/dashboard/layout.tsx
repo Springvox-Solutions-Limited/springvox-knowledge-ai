@@ -15,6 +15,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react';
+import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 import { getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
@@ -75,19 +76,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen bg-[#0B0C0E] text-[#E2E8F0]">
+    <div className="flex min-h-screen bg-[#f3f7fb] text-slate-900">
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-30 flex w-72 flex-col border-r border-[#2D3039] bg-[#0D0F12]/95 backdrop-blur-xl transition-transform duration-300 lg:static lg:z-auto lg:w-64 lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-30 flex w-72 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#0f1f33_0%,#112742_100%)] text-slate-100 shadow-[24px_0_60px_rgba(15,23,42,0.18)] transition-transform duration-300 lg:static lg:z-auto lg:w-64 lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex-1 p-6">
           <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-accent rounded flex items-center justify-center font-bold text-black shadow-lg shadow-accent/20">S</div>
-              <div className="min-w-0">
-                <span className="block truncate font-bold text-lg tracking-tight">SpringVox<span className="text-accent">.AI</span></span>
-                <span className="block truncate text-[10px] uppercase tracking-[0.18em] text-slate-500">
+            <div className="min-w-0">
+              <SpringVoxLogo variant="full" theme="light" imageClassName="h-9 w-auto" />
+              <div className="mt-2 min-w-0">
+                <span className="block truncate text-[10px] uppercase tracking-[0.18em] text-slate-400">
                   {workspace?.name || 'Default Workspace'}
                 </span>
               </div>
@@ -95,7 +95,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <button
               type="button"
               onClick={() => setSidebarOpen(false)}
-              className="rounded-lg border border-[#2D3039] p-2 text-slate-400 transition-colors hover:text-white lg:hidden"
+              className="rounded-lg border border-white/10 p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-white lg:hidden"
             >
               <PanelLeftClose size={16} />
             </button>
@@ -112,11 +112,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={cn(
                     "flex items-center space-x-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all group",
                     isActive 
-                      ? "border-accent/30 bg-accent/10 text-white shadow-lg shadow-black/20" 
-                      : "border-transparent text-slate-400 hover:border-[#2D3039] hover:bg-white/5 hover:text-white"
+                      ? "border-cyan-300/15 bg-cyan-400/10 text-white shadow-[0_12px_28px_rgba(34,211,238,0.1)]" 
+                      : "border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white"
                   )}
                 >
-                  <item.icon size={18} className={cn("transition-transform group-hover:scale-110", isActive ? "text-accent" : "text-slate-500")} />
+                  <item.icon size={18} className={cn("transition-transform group-hover:scale-110", isActive ? "text-cyan-300" : "text-slate-500")} />
                   <span>{item.name}</span>
                 </Link>
               );
@@ -124,22 +124,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
 
-        <div className="mt-auto border-t border-[#2D3039] bg-[#0D0F12] px-6 py-5">
+        <div className="mt-auto border-t border-white/10 bg-white/5 px-6 py-5">
             <div className="flex w-full flex-col gap-3">
-              <div className="flex w-full min-h-[72px] items-center gap-3 rounded-2xl border border-[#2D3039] bg-[#15171C] px-4 py-3">
-                 <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-tr from-accent to-orange-400 shadow-lg shadow-accent/10"></div>
+              <div className="flex w-full min-h-[72px] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3">
+                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-teal-400 to-cyan-400 text-[11px] font-bold text-slate-950 shadow-lg shadow-cyan-400/10">
+                   {(workspace?.name || user.email || 'S').slice(0, 1).toUpperCase()}
+                 </div>
                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-[#E2E8F0]" title={user.email || ''}>
+                    <p className="truncate text-sm font-medium text-slate-100" title={user.email || ''}>
                       {workspace?.name || user.email?.split('@')[0]}
                     </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                       {workspace?.assistant_name || (isManagerRole(profile.role) ? 'Secure Workspace' : 'Workspace Viewer')}
                     </p>
                  </div>
               </div>
             <button 
               onClick={handleLogout}
-              className="flex h-11 w-full items-center justify-start gap-3 rounded-xl border border-red-500/10 px-4 text-sm font-medium text-slate-300 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+              className="flex h-11 w-full items-center justify-start gap-3 rounded-xl border border-white/10 bg-transparent px-4 text-sm font-medium text-slate-200 transition-colors hover:border-red-300/30 hover:bg-red-400/10 hover:text-red-100"
             >
               <LogOut size={16} />
               <span>Logout</span>
@@ -158,29 +160,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
       <main className="flex-1 overflow-hidden flex flex-col min-h-screen lg:min-h-0">
-        <header className="sticky top-0 z-10 flex h-16 w-full items-center justify-between border-b border-[#2D3039] bg-[#0D0F12]/80 px-4 backdrop-blur-md md:px-8">
+        <header className="sticky top-0 z-10 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md md:px-8">
             <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(true)}
-                  className="rounded-lg border border-[#2D3039] p-2 text-slate-400 transition-colors hover:text-white lg:hidden"
-                >
-                  <PanelLeftOpen size={16} />
-                </button>
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(true)}
+          className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition-colors hover:text-slate-900 lg:hidden"
+        >
+          <PanelLeftOpen size={16} />
+        </button>
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                   <span className="hover:text-slate-300 cursor-pointer uppercase tracking-wider">{workspace?.slug || 'Workspace'}</span>
+                   <span className="cursor-pointer uppercase tracking-wider hover:text-slate-700">{workspace?.slug || 'Workspace'}</span>
                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-                   <span className="text-slate-300 uppercase tracking-wider capitalize">{pathname.split('/').pop() || 'Knowledge Engine'}</span>
+                   <span className="uppercase tracking-wider capitalize text-slate-900">{pathname.split('/').pop() || 'Knowledge Engine'}</span>
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-[10px] font-bold uppercase tracking-tighter border border-green-500/20">
+                <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-emerald-700">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                     System Active
                 </div>
             </div>
         </header>
-        <div className="border-b border-[#2D3039] bg-[#0D0F12]/80 px-4 py-3 lg:hidden">
+        <div className="border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
@@ -191,8 +193,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className={cn(
                     "whitespace-nowrap rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors",
                     isActive
-                      ? "border-accent/30 bg-accent/10 text-accent"
-                      : "border-[#2D3039] text-slate-400"
+                      ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                      : "border-slate-200 text-slate-500"
                   )}
                 >
                   {item.name}

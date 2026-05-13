@@ -135,7 +135,7 @@ export default function DashboardOverview() {
       <div className="animate-pulse space-y-8">
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-32 rounded-3xl bg-[#15171C]" />
+            <div key={item} className="h-32 rounded-3xl bg-slate-200" />
           ))}
         </div>
       </div>
@@ -143,14 +143,14 @@ export default function DashboardOverview() {
   }
 
   return (
-    <div className="space-y-10">
-      <div className="rounded-[2rem] border border-[#2D3039] bg-[radial-gradient(circle_at_top_left,rgba(255,107,0,0.12),transparent_35%),linear-gradient(180deg,#15171C_0%,#101217_100%)] p-8 md:p-10 shadow-2xl shadow-black/30">
+    <div className="admin-page">
+      <div className="admin-shell-card overflow-hidden p-8 md:p-10">
         <div className="space-y-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-accent">Company Workspace</p>
-          <h1 className="text-3xl font-bold tracking-tight text-[#E2E8F0] md:text-4xl">
+          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-700">Company Workspace</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
             {workspaceName} is live in SpringVox.
           </h1>
-          <p className="max-w-2xl text-sm leading-7 text-slate-400 md:text-base">
+          <p className="max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
             Review live usage, monitor knowledge gaps, and keep your approved knowledge base current.
           </p>
         </div>
@@ -161,46 +161,46 @@ export default function DashboardOverview() {
           <Link
             key={card.title}
             href="/dashboard/analytics"
-            className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-xl shadow-black/20 transition-colors hover:border-accent/20"
+            className="admin-kpi-card transition-colors hover:border-cyan-200"
           >
             <div className="mb-5 flex items-center justify-between">
-              <div className="rounded-2xl border border-[#2D3039] bg-[#0D0F12] p-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                 <card.icon size={20} className={card.accent} />
               </div>
               <ArrowUpRight size={16} className="text-slate-600" />
             </div>
             <div className="space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">{card.title}</p>
-              <h3 className="font-mono text-3xl font-bold text-[#E2E8F0]">{card.value}</h3>
+              <h3 className="font-mono text-3xl font-bold text-slate-950">{card.value}</h3>
             </div>
           </Link>
         ))}
       </div>
 
       <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-8 shadow-xl shadow-black/20">
+        <div className="admin-shell-card p-8">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Recent Questions</h2>
-            <Link href="/dashboard/analytics" className="text-xs font-semibold text-accent">
+            <Link href="/dashboard/analytics" className="text-xs font-semibold text-cyan-700">
               View analytics
             </Link>
           </div>
           {recentQuestions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#2D3039] bg-[#101217] p-8 text-center">
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
               <MessageSquare size={28} className="mx-auto text-slate-700" />
-              <p className="mt-4 text-sm font-semibold text-[#E2E8F0]">No questions asked yet</p>
+              <p className="mt-4 text-sm font-semibold text-slate-950">No questions asked yet</p>
               <p className="mt-2 text-xs leading-6 text-slate-500">Workspace question activity will appear here.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {recentQuestions.slice(0, 5).map((question) => (
-                <div key={question.id} className="rounded-2xl border border-[#2D3039] bg-[#101217] px-4 py-4">
-                  <p className="text-sm font-semibold text-[#E2E8F0]">{question.question}</p>
+                <div key={question.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-sm font-semibold text-slate-900">{question.question}</p>
                   <div className="mt-2 flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.18em] text-slate-500">
                     <span>{question.user_email}</span>
                     <span>{new Date(question.created_at).toLocaleDateString()}</span>
                     <span>{question.had_sources ? 'Source-backed' : 'No sources'}</span>
-                    {question.knowledge_gap && <span className="text-accent">Knowledge gap</span>}
+                    {question.knowledge_gap && <span className="text-cyan-700">Knowledge gap</span>}
                   </div>
                 </div>
               ))}
@@ -208,7 +208,7 @@ export default function DashboardOverview() {
           )}
         </div>
 
-        <div className="rounded-3xl border border-[#2D3039] bg-[#1A1C20] p-8 shadow-xl shadow-black/20 relative overflow-hidden">
+        <div className="admin-shell-card-muted relative overflow-hidden p-8">
           <div className="relative z-10">
             <h2 className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Quick Actions</h2>
             <div className="mt-6 space-y-3">
@@ -221,42 +221,42 @@ export default function DashboardOverview() {
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="flex items-start gap-4 rounded-2xl border border-[#2D3039] bg-[#101217] p-4 transition-colors hover:border-accent/25"
+                  className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition-colors hover:border-cyan-200"
                 >
-                  <div className="rounded-xl border border-[#2D3039] bg-[#0D0F12] p-3">
-                    <action.icon size={18} className="text-accent" />
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <action.icon size={18} className="text-cyan-700" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#E2E8F0]">{action.title}</p>
+                    <p className="text-sm font-semibold text-slate-950">{action.title}</p>
                     <p className="mt-1 text-xs leading-6 text-slate-500">{action.copy}</p>
                   </div>
                 </Link>
               ))}
             </div>
           </div>
-          <div className="absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-accent blur-[120px] opacity-10" />
+          <div className="absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-cyan-300 blur-[120px] opacity-25" />
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Link
           href="/dashboard/knowledge-gaps"
-          className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-xl shadow-black/20 transition-colors hover:border-accent/20"
+          className="admin-shell-card p-6 transition-colors hover:border-cyan-200"
         >
           <div className="flex items-center justify-between">
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Open Knowledge Gaps</p>
-            <AlertTriangle size={16} className="text-accent" />
+            <AlertTriangle size={16} className="text-cyan-700" />
           </div>
-          <p className="mt-4 font-mono text-4xl font-bold text-[#E2E8F0]">{summary.openKnowledgeGaps}</p>
+          <p className="mt-4 font-mono text-4xl font-bold text-slate-950">{summary.openKnowledgeGaps}</p>
           <p className="mt-2 text-sm text-slate-500">Questions the current document set does not yet support clearly.</p>
         </Link>
 
-        <div className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-xl shadow-black/20">
+        <div className="admin-shell-card p-6">
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Most Recent Knowledge Gaps</p>
           <div className="mt-5 space-y-3">
             {recentKnowledgeGaps.slice(0, 3).map((gap) => (
-              <div key={gap.id} className="rounded-2xl border border-[#2D3039] bg-[#101217] p-4">
-                <p className="text-sm font-semibold text-[#E2E8F0]">{gap.question}</p>
+              <div key={gap.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold text-slate-950">{gap.question}</p>
                 <p className="mt-2 text-xs text-slate-500">
                   Asked {gap.occurrence_count} time{gap.occurrence_count === 1 ? '' : 's'} • {gap.status}
                 </p>

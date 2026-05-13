@@ -28,11 +28,11 @@ const features = [
 
 export function FeatureSection() {
   return (
-    <section id="features" className="border-y border-white/6 bg-[#0D0F12]">
+    <section id="features" className="border-y border-slate-200 bg-[#f7fbfd]">
       <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8DA2C7]">Key features</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[#F7FAFC] sm:text-4xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">Key features</p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
             Built for controlled knowledge access, not open-ended AI guesswork.
           </h2>
         </div>
@@ -41,13 +41,13 @@ export function FeatureSection() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="rounded-[26px] border border-white/8 bg-white/[0.03] p-5 shadow-[0_16px_40px_rgba(0,0,0,0.16)]"
+              className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#FF6B00]/20 bg-[#FF6B00]/10">
-                <feature.icon className="h-5 w-5 text-[#FF6B00]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-100 bg-cyan-50">
+                <feature.icon className="h-5 w-5 text-cyan-700" />
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-[#F7FAFC]">{feature.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{feature.description}</p>
+              <h3 className="mt-5 text-lg font-semibold text-slate-950">{feature.title}</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{feature.description}</p>
             </div>
           ))}
         </div>

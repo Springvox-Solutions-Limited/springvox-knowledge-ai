@@ -30,14 +30,14 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="border-y border-white/6 bg-[#0D0F12]">
+    <section id="how-it-works" className="border-y border-slate-200 bg-[#f7fbfd]">
       <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div className="max-w-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8DA2C7]">How it works</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[#F7FAFC] sm:text-4xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">How it works</p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
             A simple path from approved files to trusted answers.
           </h2>
-          <p className="mt-5 text-base leading-8 text-slate-300">
+          <p className="mt-5 text-base leading-8 text-slate-600">
             SpringVox Knowledge AI currently supports PDF and TXT documents in a shared workspace model.
           </p>
         </div>
@@ -46,18 +46,18 @@ export function HowItWorksSection() {
           {steps.map((step, index) => (
             <div
               key={step.title}
-              className="relative rounded-[26px] border border-white/8 bg-white/[0.03] p-5 shadow-[0_16px_40px_rgba(0,0,0,0.16)]"
+              className="relative rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.05)]"
             >
               <div className="mb-5 flex items-center justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#FF6B00]/20 bg-[#FF6B00]/10">
-                  <step.icon className="h-5 w-5 text-[#FF6B00]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-100 bg-cyan-50">
+                  <step.icon className="h-5 w-5 text-cyan-700" />
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#8DA2C7]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
                   Step {index + 1}
                 </span>
               </div>
-              <h3 className="text-lg font-semibold text-[#F7FAFC]">{step.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{step.description}</p>
+              <h3 className="text-lg font-semibold text-slate-950">{step.title}</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{step.description}</p>
             </div>
           ))}
         </div>

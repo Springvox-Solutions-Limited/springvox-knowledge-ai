@@ -4,20 +4,33 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
-  --color-accent: #FF6B00;
-  --color-subtle: #2D3039;
-  --color-card: #15171C;
+  --color-accent: #14b8a6;
+  --color-subtle: #cbd5e1;
+  --color-card: #ffffff;
 }
 
 :root {
-  --background: #0B0C0E;
-  --foreground: #E2E8F0;
+  --background: #f3f7fb;
+  --foreground: #0f172a;
+  --brand-navy: #0f172a;
+  --brand-sidebar: #10233b;
+  --brand-sidebar-soft: #16304d;
+  --brand-cyan: #22d3ee;
+  --brand-teal: #14b8a6;
+  --brand-line: #dbe5ef;
+  --brand-surface: #ffffff;
+  --brand-surface-soft: #f8fbfd;
+  --brand-text-soft: #64748b;
 }
 
 body {
-  background-color: #0B0C0E;
-  color: #E2E8F0;
+  background-color: var(--background);
+  color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+a {
+  color: inherit;
 }
 
 @layer utilities {
@@ -39,7 +52,7 @@ body {
 }
 
 .markdown-container {
-  @apply text-[15px] leading-7 text-slate-200;
+  @apply text-[15px] leading-7 text-slate-700;
 }
 
 .markdown-container p {
@@ -50,7 +63,7 @@ body {
 .markdown-container h2,
 .markdown-container h3,
 .markdown-container h4 {
-  @apply font-bold tracking-tight text-[#E2E8F0];
+  @apply font-bold tracking-tight text-slate-900;
 }
 
 .markdown-container h1 {
@@ -66,7 +79,7 @@ body {
 }
 
 .markdown-container strong {
-  @apply font-semibold text-[#F8FAFC];
+  @apply font-semibold text-slate-950;
 }
 
 .markdown-container ul, .markdown-container ol {
@@ -86,21 +99,49 @@ body {
 }
 
 .markdown-container hr {
-  @apply my-5 border-[#2D3039];
+  @apply my-5 border-slate-200;
 }
 
 .markdown-container code {
-  @apply rounded bg-[#0D0F12] px-1.5 py-0.5 font-mono text-[13px] text-accent;
+  @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[13px] text-cyan-700;
 }
 
 .markdown-container pre {
-  @apply mb-4 overflow-x-auto rounded-2xl border border-[#2D3039] bg-[#0D0F12] p-4;
+  @apply mb-4 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-950 p-4;
 }
 
 .markdown-container pre code {
-  @apply bg-transparent p-0 text-slate-200;
+  @apply bg-transparent p-0 text-slate-100;
 }
 
 .markdown-container blockquote {
-  @apply mb-4 border-l-2 border-accent/40 pl-4 text-slate-400;
+  @apply mb-4 border-l-2 border-cyan-400/60 pl-4 text-slate-500;
+}
+
+.admin-page {
+  @apply space-y-8 text-slate-900;
+}
+
+.admin-shell-card {
+  @apply rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)];
+}
+
+.admin-shell-card-muted {
+  @apply rounded-[28px] border border-slate-200 bg-slate-50/90 shadow-[0_14px_28px_rgba(15,23,42,0.04)];
+}
+
+.admin-kpi-card {
+  @apply rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_28px_rgba(15,23,42,0.05)];
+}
+
+.admin-input {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100;
+}
+
+.admin-chip {
+  @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500;
+}
+
+.landing-panel {
+  @apply rounded-[28px] border border-white/10 bg-white/5 shadow-[0_20px_50px_rgba(15,23,42,0.2)] backdrop-blur-sm;
 }

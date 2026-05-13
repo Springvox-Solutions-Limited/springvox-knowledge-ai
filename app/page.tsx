@@ -12,7 +12,7 @@ import { UseCasesSection } from '@/src/components/landing/UseCasesSection';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,107,0,0.12),transparent_30%),linear-gradient(180deg,#0B0C0E_0%,#090A0C_100%)] text-[#E2E8F0]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),transparent_28%),linear-gradient(180deg,#07111f_0%,#0c1830_58%,#eef4f8_58.1%,#f3f7fb_100%)] text-slate-900">
       <LandingNavbar />
       <main>
         <HeroSection />

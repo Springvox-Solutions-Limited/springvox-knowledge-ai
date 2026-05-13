@@ -498,7 +498,7 @@ export default function ChatPage() {
       <div className="mx-auto flex h-[calc(100vh-165px)] max-w-[920px] flex-col">
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto scrollbar-hide px-3 pb-44 pt-6 sm:px-5"
+          className="flex-1 overflow-y-auto scrollbar-hide rounded-[28px] bg-[linear-gradient(180deg,#081221_0%,#0d1728_100%)] px-3 pb-44 pt-6 shadow-[0_18px_44px_rgba(15,23,42,0.18)] sm:px-5"
         >
           {historyLoading ? (
             <div className="flex items-center gap-3 pt-10 text-sm text-slate-400">
@@ -507,11 +507,11 @@ export default function ChatPage() {
             </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center space-y-7 pt-16 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-accent/20 bg-accent/10 text-accent shadow-[0_20px_60px_rgba(255,107,0,0.12)]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 shadow-[0_20px_60px_rgba(34,211,238,0.12)]">
                 <BrainCircuit size={30} />
               </div>
               <div className="space-y-3">
-                <h2 className="text-2xl font-semibold tracking-tight text-[#E2E8F0] sm:text-3xl">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-100 sm:text-3xl">
                   {isViewer
                     ? `Ask questions from ${companyName}'s approved knowledge base.`
                     : `Test how users will experience ${companyName}.`}
@@ -527,7 +527,7 @@ export default function ChatPage() {
                   <button
                     key={prompt}
                     onClick={() => setInput(prompt)}
-                    className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3.5 text-left text-sm text-slate-300 transition-all hover:border-accent/30 hover:bg-white/[0.05]"
+                    className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3.5 text-left text-sm text-slate-300 transition-all hover:border-cyan-300/30 hover:bg-white/[0.05]"
                   >
                     {prompt}
                   </button>
@@ -544,7 +544,7 @@ export default function ChatPage() {
                   )}
                 >
                   {message.role === 'user' ? (
-                    <div className="rounded-[1.4rem] rounded-br-md bg-accent px-4 py-3 text-sm leading-7 text-black shadow-[0_16px_40px_rgba(255,107,0,0.14)]">
+                    <div className="rounded-[1.4rem] rounded-br-md bg-gradient-to-r from-teal-400 to-cyan-400 px-4 py-3 text-sm leading-7 text-slate-950 shadow-[0_16px_40px_rgba(34,211,238,0.14)]">
                       <div className="whitespace-pre-wrap">{message.content}</div>
                     </div>
                   ) : (
@@ -653,7 +653,7 @@ export default function ChatPage() {
             <div className="rounded-[28px] border border-white/8 bg-[#14161B]/95 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
               <textarea
                 rows={1}
-                className="max-h-48 min-h-[64px] w-full resize-none bg-transparent px-5 py-4 pr-24 text-sm leading-7 text-[#E2E8F0] outline-none placeholder:text-slate-500"
+                className="max-h-48 min-h-[64px] w-full resize-none bg-transparent px-5 py-4 pr-24 text-sm leading-7 text-slate-100 outline-none placeholder:text-slate-500"
                 placeholder="Ask anything from your approved documents..."
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
@@ -679,7 +679,7 @@ export default function ChatPage() {
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="rounded-full bg-accent p-2.5 text-black shadow-[0_12px_30px_rgba(255,107,0,0.2)] transition-all hover:bg-orange-600 disabled:opacity-30"
+                  className="rounded-full bg-gradient-to-r from-teal-400 to-cyan-400 p-2.5 text-slate-950 shadow-[0_12px_30px_rgba(34,211,238,0.2)] transition-all hover:from-teal-300 hover:to-cyan-300 disabled:opacity-30"
                 >
                   <Send size={16} />
                 </button>
@@ -764,13 +764,13 @@ function CitationList({
               className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left transition-colors hover:border-accent/30 hover:bg-white/[0.05]"
             >
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/8 bg-[#0D0F12]">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/8 bg-slate-950">
                   <FileText size={14} className="text-accent" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-[#E2E8F0]">{citation.filename}</p>
+                      <p className="text-sm font-medium text-slate-100">{citation.filename}</p>
                       <p className="mt-1 text-[11px] text-slate-500">Chunk {citation.chunk_index}</p>
                     </div>
                     <span className="text-[11px] text-accent">View source</span>
@@ -906,21 +906,21 @@ function SourceDrawer({
         className="fixed inset-0 z-40 bg-black/60"
         onClick={onClose}
       />
-      <aside className="fixed inset-y-0 right-0 z-50 w-full border-l border-[#2D3039] bg-[#0D0F12] shadow-[0_0_60px_rgba(0,0,0,0.45)] sm:max-w-xl">
+      <aside className="fixed inset-y-0 right-0 z-50 w-full border-l border-white/10 bg-[#0b1728] shadow-[0_0_60px_rgba(0,0,0,0.45)] sm:max-w-xl">
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-[#2D3039] px-5 py-4">
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
                 {managerView ? 'Verified Source' : 'Source'}
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-[#E2E8F0]">
+              <h3 className="mt-1 text-lg font-semibold text-slate-100">
                 {citation?.filename || 'Source details'}
               </h3>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-[#2D3039] p-2 text-slate-400 transition-colors hover:text-white"
+              className="rounded-xl border border-white/10 p-2 text-slate-400 transition-colors hover:text-white"
             >
               <X size={16} />
             </button>
@@ -928,7 +928,7 @@ function SourceDrawer({
 
           <div className="flex-1 overflow-y-auto px-5 py-5">
             {loading && (
-              <div className="flex items-center gap-3 rounded-2xl border border-[#2D3039] bg-[#15171C] px-4 py-4 text-sm text-slate-300">
+              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-slate-300">
                 <Loader2 size={16} className="animate-spin text-accent" />
                 Loading source details...
               </div>
@@ -941,18 +941,18 @@ function SourceDrawer({
             )}
 
             <div className="space-y-5">
-              <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Section</p>
-                <p className="mt-2 text-sm text-[#E2E8F0]">Chunk {citation?.chunk_index || 0}</p>
+                <p className="mt-2 text-sm text-slate-100">Chunk {citation?.chunk_index || 0}</p>
               </div>
 
-              <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Excerpt</p>
                   <button
                     type="button"
                     onClick={handleCopyExcerpt}
-                    className="flex items-center gap-2 rounded-lg border border-[#2D3039] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 transition-colors hover:text-white"
+                    className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 transition-colors hover:text-white"
                   >
                     {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
                     {copied ? 'Copied' : 'Copy excerpt'}
@@ -963,14 +963,14 @@ function SourceDrawer({
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Preview</p>
                 <p className="mt-3 text-sm leading-7 text-slate-300">
                   {citation?.preview || 'No preview available.'}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Uploaded</p>
                 <p className="mt-3 text-sm text-slate-300">
                   {citation?.uploaded_at ? new Date(citation.uploaded_at).toLocaleString() : 'Unknown'}
@@ -978,7 +978,7 @@ function SourceDrawer({
               </div>
 
               {managerView && (
-                <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Source metadata</p>
                   <div className="mt-3 space-y-2 text-sm text-slate-300">
                     <p>Document ID: {citation?.document_id || 'Unknown'}</p>

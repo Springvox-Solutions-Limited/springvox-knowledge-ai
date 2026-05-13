@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 
 const navItems = [
   { href: '#how-it-works', label: 'How it works' },
@@ -9,16 +10,11 @@ const navItems = [
 
 export function LandingNavbar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/6 bg-[#0B0C0E]/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#081322]/78 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF7C1F] to-[#FF6B00] text-base font-black text-black shadow-[0_12px_40px_rgba(255,107,0,0.25)]">
-            S
-          </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.28em] text-[#8DA2C7]">SpringVox</p>
-            <p className="text-base font-semibold text-[#F7FAFC]">Knowledge AI</p>
-          </div>
+          <SpringVoxLogo variant="full" theme="light" imageClassName="h-9 md:h-10" />
+          <span className="sr-only">SpringVox Knowledge AI</span>
         </Link>
 
         <nav className="hidden items-center gap-8 lg:flex">
@@ -26,7 +22,7 @@ export function LandingNavbar() {
             <a
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-slate-400 transition-colors hover:text-[#F7FAFC]"
+              className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
             >
               {item.label}
             </a>
@@ -36,13 +32,13 @@ export function LandingNavbar() {
         <div className="flex items-center gap-3">
           <Link
             href="/login"
-            className="hidden rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:text-white sm:inline-flex"
+            className="hidden rounded-full border border-cyan-400/20 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 transition hover:border-cyan-300/30 hover:bg-white/10 sm:inline-flex"
           >
             Login
           </Link>
           <Link
             href="/register"
-            className="inline-flex rounded-full bg-[#FF6B00] px-4 py-2 text-sm font-semibold text-black shadow-[0_14px_40px_rgba(255,107,0,0.28)] transition hover:bg-[#FF7C1F]"
+            className="inline-flex rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_14px_32px_rgba(34,211,238,0.22)] transition hover:from-teal-400 hover:to-cyan-400"
           >
             Get Started
           </Link>
