@@ -39,7 +39,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     <div className="w-full max-w-sm space-y-8 rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
       <div className="text-center space-y-3">
         <div className="flex justify-center">
-          <SpringVoxLogo variant="full" theme="dark" imageClassName="h-10" />
+          <SpringVoxLogo variant="full" theme="light" imageClassName="h-10" />
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-950">
           {mode === 'login' ? 'Welcome back' : 'Create an account'}

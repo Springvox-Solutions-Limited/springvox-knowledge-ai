@@ -12,61 +12,58 @@ const trustPoints = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden border-b border-white/10">
-      <div className="absolute left-1/2 top-0 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-cyan-400/14 blur-[180px]" />
-      <div className="mx-auto max-w-7xl px-5 pb-20 pt-14 sm:px-6 lg:px-8 lg:pb-24 lg:pt-20">
-        <div className="grid items-center gap-14 lg:grid-cols-[1.02fr,0.98fr]">
-          <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan-100">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Private AI knowledge assistant
+    <section className="relative overflow-hidden bg-white pt-20 lg:pt-32 border-b border-slate-100">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-0 right-0 w-1/2 h-full bg-slate-50/50 -z-10" />
+      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-slate-200/20 rounded-full blur-[120px] animate-pulse" />
+      
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-10 py-12 lg:py-20 animate-in fade-in slide-in-from-left-4 duration-1000">
+            <div className="inline-flex items-center gap-3 rounded-full bg-slate-950 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.2em] !text-white shadow-2xl shadow-slate-950/20">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+              Next-Gen Intelligence Active
             </div>
 
-            <h1 className="mt-7 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl lg:leading-[1.05]">
-              Turn company documents into a trusted AI assistant.
+            <h1 className="text-6xl font-black tracking-tighter text-slate-950 sm:text-7xl lg:text-8xl leading-[0.95]">
+              Trusted <br />
+              Intelligence. <br />
+              <span className="text-slate-300">Absolute Context.</span>
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              SpringVox Knowledge AI helps teams upload approved knowledge, invite users, and answer
-              staff questions with source-backed AI responses.
+            <p className="max-w-xl text-xl leading-relaxed text-slate-500 font-medium border-l-2 border-slate-100 pl-8">
+              SpringVox transforms fragmented documentation into a secure, 
+              source-backed AI knowledge base. Built for organizations where 
+              accuracy is the only metric that matters.
             </p>
 
-            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-3.5 text-sm font-semibold text-slate-950 shadow-[0_18px_50px_rgba(34,211,238,0.22)] transition hover:from-teal-400 hover:to-cyan-400"
+                className="group relative inline-flex items-center justify-center gap-4 rounded-2xl bg-slate-950 px-10 py-7 text-base font-bold !text-white transition-all hover:bg-slate-800 hover:scale-[1.02] active:scale-95 overflow-hidden shadow-2xl shadow-slate-950/40"
               >
-                Get Started
-                <ArrowRight className="h-4 w-4" />
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                Start Your Project
+                <ArrowRight className="h-5 w-5 !text-white" />
               </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-semibold text-slate-100 transition hover:border-cyan-300/30 hover:bg-white/10"
+                className="inline-flex items-center justify-center rounded-2xl border-2 border-slate-100 bg-white px-10 py-7 text-base font-bold text-slate-950 transition-all hover:bg-slate-50 hover:border-slate-200"
               >
-                Login
+                View Demo
               </Link>
-              <a
-                href="#how-it-works"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-medium text-slate-300 transition hover:text-white"
-              >
-                <Play className="h-4 w-4 text-cyan-300" />
-                See how it works
-              </a>
             </div>
 
-            <div className="mt-10 grid gap-3 sm:grid-cols-2">
-              {trustPoints.map((point) => (
-                <div
-                  key={point}
-                  className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3 text-sm text-slate-200 shadow-[0_12px_30px_rgba(2,12,27,0.16)]"
-                >
-                  {point}
-                </div>
-              ))}
+            <div className="pt-8 flex items-center gap-8 text-slate-400">
+              <div className="h-px w-12 bg-slate-200" />
+              <p className="text-[10px] font-black uppercase tracking-widest">Grounded in SEC-Standard Security</p>
             </div>
           </div>
 
-          <ProductMockup />
+          <div className="relative animate-in fade-in slide-in-from-right-4 duration-1000 delay-300">
+            <div className="absolute -inset-4 rounded-[48px] bg-slate-100 opacity-50 blur-2xl" />
+            <ProductMockup />
+          </div>
         </div>
       </div>
     </section>

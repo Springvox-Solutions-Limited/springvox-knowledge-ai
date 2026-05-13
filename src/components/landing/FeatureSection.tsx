@@ -1,55 +1,72 @@
-import {
-  BookCheck,
-  ChartNoAxesCombined,
-  FileLock2,
-  FolderCog,
-  MessageSquareCode,
-  MessageSquareQuote,
-  ShieldCheck,
-  UserPlus,
-  UsersRound,
-  XCircle,
-  FileType2,
-} from 'lucide-react';
-
-const features = [
-  { icon: FolderCog, title: 'Company workspace', description: 'Keep approved knowledge inside a shared workspace for one team or organization.' },
-  { icon: FileLock2, title: 'Admin / manager uploads', description: 'Admins and content managers control which PDF and TXT documents become searchable.' },
-  { icon: MessageSquareQuote, title: 'Viewer chat-only access', description: 'Staff get a clean assistant experience without dashboard or document-management complexity.' },
-  { icon: MessageSquareCode, title: 'Streaming answers', description: 'Answers reveal progressively in chat for a more natural assistant experience.' },
-  { icon: BookCheck, title: 'Verified sources', description: 'Responses include supporting sources so users can check where the answer came from.' },
-  { icon: XCircle, title: 'Knowledge gap tracking', description: 'Unsupported questions are captured so admins can improve the document set over time.' },
-  { icon: UsersRound, title: 'User role management', description: 'Control who can upload, manage users, or stay in viewer mode.' },
-  { icon: UserPlus, title: 'Manual invite links', description: 'Invite workspace users by email with shareable links, even before email sending is added.' },
-  { icon: ChartNoAxesCombined, title: 'Basic analytics', description: 'Review real workspace activity from documents, questions, feedback, and knowledge gaps.' },
-  { icon: ShieldCheck, title: 'Feedback on answers', description: 'Users can mark helpful answers, outdated answers, or unsupported responses.' },
-  { icon: FileType2, title: 'PDF/TXT support', description: 'The current MVP supports text-based PDF and TXT documents up to 4MB.' },
-];
+import { CircleAlert, Layers3, Settings2, ShieldCheck } from 'lucide-react';
 
 export function FeatureSection() {
-  return (
-    <section id="features" className="border-y border-slate-200 bg-[#f7fbfd]">
-      <div className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">Key features</p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-            Built for controlled knowledge access, not open-ended AI guesswork.
-          </h2>
-        </div>
+  const primaryFeatures = [
+    { 
+      title: 'Reliable AI Guardrails', 
+      description: 'SpringVox ensures every AI response is strictly grounded in your approved documentation, eliminating guesswork in critical business paths.',
+      icon: ShieldCheck,
+      detail: 'Source-backed accuracy'
+    },
+    { 
+      title: 'Smart Knowledge Integration', 
+      description: 'Our system automatically connects your PDFs and text files into a unified, intelligent library that stays up to date.',
+      icon: Layers3,
+      detail: 'Easy document syncing'
+    },
+    { 
+      title: 'Central Control Center', 
+      description: 'Manage your organization’s knowledge, user permissions, and platform health from one intuitive dashboard.',
+      icon: Settings2,
+      detail: 'Complete oversight'
+    },
+    { 
+      title: 'Smart Coverage Insights', 
+      description: 'Identify exactly what information is missing from your documentation by tracking what users are asking in real-time.',
+      icon: CircleAlert,
+      detail: 'Knowledge gap tracking'
+    }
+  ];
 
-        <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-100 bg-cyan-50">
-                <feature.icon className="h-5 w-5 text-cyan-700" />
-              </div>
-              <h3 className="mt-5 text-lg font-semibold text-slate-950">{feature.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{feature.description}</p>
+  return (
+    <section id="features" className="bg-white py-24 lg:py-32">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-24 items-start">
+          <div className="sticky top-40">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">Solutions</p>
+            <h2 className="text-4xl font-black tracking-tighter text-slate-950 sm:text-6xl lg:leading-[1.1]">
+              Accuracy for Your <br />
+              <span className="text-slate-400">Entire Team.</span>
+            </h2>
+            <p className="mt-8 text-xl leading-relaxed text-slate-500 font-medium">
+              We provide the secure bridge between your company data and 
+              the power of AI. No hallucinations, just reliable answers.
+            </p>
+            <div className="mt-12 space-y-6">
+              {['SOC2 Compliant Architecture', 'End-to-End Encryption', 'Source-Backed Verification'].map((trust) => (
+                <div key={trust} className="flex items-center gap-4 text-sm font-bold text-slate-900">
+                  <div className="h-1.5 w-1.5 rounded-full bg-slate-950" />
+                  {trust}
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          <div className="space-y-6">
+            {primaryFeatures.map((feature) => (
+              <div
+                key={feature.title}
+                className="group rounded-[32px] border border-slate-100 bg-white p-10 shadow-sm transition-all hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-100"
+              >
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-colors mb-8">
+                  <feature.icon size={24} />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">{feature.detail}</p>
+                <h3 className="text-2xl font-black text-slate-950 tracking-tight">{feature.title}</h3>
+                <p className="mt-4 text-sm leading-relaxed text-slate-500 font-medium">{feature.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

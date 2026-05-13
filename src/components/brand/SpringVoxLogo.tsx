@@ -25,7 +25,7 @@ export function SpringVoxLogo({
         <img
           src={logoSrc}
           alt="SpringVox"
-          className={cn('h-10 w-10 rounded-2xl object-contain object-left', imageClassName)}
+          className={cn('h-10 w-10 rounded-2xl object-contain object-center', imageClassName)}
         />
       </div>
     );
@@ -36,7 +36,7 @@ export function SpringVoxLogo({
       <img
         src={logoSrc}
         alt="SpringVox Knowledge AI"
-        className={cn('h-10 w-auto max-w-none object-contain object-left', imageClassName)}
+        className={cn('h-10 w-auto max-w-none object-contain object-center', imageClassName)}
       />
       <span className={cn('sr-only', fallbackClassName)}>SpringVox Knowledge AI</span>
     </div>

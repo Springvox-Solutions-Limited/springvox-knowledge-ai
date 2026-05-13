@@ -124,10 +124,10 @@ export default function DashboardOverview() {
   }
 
   const cards = [
-    { title: 'Total Documents', value: summary.totalDocuments, icon: FileText, accent: 'text-accent' },
-    { title: 'Completed', value: summary.completedDocuments, icon: CheckCircle2, accent: 'text-green-400' },
-    { title: 'Failed', value: summary.failedDocuments, icon: AlertTriangle, accent: 'text-red-400' },
-    { title: 'Total Sections', value: summary.totalChunks, icon: Layers3, accent: 'text-blue-400' },
+    { title: 'Knowledge Base', value: summary.totalDocuments, icon: FileText, accent: 'text-slate-950' },
+    { title: 'Indexed Assets', value: summary.completedDocuments, icon: CheckCircle2, accent: 'text-emerald-600' },
+    { title: 'Sync Failures', value: summary.failedDocuments, icon: AlertTriangle, accent: 'text-red-600' },
+    { title: 'Neural Sections', value: summary.totalChunks, icon: Layers3, accent: 'text-slate-950' },
   ];
 
   if (loading) {
@@ -135,7 +135,7 @@ export default function DashboardOverview() {
       <div className="animate-pulse space-y-8">
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-32 rounded-3xl bg-slate-200" />
+            <div key={item} className="h-40 rounded-3xl bg-slate-100" />
           ))}
         </div>
       </div>
@@ -144,14 +144,14 @@ export default function DashboardOverview() {
 
   return (
     <div className="admin-page">
-      <div className="admin-shell-card overflow-hidden p-8 md:p-10">
+      <div className="admin-shell-card overflow-hidden p-10 border border-slate-200 bg-white">
         <div className="space-y-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-700">Company Workspace</p>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">
-            {workspaceName} is live in SpringVox.
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">Security Command Center</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 md:text-5xl">
+            Welcome to {workspaceName}.
           </h1>
-          <p className="max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
-            Review live usage, monitor knowledge gaps, and keep your approved knowledge base current.
+          <p className="max-w-2xl text-sm leading-relaxed text-slate-500 md:text-lg font-medium">
+            Your enterprise knowledge graph is active. Monitor real-time intelligence, manage document lifecycles, and bridge documentation gaps.
           </p>
         </div>
       </div>
@@ -161,46 +161,56 @@ export default function DashboardOverview() {
           <Link
             key={card.title}
             href="/dashboard/analytics"
-            className="admin-kpi-card transition-colors hover:border-cyan-200"
+            className="admin-kpi-card border border-slate-200 bg-white group transition-all hover:border-slate-950 hover:shadow-xl hover:shadow-slate-200/50"
           >
-            <div className="mb-5 flex items-center justify-between">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <card.icon size={20} className={card.accent} />
+            <div className="mb-6 flex items-center justify-between">
+              <div className="rounded-xl bg-slate-50 p-3 text-slate-950 border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-colors">
+                <card.icon size={18} />
               </div>
-              <ArrowUpRight size={16} className="text-slate-600" />
+              <ArrowUpRight size={16} className="text-slate-300 group-hover:text-slate-950 transition-colors" />
             </div>
             <div className="space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">{card.title}</p>
-              <h3 className="font-mono text-3xl font-bold text-slate-950">{card.value}</h3>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">{card.title}</p>
+              <h3 className="font-mono text-3xl font-bold text-slate-950 tracking-tight">{card.value}</h3>
             </div>
           </Link>
         ))}
       </div>
 
       <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="admin-shell-card p-8">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Recent Questions</h2>
-            <Link href="/dashboard/analytics" className="text-xs font-semibold text-cyan-700">
-              View analytics
+        <div className="admin-shell-card p-10 border border-slate-200 bg-white">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-slate-950">Recent Intelligence</h2>
+              <p className="text-xs text-slate-500 mt-1">Live question activity across your organization.</p>
+            </div>
+            <Link href="/dashboard/analytics" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-950 transition-colors">
+              Full Analytics
             </Link>
           </div>
           {recentQuestions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-              <MessageSquare size={28} className="mx-auto text-slate-700" />
-              <p className="mt-4 text-sm font-semibold text-slate-950">No questions asked yet</p>
-              <p className="mt-2 text-xs leading-6 text-slate-500">Workspace question activity will appear here.</p>
+            <div className="rounded-2xl border border-dashed border-slate-100 bg-slate-50/50 py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-100 mx-auto text-slate-400">
+                <MessageSquare size={20} />
+              </div>
+              <p className="mt-4 text-sm font-bold text-slate-950">No activity yet</p>
+              <p className="mt-1 text-xs text-slate-500">Live question data will be streamed here.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {recentQuestions.slice(0, 5).map((question) => (
-                <div key={question.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <p className="text-sm font-semibold text-slate-900">{question.question}</p>
-                  <div className="mt-2 flex flex-wrap gap-3 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                    <span>{question.user_email}</span>
+                <div key={question.id} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 group hover:border-slate-200 transition-all">
+                  <p className="text-sm font-bold text-slate-950 leading-snug">{question.question}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <span className="text-slate-900">{question.user_email.split('@')[0]}</span>
                     <span>{new Date(question.created_at).toLocaleDateString()}</span>
-                    <span>{question.had_sources ? 'Source-backed' : 'No sources'}</span>
-                    {question.knowledge_gap && <span className="text-cyan-700">Knowledge gap</span>}
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full",
+                      question.had_sources ? "bg-emerald-50 text-emerald-600" : "bg-slate-200 text-slate-600"
+                    )}>
+                      {question.had_sources ? 'Grounded' : 'Fallback'}
+                    </span>
+                    {question.knowledge_gap && <span className="text-red-500 font-black">Coverage Gap</span>}
                   </div>
                 </div>
               ))}
@@ -208,62 +218,67 @@ export default function DashboardOverview() {
           )}
         </div>
 
-        <div className="admin-shell-card-muted relative overflow-hidden p-8">
-          <div className="relative z-10">
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Quick Actions</h2>
-            <div className="mt-6 space-y-3">
-              {[
-                { href: '/dashboard/upload', icon: Upload, title: 'Upload document', copy: 'Add a new PDF or TXT file to the knowledge base.' },
-                { href: '/dashboard/chat', icon: MessageSquare, title: 'Ask a question', copy: 'Test how the assistant answers from approved documents.' },
-                { href: '/dashboard/knowledge-gaps', icon: CircleAlert, title: 'Review knowledge gaps', copy: 'See which questions your current documents do not answer yet.' },
-                { href: '/dashboard/analytics', icon: FolderOpen, title: 'View analytics', copy: 'Monitor usage, users, documents, and feedback from real workspace data.' },
-              ].map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition-colors hover:border-cyan-200"
-                >
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    <action.icon size={18} className="text-cyan-700" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">{action.title}</p>
-                    <p className="mt-1 text-xs leading-6 text-slate-500">{action.copy}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+        <div className="admin-shell-card p-10 border border-slate-200 bg-white">
+          <h2 className="text-lg font-bold tracking-tight text-slate-950 mb-8">System Operations</h2>
+          <div className="space-y-4">
+            {[
+              { href: '/dashboard/upload', icon: Upload, title: 'Knowledge Ingestion', copy: 'Process new documents into the neural index.' },
+              { href: '/dashboard/chat', icon: MessageSquare, title: 'Secure Sandbox', copy: 'Validate assistant responses in a controlled environment.' },
+              { href: '/dashboard/knowledge-gaps', icon: CircleAlert, title: 'Coverage Audit', copy: 'Identify and resolve critical documentation failures.' },
+              { href: '/dashboard/analytics', icon: FolderOpen, title: 'Operational Metrics', copy: 'Review organizational engagement and feedback loops.' },
+            ].map((action) => (
+              <Link
+                key={action.href}
+                href={action.href}
+                className="flex items-center gap-5 rounded-2xl border border-slate-100 bg-white p-5 transition-all hover:border-slate-950 hover:shadow-lg hover:shadow-slate-100 group"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-950 border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-colors">
+                  <action.icon size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-950">{action.title}</p>
+                  <p className="mt-0.5 text-xs text-slate-500 font-medium">{action.copy}</p>
+                </div>
+              </Link>
+            ))}
           </div>
-          <div className="absolute -bottom-16 -right-16 h-48 w-48 rounded-full bg-cyan-300 blur-[120px] opacity-25" />
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <Link
           href="/dashboard/knowledge-gaps"
-          className="admin-shell-card p-6 transition-colors hover:border-cyan-200"
+          className="admin-shell-card p-10 border border-slate-200 bg-white group hover:border-red-200 transition-all"
         >
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Open Knowledge Gaps</p>
-            <AlertTriangle size={16} className="text-cyan-700" />
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Critical Gaps</p>
+            <AlertTriangle size={18} className="text-red-500" />
           </div>
-          <p className="mt-4 font-mono text-4xl font-bold text-slate-950">{summary.openKnowledgeGaps}</p>
-          <p className="mt-2 text-sm text-slate-500">Questions the current document set does not yet support clearly.</p>
+          <div className="flex items-baseline gap-3">
+            <p className="font-mono text-5xl font-bold text-slate-950 tracking-tighter">{summary.openKnowledgeGaps}</p>
+            <span className="text-xs font-bold text-red-500 uppercase tracking-widest">Action Required</span>
+          </div>
+          <p className="mt-4 text-xs font-medium text-slate-500 leading-relaxed">
+            Identified questions that currently have no supported documentation in the knowledge base.
+          </p>
         </Link>
 
-        <div className="admin-shell-card p-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Most Recent Knowledge Gaps</p>
-          <div className="mt-5 space-y-3">
-            {recentKnowledgeGaps.slice(0, 3).map((gap) => (
-              <div key={gap.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-950">{gap.question}</p>
-                <p className="mt-2 text-xs text-slate-500">
-                  Asked {gap.occurrence_count} time{gap.occurrence_count === 1 ? '' : 's'} • {gap.status}
-                </p>
+        <div className="admin-shell-card p-10 border border-slate-200 bg-white">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 mb-8">Active Failure Analysis</p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {recentKnowledgeGaps.slice(0, 2).map((gap) => (
+              <div key={gap.id} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6 flex flex-col justify-between">
+                <p className="text-sm font-bold text-slate-950 leading-snug">{gap.question}</p>
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="flex h-6 items-center rounded-full bg-white px-2 border border-slate-100 text-[9px] font-black uppercase tracking-tighter text-slate-950">
+                    {gap.occurrence_count} OCCURRENCES
+                  </div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{gap.status}</span>
+                </div>
               </div>
             ))}
             {recentKnowledgeGaps.length === 0 && (
-              <p className="text-sm text-slate-500">No knowledge gaps recorded yet.</p>
+              <p className="col-span-full text-xs text-slate-400 italic py-4">System integrity verified. No open gaps.</p>
             )}
           </div>
         </div>

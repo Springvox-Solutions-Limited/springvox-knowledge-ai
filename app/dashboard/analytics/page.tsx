@@ -1,8 +1,35 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { BarChart3, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { 
+  BarChart3, 
+  Loader2, 
+  TrendingUp, 
+  TrendingDown, 
+  PieChart as PieIcon,
+  MessageSquare,
+  FileText,
+  ShieldCheck,
+  Search,
+  Activity,
+  ArrowRight
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
 import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
 import { cn } from '@/src/lib/utils';
@@ -80,180 +107,262 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white px-6 py-8 text-sm text-slate-500 shadow-sm">
-        <Loader2 size={18} className="animate-spin text-cyan-700" />
-        Loading analytics...
+      <div className="flex h-[400px] flex-col items-center justify-center gap-4 rounded-[40px] border border-slate-200 bg-white shadow-sm">
+        <Loader2 size={32} className="animate-spin text-slate-900" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Synchronizing Data Store...</p>
       </div>
     );
   }
 
   if (!data) {
-    return <div className="text-sm text-red-300">{error || 'Analytics unavailable.'}</div>;
+    return (
+      <div className="rounded-[32px] border border-red-100 bg-red-50/50 p-10 text-center">
+        <p className="text-sm font-bold text-red-600">{error || 'Analytics unavailable.'}</p>
+      </div>
+    );
   }
 
-  const metricCards = [
-    ['Total documents', data.summary.totalDocuments],
-    ['Completed documents', data.summary.completedDocuments],
-    ['Failed documents', data.summary.failedDocuments],
-    ['Total sections', data.summary.totalChunks],
-    ['Total questions', data.summary.totalQuestions],
-    ['Questions in 7 days', data.summary.questionsLast7Days],
-    ['Source-backed', data.summary.sourceBackedAnswers],
-    ['Fallback answers', data.summary.fallbackAnswers],
-    ['Open knowledge gaps', data.summary.openKnowledgeGaps],
-    ['Total users', data.summary.totalUsers],
-    ['Viewers', data.summary.viewers],
-    ['Content managers', data.summary.contentManagers],
-    ['Admins', data.summary.admins],
-    ['Pending invites', data.summary.pendingInvitations],
+  const totalQuestions = data.summary.totalQuestions || 0;
+  const sourceBacked = data.summary.sourceBackedAnswers || 0;
+  const fallback = data.summary.fallbackAnswers || 0;
+  const gapRate = totalQuestions ? Math.round((fallback / totalQuestions) * 100) : 0;
+  const healthScore = 100 - gapRate;
+
+  const pieData = [
+    { name: 'Grounded', value: sourceBacked, color: '#0f172a' },
+    { name: 'Fallback', value: fallback, color: '#cbd5e1' },
   ];
-  const totalAnswerOutcomes =
-    (data.summary.sourceBackedAnswers || 0) + (data.summary.fallbackAnswers || 0);
-  const sourceBackedPercentage = totalAnswerOutcomes
-    ? Math.round(((data.summary.sourceBackedAnswers || 0) / totalAnswerOutcomes) * 100)
-    : 0;
-  const maxDailyQuestionCount = Math.max(1, ...data.dailyQuestionCounts.map((entry) => entry.count));
-  const supportMixWidth = totalAnswerOutcomes ? Math.max(sourceBackedPercentage, 12) : 0;
 
   return (
-    <div className="admin-page">
-      <div className="space-y-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-700">Analytics</p>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-950">
-          {data.workspace?.name || 'Workspace'} analytics
-        </h1>
-        <p className="text-sm text-slate-500">
-          Real metrics from documents, chats, knowledge gaps, invites, users, and feedback.
-        </p>
+    <div className="space-y-10">
+      {/* Header Section */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">
+            <Activity size={12} />
+            Workspace Intelligence
+          </div>
+          <h1 className="text-4xl font-black tracking-tight text-slate-950">
+            {data.workspace?.name || 'Workspace'} Dashboard
+          </h1>
+          <p className="text-base text-slate-500 font-medium">
+            Real-time insights into knowledge coverage and AI accuracy.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 shadow-sm">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Health Score</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-black text-slate-950">{healthScore}%</span>
+              <TrendingUp size={14} className="text-emerald-500" />
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {metricCards.map(([label, value]) => (
-          <div key={label} className="admin-kpi-card">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">{label}</p>
-            <p className="mt-4 font-mono text-3xl font-bold text-slate-950">{value}</p>
+      {/* KPI Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: 'Total Ingested', value: data.summary.totalDocuments, icon: FileText, sub: `${data.summary.totalChunks} Chunks` },
+          { label: 'Active Queries', value: data.summary.totalQuestions, icon: MessageSquare, sub: `${data.summary.questionsLast7Days} this week` },
+          { label: 'Knowledge Gaps', value: data.summary.openKnowledgeGaps, icon: Search, sub: 'Needs Ingestion', trend: 'down' },
+          { label: 'Grounded Rate', value: `${gapRate ? 100 - gapRate : 0}%`, icon: ShieldCheck, sub: 'Source-backed', trend: 'up' },
+        ].map((kpi) => (
+          <div key={kpi.label} className="group relative rounded-[32px] border border-slate-200 bg-white p-7 shadow-sm transition-all hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-100">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-all">
+              <kpi.icon size={20} />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{kpi.label}</p>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-3xl font-black tracking-tight text-slate-950">{kpi.value}</span>
+              {kpi.trend && (
+                kpi.trend === 'up' ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />
+              )}
+            </div>
+            <p className="mt-1 text-xs font-medium text-slate-500">{kpi.sub}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
-        <div className="admin-shell-card p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <BarChart3 size={18} className="text-cyan-700" />
-            <h2 className="text-lg font-semibold text-slate-950">Question activity</h2>
-          </div>
-          <div className="space-y-3">
-            {data.dailyQuestionCounts.map((item) => (
-              <div key={item.date}>
-                <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
-                  <span>{item.date}</span>
-                  <span>{item.count} questions</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100">
-                  <div
-                    className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-teal-500"
-                    style={{
-                      width: `${Math.max(8, (item.count / maxDailyQuestionCount) * 100)}%`,
-                    }}
-                  />
-                </div>
+      {/* Main Analytics Content */}
+      <div className="grid gap-10 lg:grid-cols-[1fr,400px]">
+        {/* Line Chart Section */}
+        <div className="rounded-[40px] border border-slate-200 bg-white p-10 shadow-sm">
+          <div className="mb-10 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100">
+                <BarChart3 size={20} />
               </div>
-            ))}
+              <div>
+                <h2 className="text-xl font-black tracking-tight text-slate-950">Query Activity</h2>
+                <p className="text-sm font-medium text-slate-500">Daily question volume over the last 14 days.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data.dailyQuestionCounts}>
+                <defs>
+                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#0f172a" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} 
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    borderRadius: '20px', 
+                    border: '1px solid #f1f5f9', 
+                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }} 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="count" 
+                  stroke="#0f172a" 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#colorCount)" 
+                  activeDot={{ r: 6, fill: '#0f172a', stroke: '#fff', strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="admin-shell-card p-6">
-            <h2 className="text-lg font-semibold text-slate-950">Answer support mix</h2>
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between text-sm text-slate-600">
-                <span>Source-backed answers</span>
-                <span className="font-semibold text-slate-900">{sourceBackedPercentage}%</span>
-              </div>
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-500"
-                  style={{ width: `${supportMixWidth}%` }}
-                />
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Source-backed</p>
-                  <p className="mt-2 font-mono text-2xl font-bold text-slate-950">{data.summary.sourceBackedAnswers || 0}</p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Fallback</p>
-                  <p className="mt-2 font-mono text-2xl font-bold text-slate-950">{data.summary.fallbackAnswers || 0}</p>
-                </div>
+        {/* Pie Chart / Distribution Section */}
+        <div className="flex flex-col gap-6">
+          <div className="rounded-[40px] border border-slate-200 bg-white p-10 shadow-sm">
+            <div className="mb-8">
+              <h2 className="text-xl font-black tracking-tight text-slate-950">Coverage Mix</h2>
+              <p className="text-sm font-medium text-slate-500">Distribution of answer types.</p>
+            </div>
+            
+            <div className="h-[200px] w-full relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={8}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-black text-slate-950">{healthScore}%</span>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Grounded</span>
               </div>
             </div>
-          </div>
 
-          <div className="admin-shell-card p-6">
-            <h2 className="text-lg font-semibold text-slate-950">Feedback summary</h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-3">
-              {[
-                ['Total feedback', data.summary.totalFeedback],
-                ['Helpful', data.summary.helpfulFeedback],
-                ['Negative', data.summary.negativeFeedback],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-                  <p className="mt-3 font-mono text-2xl font-bold text-slate-950">{value}</p>
+            <div className="mt-8 space-y-4">
+              {pieData.map((item) => (
+                <div key={item.name} className="flex items-center justify-between rounded-2xl border border-slate-50 bg-slate-50/50 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{item.name}</span>
+                  </div>
+                  <span className="text-sm font-black text-slate-950">{item.value}</span>
                 </div>
               ))}
             </div>
-            <div className="mt-5 space-y-3">
-              {data.feedbackSummary.recentNegativeFeedback.length === 0 ? (
-                <p className="text-sm text-slate-500">No recent negative feedback yet.</p>
-              ) : (
-                data.feedbackSummary.recentNegativeFeedback.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className={cn('text-sm font-semibold', item.rating === 'wrong' ? 'text-red-500' : 'text-slate-700')}>
-                      {item.rating.replaceAll('_', ' ')}
-                    </p>
-                    <p className="mt-2 text-xs text-slate-500">{new Date(item.created_at).toLocaleString()}</p>
-                  </div>
-                ))
-              )}
+          </div>
+
+          <div className="rounded-[40px] border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-lg font-black tracking-tight text-slate-950">Member Directory</h2>
+            <div className="mt-6 space-y-3">
+              {[
+                { label: 'Total Users', value: data.summary.totalUsers },
+                { label: 'Administrators', value: data.summary.admins },
+                { label: 'Pending Invitations', value: data.summary.pendingInvitations },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{row.label}</span>
+                  <span className="text-sm font-black text-slate-950">{row.value}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
-        <div className="admin-shell-card p-6">
-          <h2 className="text-lg font-semibold text-slate-950">Recent questions</h2>
-          <div className="mt-5 overflow-x-auto">
+      {/* Bottom Activity Section */}
+      <div className="grid gap-10 xl:grid-cols-[1.2fr,0.8fr]">
+        <div className="rounded-[40px] border border-slate-200 bg-white p-10 shadow-sm overflow-hidden">
+          <div className="mb-8 flex items-center justify-between">
+            <h2 className="text-2xl font-black tracking-tight text-slate-950">Recent Query Flow</h2>
+            <Link href="/dashboard/chat" className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-950 transition-colors flex items-center gap-2">
+              View All <ArrowRight size={12} />
+            </Link>
+          </div>
+          
+          <div className="overflow-x-auto">
             {data.recentQuestions.length === 0 ? (
-              <p className="text-sm text-slate-500">No workspace questions yet.</p>
+              <p className="text-sm text-slate-500 italic">No activity recorded yet.</p>
             ) : (
-              <table className="w-full min-w-[760px] border-collapse text-left">
+              <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-slate-200 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                    <th className="pb-3 pr-4">Question</th>
-                    <th className="pb-3 pr-4">User</th>
-                    <th className="pb-3 pr-4">Support</th>
-                    <th className="pb-3 pr-4">Knowledge gap</th>
-                    <th className="pb-3">Asked</th>
+                  <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    <th className="pb-4 pr-4">Question</th>
+                    <th className="pb-4 pr-4">Outcome</th>
+                    <th className="pb-4 pr-4">Status</th>
+                    <th className="pb-4">Timestamp</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-slate-50">
                   {data.recentQuestions.map((item) => (
-                    <tr key={item.id}>
-                      <td className="py-4 pr-4 text-sm font-semibold text-slate-900">{item.question}</td>
-                      <td className="py-4 pr-4 text-xs text-slate-400">{item.user_email}</td>
-                      <td className="py-4 pr-4 text-xs text-slate-400">
-                        {item.had_sources ? 'Source-backed' : 'Fallback'}
+                    <tr key={item.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="py-5 pr-4">
+                        <p className="text-sm font-bold text-slate-900 leading-snug">{item.question}</p>
+                        <p className="mt-1 text-[10px] text-slate-400 font-medium">{item.user_email}</p>
                       </td>
-                      <td className="py-4 pr-4 text-xs">
+                      <td className="py-5 pr-4">
+                        <span className={cn(
+                          "rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider",
+                          item.had_sources ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-slate-100 text-slate-600 border border-slate-200"
+                        )}>
+                          {item.had_sources ? 'Grounded' : 'Fallback'}
+                        </span>
+                      </td>
+                      <td className="py-5 pr-4">
                         {item.knowledge_gap ? (
-                          <span className="text-cyan-700">Yes</span>
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-red-600">
+                            <div className="h-1 w-1 rounded-full bg-red-600" />
+                            Gap Detected
+                          </div>
                         ) : (
-                          <span className="text-slate-500">No</span>
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-300">
+                            <div className="h-1 w-1 rounded-full bg-slate-300" />
+                            Resolved
+                          </div>
                         )}
                       </td>
-                      <td className="py-4 text-xs text-slate-500">{new Date(item.created_at).toLocaleString()}</td>
+                      <td className="py-5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -262,23 +371,44 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="admin-shell-card p-6">
-          <h2 className="text-lg font-semibold text-slate-950">Recent knowledge gaps</h2>
-          <div className="mt-5 space-y-3">
+        <div className="rounded-[40px] border border-slate-200 bg-white p-10 shadow-sm">
+          <div className="mb-8">
+            <h2 className="text-2xl font-black tracking-tight text-slate-950">Active Knowledge Gaps</h2>
+            <p className="mt-1 text-sm font-medium text-slate-500">Queries that failed to find source context.</p>
+          </div>
+          
+          <div className="space-y-4">
             {data.recentKnowledgeGaps.length === 0 ? (
-              <p className="text-sm text-slate-500">No knowledge gaps recorded yet.</p>
+              <div className="rounded-3xl border border-dashed border-slate-200 p-10 text-center">
+                <ShieldCheck size={32} className="mx-auto text-slate-200 mb-4" />
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No Gaps Detected</p>
+              </div>
             ) : (
               data.recentKnowledgeGaps.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">{item.question}</p>
-                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
-                    <span>{item.status}</span>
-                    <span>{item.occurrence_count} asks</span>
-                    <span>{new Date(item.last_asked_at).toLocaleString()}</span>
+                <div key={item.id} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-6 transition-all hover:border-slate-300">
+                  <p className="text-sm font-bold text-slate-900 leading-snug">{item.question}</p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+                        {item.status}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        {item.occurrence_count} {item.occurrence_count === 1 ? 'hit' : 'hits'}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-300">
+                      {new Date(item.last_asked_at).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               ))
             )}
+          </div>
+          
+          <div className="mt-8">
+            <Link href="/dashboard/knowledge-gaps" className="flex w-full items-center justify-center rounded-2xl bg-slate-950 py-4 text-xs font-bold uppercase tracking-widest !text-white transition-all hover:bg-slate-800">
+              Manage All Gaps
+            </Link>
           </div>
         </div>
       </div>

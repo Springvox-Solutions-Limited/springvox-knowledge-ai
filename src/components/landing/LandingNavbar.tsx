@@ -10,40 +10,45 @@ const navItems = [
 
 export function LandingNavbar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#081322]/78 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-3">
-          <SpringVoxLogo variant="full" theme="light" imageClassName="h-9 md:h-10" />
-          <span className="sr-only">SpringVox Knowledge AI</span>
-        </Link>
+    <nav className="fixed inset-x-0 top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+        <div className="flex items-center gap-12">
+          <Link href="/" className="flex items-center group h-12">
+            <SpringVoxLogo variant="full" theme="light" imageClassName="h-10 md:h-11 transition-transform group-hover:scale-[1.02] block" />
+          </Link>
+          
+          <div className="hidden lg:flex items-center gap-10">
+            {[
+              { label: 'Solutions', href: '#capabilities' },
+              { label: 'Process', href: '#pipeline' },
+              { label: 'Industries', href: '#sectors' }
+            ].map((item) => (
+              <Link 
+                key={item.label}
+                href={item.href} 
+                className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500 hover:text-slate-950 transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
 
-        <nav className="hidden items-center gap-8 lg:flex">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden rounded-full border border-cyan-400/20 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 transition hover:border-cyan-300/30 hover:bg-white/10 sm:inline-flex"
+        <div className="flex items-center gap-8">
+          <Link 
+            href="/login" 
+            className="hidden sm:block text-xs font-bold uppercase tracking-[0.15em] text-slate-950 hover:text-slate-600 transition-colors"
           >
-            Login
+            Sign In
           </Link>
           <Link
             href="/register"
-            className="inline-flex rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_14px_32px_rgba(34,211,238,0.22)] transition hover:from-teal-400 hover:to-cyan-400"
+            className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-8 py-3.5 text-xs font-bold uppercase tracking-[0.15em] !text-white shadow-2xl shadow-slate-950/20 transition-all hover:bg-slate-800 hover:scale-[1.05] active:scale-95"
           >
             Get Started
           </Link>
         </div>
       </div>
-    </header>
+    </nav>
   );
 }

@@ -7,22 +7,18 @@ import { LandingNavbar } from '@/src/components/landing/LandingNavbar';
 import { ProblemSection } from '@/src/components/landing/ProblemSection';
 import { RoadmapSection } from '@/src/components/landing/RoadmapSection';
 import { RoleSection } from '@/src/components/landing/RoleSection';
-import { SecurityControlSection } from '@/src/components/landing/SecurityControlSection';
 import { UseCasesSection } from '@/src/components/landing/UseCasesSection';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.14),transparent_28%),linear-gradient(180deg,#07111f_0%,#0c1830_58%,#eef4f8_58.1%,#f3f7fb_100%)] text-slate-900">
+    <div className="min-h-screen bg-white text-slate-900 selection:bg-slate-900 selection:text-white">
       <LandingNavbar />
       <main>
         <HeroSection />
         <ProblemSection />
         <HowItWorksSection />
-        <RoleSection />
         <FeatureSection />
         <UseCasesSection />
-        <RoadmapSection />
-        <SecurityControlSection />
         <LandingCTA />
       </main>
       <LandingFooter />

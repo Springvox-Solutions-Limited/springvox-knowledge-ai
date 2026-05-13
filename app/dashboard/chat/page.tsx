@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   BrainCircuit,
@@ -64,6 +64,28 @@ const EMPTY_PROMPTS = [
 
 const EXTRA_FEEDBACK_OPTIONS: FeedbackRating[] = ['wrong', 'outdated', 'needs_more_detail'];
 
+function useAutoResizeTextarea({ minHeight, maxHeight }: { minHeight: number; maxHeight?: number }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const adjustHeight = useCallback(
+    (reset?: boolean) => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      if (reset) {
+        textarea.style.height = `${minHeight}px`;
+        return;
+      }
+      textarea.style.height = `${minHeight}px`;
+      const newHeight = Math.max(minHeight, Math.min(textarea.scrollHeight, maxHeight ?? Infinity));
+      textarea.style.height = `${newHeight}px`;
+    },
+    [minHeight, maxHeight],
+  );
+  useEffect(() => {
+    if (textareaRef.current) textareaRef.current.style.height = `${minHeight}px`;
+  }, [minHeight]);
+  return { textareaRef, adjustHeight };
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -87,6 +109,8 @@ export default function ChatPage() {
   const typingQueueRef = useRef('');
   const typingIntervalRef = useRef<number | null>(null);
   const typingMessageIdRef = useRef<string | null>(null);
+  const [inputFocused, setInputFocused] = useState(false);
+  const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 56, maxHeight: 192 });
   const pendingCompletionRef = useRef<{
     messageId: string;
     payload: {
@@ -277,6 +301,7 @@ export default function ChatPage() {
     setRetryQuestion(question);
     setLoading(true);
     setInput('');
+    adjustHeight(true);
     startedAtRef.current = Date.now();
 
     try {
@@ -498,25 +523,25 @@ export default function ChatPage() {
       <div className="mx-auto flex h-[calc(100vh-165px)] max-w-[920px] flex-col">
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto scrollbar-hide rounded-[28px] bg-[linear-gradient(180deg,#081221_0%,#0d1728_100%)] px-3 pb-44 pt-6 shadow-[0_18px_44px_rgba(15,23,42,0.18)] sm:px-5"
+          className="flex-1 overflow-y-auto scrollbar-hide rounded-[28px] bg-white px-3 pb-44 pt-6 shadow-[0_2px_12px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/60 sm:px-5"
         >
           {historyLoading ? (
-            <div className="flex items-center gap-3 pt-10 text-sm text-slate-400">
-              <Loader2 size={18} className="animate-spin text-accent" />
+            <div className="flex items-center gap-3 pt-10 text-sm text-slate-500">
+              <Loader2 size={18} className="animate-spin text-teal-600" />
               Loading your recent conversations...
             </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center space-y-7 pt-16 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 shadow-[0_20px_60px_rgba(34,211,238,0.12)]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-teal-200 bg-teal-50 text-teal-600 shadow-sm">
                 <BrainCircuit size={30} />
               </div>
               <div className="space-y-3">
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-100 sm:text-3xl">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                   {isViewer
                     ? `Ask questions from ${companyName}'s approved knowledge base.`
                     : `Test how users will experience ${companyName}.`}
                 </h2>
-                <p className="max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
+                <p className="max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
                   {isViewer
                     ? welcomeMessage
                     : `${welcomeMessage} This is the same experience end users will rely on when they ask questions.`}
@@ -527,7 +552,7 @@ export default function ChatPage() {
                   <button
                     key={prompt}
                     onClick={() => setInput(prompt)}
-                    className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3.5 text-left text-sm text-slate-300 transition-all hover:border-cyan-300/30 hover:bg-white/[0.05]"
+                    className="rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-left text-sm text-slate-700 transition-all hover:border-teal-300 hover:bg-teal-50/50"
                   >
                     {prompt}
                   </button>
@@ -544,36 +569,37 @@ export default function ChatPage() {
                   )}
                 >
                   {message.role === 'user' ? (
-                    <div className="rounded-[1.4rem] rounded-br-md bg-gradient-to-r from-teal-400 to-cyan-400 px-4 py-3 text-sm leading-7 text-slate-950 shadow-[0_16px_40px_rgba(34,211,238,0.14)]">
+                    <div className="rounded-[1.4rem] rounded-br-md bg-slate-100 px-4 py-3 text-sm leading-7 text-slate-900">
                       <div className="whitespace-pre-wrap">{message.content}</div>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3 text-xs text-slate-500">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/8 bg-white/[0.03]">
-                          <BrainCircuit size={13} className="text-accent" />
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-teal-200 bg-teal-50">
+                          <BrainCircuit size={13} className="text-teal-600" />
                         </div>
-                        <span>{assistantName}</span>
+                        <span className="font-medium text-slate-600">{assistantName}</span>
                       </div>
 
                       {!!message.content && (
-                        <div className="markdown-container pl-10 text-[15px] leading-8 text-slate-200">
+                        <div className="markdown-container pl-10 text-[15px] leading-8 text-slate-800">
                           <ReactMarkdown>{message.content}</ReactMarkdown>
                         </div>
                       )}
 
                       {(message.statusMessage || (loading && activeMessageId === message.id)) && (
                         <div className="pl-10">
-                          <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-slate-400">
+                          <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
                             {loading && activeMessageId === message.id ? (
-                              <Loader2 size={13} className="animate-spin text-accent" />
+                              <Loader2 size={13} className="animate-spin text-teal-600" />
                             ) : (
-                              <ShieldCheck size={13} className="text-accent" />
+                              <ShieldCheck size={13} className="text-teal-600" />
                             )}
                             <span>{getVisibleStatus(message.statusMessage || '', isViewer, loading && activeMessageId === message.id)}</span>
                             {loading && activeMessageId === message.id && (
-                              <span className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                                Thinking for {elapsedSeconds.toFixed(1)}s
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                                <ThinkingDots />
+                                {elapsedSeconds.toFixed(1)}s
                               </span>
                             )}
                           </div>
@@ -586,10 +612,10 @@ export default function ChatPage() {
                             <button
                               type="button"
                               onClick={() => handleCopyAnswer(message.content, message.id)}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/[0.04] hover:text-white"
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                             >
                               {copiedIndex === message.id ? (
-                                <Check size={12} className="text-green-400" />
+                                <Check size={12} className="text-green-600" />
                               ) : (
                                 <Copy size={12} />
                               )}
@@ -601,7 +627,7 @@ export default function ChatPage() {
                               type="button"
                               onClick={(event) => handleSend(event, retryQuestion)}
                               disabled={loading}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/[0.04] hover:text-white"
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                             >
                               <RefreshCw size={12} />
                               Retry
@@ -611,7 +637,7 @@ export default function ChatPage() {
                             <button
                               type="button"
                               onClick={handleStopGenerating}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/[0.04] hover:text-white"
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                             >
                               <Square size={11} className="fill-current" />
                               Stop
@@ -648,15 +674,21 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(11,12,14,0)_0%,rgba(11,12,14,0.9)_22%,rgba(11,12,14,1)_100%)] px-3 pb-5 pt-10 sm:px-5">
+        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(249,250,251,0)_0%,rgba(249,250,251,0.92)_22%,rgba(249,250,251,1)_100%)] px-3 pb-5 pt-10 sm:px-5">
           <form onSubmit={handleSend} className="relative mx-auto max-w-[920px]">
-            <div className="rounded-[28px] border border-white/8 bg-[#14161B]/95 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+            <div className={cn('rounded-[28px] border bg-white shadow-[0_4px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-500', inputFocused ? 'border-teal-400/40 ring-4 ring-teal-100' : 'border-slate-200')}>            
               <textarea
+                ref={textareaRef}
                 rows={1}
-                className="max-h-48 min-h-[64px] w-full resize-none bg-transparent px-5 py-4 pr-24 text-sm leading-7 text-slate-100 outline-none placeholder:text-slate-500"
+                className="max-h-48 min-h-[56px] w-full resize-none bg-transparent px-5 py-4 pr-24 text-sm leading-7 text-slate-900 outline-none placeholder:text-slate-400"
                 placeholder="Ask anything from your approved documents..."
                 value={input}
-                onChange={(event) => setInput(event.target.value)}
+                onChange={(event) => {
+                  setInput(event.target.value);
+                  adjustHeight();
+                }}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey) {
                     event.preventDefault();
@@ -664,13 +696,14 @@ export default function ChatPage() {
                   }
                 }}
                 disabled={loading}
+                style={{ overflow: 'hidden' }}
               />
               <div className="absolute bottom-3 right-3 flex items-center gap-2">
                 {loading && (
                   <button
                     type="button"
                     onClick={handleStopGenerating}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-2 text-[11px] text-slate-300 transition-colors hover:text-white"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-[11px] text-slate-500 transition-colors hover:text-slate-800"
                   >
                     <Square size={11} className="fill-current" />
                     Stop
@@ -679,14 +712,14 @@ export default function ChatPage() {
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="rounded-full bg-gradient-to-r from-teal-400 to-cyan-400 p-2.5 text-slate-950 shadow-[0_12px_30px_rgba(34,211,238,0.2)] transition-all hover:from-teal-300 hover:to-cyan-300 disabled:opacity-30"
+                  className="rounded-full bg-slate-900 p-2.5 text-white shadow-sm transition-all hover:bg-slate-800 disabled:opacity-30"
                 >
                   <Send size={16} />
                 </button>
               </div>
             </div>
           </form>
-          <p className="mt-3 text-center text-xs text-slate-500">
+          <p className="mt-3 text-center text-xs text-slate-400">
             {isViewer
               ? 'Answers come from approved documents when support is available.'
               : 'Streaming answers stay grounded in approved workspace documents.'}
@@ -746,9 +779,9 @@ function CitationList({
       <button
         type="button"
         onClick={() => setExpanded((currentValue) => !currentValue)}
-        className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-2 text-left text-xs text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 shadow-sm"
       >
-        <ShieldCheck size={12} className="text-accent" />
+        <ShieldCheck size={12} className="text-teal-600" />
         <span>Sources</span>
         <span className="text-slate-500">· {uniqueCitations.length}</span>
         {expanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
@@ -761,21 +794,21 @@ function CitationList({
               type="button"
               key={`${citation.filename}-${citation.chunk_index}`}
               onClick={() => onOpenSource(citation)}
-              className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left transition-colors hover:border-accent/30 hover:bg-white/[0.05]"
+              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-colors hover:border-teal-300 hover:bg-teal-50/30"
             >
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/8 bg-slate-950">
-                  <FileText size={14} className="text-accent" />
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-teal-200 bg-teal-50">
+                  <FileText size={14} className="text-teal-600" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-100">{citation.filename}</p>
+                      <p className="text-sm font-medium text-slate-900">{citation.filename}</p>
                       <p className="mt-1 text-[11px] text-slate-500">Chunk {citation.chunk_index}</p>
                     </div>
-                    <span className="text-[11px] text-accent">View source</span>
+                    <span className="text-[11px] text-teal-600">View source</span>
                   </div>
-                  <p className="mt-2 text-xs leading-6 text-slate-400">
+                  <p className="mt-2 text-xs leading-6 text-slate-500">
                     {truncate(citation.preview, 120)}
                   </p>
                 </div>
@@ -824,7 +857,7 @@ function FeedbackRow({
               type="button"
               disabled={loading}
               onClick={onHelpful}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
             >
               <ThumbsUp size={12} />
               Helpful
@@ -833,7 +866,7 @@ function FeedbackRow({
               type="button"
               disabled={loading}
               onClick={onNotHelpful}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
             >
               <ThumbsDown size={12} />
               Not helpful
@@ -842,11 +875,11 @@ function FeedbackRow({
               type="button"
               disabled={loading}
               onClick={onToggleMore}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/[0.04] hover:text-white"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
             >
               More options
             </button>
-            {loading && <Loader2 size={13} className="animate-spin text-accent" />}
+            {loading && <Loader2 size={13} className="animate-spin text-teal-600" />}
           </div>
 
           {expanded && (
@@ -856,7 +889,7 @@ function FeedbackRow({
                   key={option}
                   type="button"
                   onClick={() => onSelectMore(option)}
-                  className="rounded-full border border-white/8 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:text-white"
+                  className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
                 >
                   {option.replaceAll('_', ' ')}
                 </button>
@@ -903,24 +936,24 @@ function SourceDrawer({
       <button
         type="button"
         aria-label="Close source panel overlay"
-        className="fixed inset-0 z-40 bg-black/60"
+        className="fixed inset-0 z-40 bg-black/30"
         onClick={onClose}
       />
-      <aside className="fixed inset-y-0 right-0 z-50 w-full border-l border-white/10 bg-[#0b1728] shadow-[0_0_60px_rgba(0,0,0,0.45)] sm:max-w-xl">
+      <aside className="fixed inset-y-0 right-0 z-50 w-full border-l border-slate-200 bg-white shadow-[0_0_40px_rgba(15,23,42,0.10)] sm:max-w-xl">
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
                 {managerView ? 'Verified Source' : 'Source'}
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-100">
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">
                 {citation?.filename || 'Source details'}
               </h3>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-white/10 p-2 text-slate-400 transition-colors hover:text-white"
+              className="rounded-xl border border-slate-200 p-2 text-slate-400 transition-colors hover:text-slate-700"
             >
               <X size={16} />
             </button>
@@ -928,59 +961,59 @@ function SourceDrawer({
 
           <div className="flex-1 overflow-y-auto px-5 py-5">
             {loading && (
-              <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm text-slate-300">
-                <Loader2 size={16} className="animate-spin text-accent" />
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                <Loader2 size={16} className="animate-spin text-teal-600" />
                 Loading source details...
               </div>
             )}
 
             {error && (
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/5 px-4 py-4 text-sm text-red-300">
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-600">
                 {error}
               </div>
             )}
 
             <div className="space-y-5">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Section</p>
-                <p className="mt-2 text-sm text-slate-100">Chunk {citation?.chunk_index || 0}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Section</p>
+                <p className="mt-2 text-sm text-slate-800">Chunk {citation?.chunk_index || 0}</p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Excerpt</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Excerpt</p>
                   <button
                     type="button"
                     onClick={handleCopyExcerpt}
-                    className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 transition-colors hover:text-white"
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-slate-800"
                   >
                     {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
                     {copied ? 'Copied' : 'Copy excerpt'}
                   </button>
                 </div>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-200">
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
                   {excerpt || 'No excerpt available.'}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Preview</p>
-                <p className="mt-3 text-sm leading-7 text-slate-300">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Preview</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
                   {citation?.preview || 'No preview available.'}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Uploaded</p>
-                <p className="mt-3 text-sm text-slate-300">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Uploaded</p>
+                <p className="mt-3 text-sm text-slate-600">
                   {citation?.uploaded_at ? new Date(citation.uploaded_at).toLocaleString() : 'Unknown'}
                 </p>
               </div>
 
               {managerView && (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Source metadata</p>
-                  <div className="mt-3 space-y-2 text-sm text-slate-300">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Source metadata</p>
+                  <div className="mt-3 space-y-2 text-sm text-slate-600">
                     <p>Document ID: {citation?.document_id || 'Unknown'}</p>
                     <p>Uploaded by: {citation?.uploaded_by || 'Unknown'}</p>
                     <p>Chunk index: {citation?.chunk_index || 0}</p>
@@ -992,5 +1025,28 @@ function SourceDrawer({
         </div>
       </aside>
     </>
+  );
+}
+
+function ThinkingDots() {
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="inline-block h-1 w-1 rounded-full bg-teal-500"
+          style={{
+            animation: 'thinking-dot 1.2s ease-in-out infinite',
+            animationDelay: `${i * 0.15}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes thinking-dot {
+          0%, 100% { opacity: 0.3; transform: scale(0.85); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+      `}</style>
+    </span>
   );
 }

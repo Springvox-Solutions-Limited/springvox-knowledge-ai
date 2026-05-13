@@ -53,6 +53,7 @@ Permissions:
 - Qdrant Cloud collection: `springvox_knowledge`
 - Gemini `gemini-embedding-001` for embeddings
 - Gemini `gemini-2.5-flash` for strict RAG answers
+- **Recharts** for enterprise-grade data visualization
 
 ## Environment Variables
 
@@ -353,29 +354,26 @@ Deployment checklist for Qdrant:
 - Admins and content managers can review gaps at `/dashboard/knowledge-gaps`.
 - Knowledge gaps help show what users are asking that the current document set does not answer yet.
 
-## Analytics
+## Analytics Command Center
 
-- Admins and content managers can open `/dashboard/analytics`.
-- Metrics are calculated from real workspace data only.
-- Current analytics include:
-  - total documents
-  - completed documents
-  - failed documents
-  - total sections / chunks
-  - total questions asked
-  - questions asked in the last 7 days
-  - open knowledge gaps
-  - total users
-  - viewers
-  - content managers
-  - admins
-  - pending invitations
-  - feedback totals
-- Analytics also includes:
-  - recent questions
-  - recent knowledge gaps
-  - recent negative feedback
-  - daily question counts for the last 7 days
+- Admins and content managers can access `/dashboard/analytics`.
+- The analytics interface has been redesigned as a professional **Command Center** with high-fidelity visualizations.
+- **Data Visualization (Recharts)**:
+  - **Query Activity Chart**: An interactive `AreaChart` visualizing question volume trends over the last 7 days.
+  - **Coverage Mix**: A `PieChart` showing the distribution between "Grounded" (source-backed) and "Fallback" (gap-detected) answers.
+- **Metric Clusters**:
+  - **Knowledge Health**: Real-time stats on indexed documents, chunks, and grounding rates.
+  - **User Engagement**: Insights into active queries, unique members, and feedback sentiment.
+  - **Intelligence Summary**: Actionable grouping of knowledge gaps and recent negative feedback.
+- **Performance**: Metrics are calculated server-side from real workspace telemetry to ensure data integrity.
+
+## UI/UX Standards
+
+SpringVox follows an enterprise-grade "Clean Command Center" aesthetic:
+- **Humanized UI**: Technical jargon (e.g., "Terminate Session") has been replaced with human-centric copy (e.g., "Sign Out").
+- **High-Fidelity Layouts**: Uses a high-contrast `Slate-950` and `White` palette for optimal legibility.
+- **Accessibility**: All interactive elements (Search, Invite, Upload) use standardized padding and focus states.
+- **Branding Consistency**: Sidebars and headers reflect the workspace's unique corporate identity.
 
 ## Feedback Buttons
 

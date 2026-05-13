@@ -72,36 +72,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   if (authLoading || !user || !profile) {
-    return <div className="h-screen w-screen flex items-center justify-center font-mono text-xs animate-pulse">AUTHORIZING...</div>;
+    return <div className="h-screen w-screen flex items-center justify-center font-mono text-[10px] tracking-widest text-slate-400 bg-white">INITIALIZING ENCRYPTION...</div>;
   }
 
   return (
-    <div className="flex min-h-screen bg-[#f3f7fb] text-slate-900">
+    <div className="flex min-h-screen bg-slate-50 text-slate-900">
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-30 flex w-72 flex-col border-r border-white/10 bg-[linear-gradient(180deg,#0f1f33_0%,#112742_100%)] text-slate-100 shadow-[24px_0_60px_rgba(15,23,42,0.18)] transition-transform duration-300 lg:static lg:z-auto lg:w-64 lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-30 flex w-72 flex-col bg-slate-950 text-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:w-64 lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex-1 p-6">
-          <div className="mb-6 flex items-center justify-between">
+        <div className="flex-1 flex flex-col p-6">
+          <div className="mb-10 flex items-center justify-between px-2">
             <div className="min-w-0">
-              <SpringVoxLogo variant="full" theme="light" imageClassName="h-9 w-auto" />
-              <div className="mt-2 min-w-0">
-                <span className="block truncate text-[10px] uppercase tracking-[0.18em] text-slate-400">
-                  {workspace?.name || 'Default Workspace'}
+              <div className="flex items-center gap-3">
+                <SpringVoxLogo variant="mark" theme="dark" imageClassName="h-8 w-8 rounded-xl" />
+                <span className="text-lg font-black tracking-tighter text-white">SPRINGVOX</span>
+              </div>
+              <div className="mt-5 flex items-center gap-2 px-1">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <span className="block truncate text-[9px] font-bold uppercase tracking-[0.25em] text-slate-500">
+                  {workspace?.name || 'Workspace'}
                 </span>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setSidebarOpen(false)}
-              className="rounded-lg border border-white/10 p-2 text-slate-400 transition-colors hover:bg-white/5 hover:text-white lg:hidden"
+              className="rounded-xl border border-white/10 p-2 text-slate-500 transition-colors hover:bg-white/5 hover:text-white lg:hidden"
             >
               <PanelLeftClose size={16} />
             </button>
           </div>
 
-          <nav className="space-y-2">
+          <nav className="space-y-1.5 flex-1">
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-600 ml-6">Workspace Admin</p>
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -110,80 +115,80 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center space-x-3 rounded-xl border px-4 py-3 text-sm font-medium transition-all group",
+                    "flex items-center space-x-3 rounded-xl px-4 py-3.5 text-sm font-bold transition-all group",
                     isActive 
-                      ? "border-cyan-300/15 bg-cyan-400/10 text-white shadow-[0_12px_28px_rgba(34,211,238,0.1)]" 
-                      : "border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5 hover:text-white"
+                      ? "bg-white text-slate-950 shadow-lg" 
+                      : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
                   )}
                 >
-                  <item.icon size={18} className={cn("transition-transform group-hover:scale-110", isActive ? "text-cyan-300" : "text-slate-500")} />
-                  <span>{item.name}</span>
+                  <item.icon size={18} className={cn("transition-all duration-300", isActive ? "text-slate-950" : "text-slate-500 group-hover:text-slate-300")} />
+                  <span className={cn("transition-colors", isActive ? "text-slate-950" : "text-slate-400 group-hover:text-slate-200")}>{item.name}</span>
                 </Link>
               );
             })}
           </nav>
-        </div>
 
-        <div className="mt-auto border-t border-white/10 bg-white/5 px-6 py-5">
-            <div className="flex w-full flex-col gap-3">
-              <div className="flex w-full min-h-[72px] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3">
-                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-teal-400 to-cyan-400 text-[11px] font-bold text-slate-950 shadow-lg shadow-cyan-400/10">
+          <div className="mt-auto pt-6 border-t border-white/5">
+             <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3 rounded-2xl bg-slate-900 px-4 py-3 border border-white/5 transition-all">
+                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-[11px] font-bold text-white shadow-sm border border-white/5">
                    {(workspace?.name || user.email || 'S').slice(0, 1).toUpperCase()}
                  </div>
                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-100" title={user.email || ''}>
-                      {workspace?.name || user.email?.split('@')[0]}
+                    <p className="truncate text-xs font-bold text-white" title={user.email || ''}>
+                      {user.email?.split('@')[0]}
                     </p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      {workspace?.assistant_name || (isManagerRole(profile.role) ? 'Secure Workspace' : 'Workspace Viewer')}
+                    <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                      {profile.role.replace('_', ' ')}
                     </p>
                  </div>
               </div>
-            <button 
-              onClick={handleLogout}
-              className="flex h-11 w-full items-center justify-start gap-3 rounded-xl border border-white/10 bg-transparent px-4 text-sm font-medium text-slate-200 transition-colors hover:border-red-300/30 hover:bg-red-400/10 hover:text-red-100"
-            >
-              <LogOut size={16} />
-              <span>Logout</span>
-            </button>
-            </div>
+              <button 
+                onClick={handleLogout}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/5 bg-transparent text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-all hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
+              >
+                <LogOut size={14} />
+                <span>Sign Out</span>
+              </button>
+             </div>
+          </div>
         </div>
       </aside>
 
       {/* Main Content */}
       {sidebarOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar overlay"
-          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+        <div
+          className="fixed inset-0 z-20 bg-slate-950/40 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      <main className="flex-1 overflow-hidden flex flex-col min-h-screen lg:min-h-0">
-        <header className="sticky top-0 z-10 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur-md md:px-8">
+      <main className="flex-1 overflow-hidden flex flex-col min-h-screen">
+        <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl md:px-8">
             <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => setSidebarOpen(true)}
-          className="rounded-lg border border-slate-200 bg-white p-2 text-slate-500 transition-colors hover:text-slate-900 lg:hidden"
-        >
-          <PanelLeftOpen size={16} />
-        </button>
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                   <span className="cursor-pointer uppercase tracking-wider hover:text-slate-700">{workspace?.slug || 'Workspace'}</span>
-                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-                   <span className="uppercase tracking-wider capitalize text-slate-900">{pathname.split('/').pop() || 'Knowledge Engine'}</span>
-                </div>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition-all hover:bg-slate-50 lg:hidden"
+              >
+                <PanelLeftOpen size={18} />
+              </button>
+              <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.15em]">
+                 <span className="text-slate-400 hover:text-slate-950 transition-colors cursor-default">{workspace?.name || 'SpringVox'}</span>
+                 <span className="text-slate-300">/</span>
+                 <span className="text-slate-950">{pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-emerald-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                    System Active
+            <div className="flex items-center gap-4">
+                <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/50 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    System Online
                 </div>
             </div>
         </header>
-        <div className="border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        
+        {/* Mobile Sub-Nav */}
+        <div className="border-b border-slate-200 bg-white px-4 py-3 lg:hidden overflow-hidden">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -191,10 +196,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "whitespace-nowrap rounded-full border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors",
+                    "whitespace-nowrap rounded-xl px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all",
                     isActive
-                      ? "border-cyan-200 bg-cyan-50 text-cyan-700"
-                      : "border-slate-200 text-slate-500"
+                      ? "bg-slate-950 text-white shadow-md"
+                      : "bg-slate-50 text-slate-500 border border-slate-100"
                   )}
                 >
                   {item.name}
@@ -203,8 +208,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             })}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="w-full max-w-[1240px] p-4 md:p-8">
+
+        <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
+          <div className="mx-auto w-full max-w-7xl p-4 md:p-10">
               {children}
           </div>
         </div>
@@ -235,19 +241,19 @@ function getNavItems(role: UserProfile['role']) {
   }
 
   const items = [
-    { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
+    { name: 'Overview', href: '/dashboard', icon: BarChart3 },
     { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-    { name: 'Upload', href: '/dashboard/upload', icon: Upload },
-    { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: ChartColumnBig },
+    { name: 'Ingestion', href: '/dashboard/upload', icon: Upload },
+    { name: 'Workspace Chat', href: '/dashboard/chat', icon: MessageSquare },
+    { name: 'Intelligence', href: '/dashboard/analytics', icon: ChartColumnBig },
   ];
 
   if (isAdminRole(role)) {
-    items.push({ name: 'Users', href: '/dashboard/users', icon: Users });
-    items.push({ name: 'Settings', href: '/dashboard/settings', icon: Settings });
+    items.push({ name: 'User Directory', href: '/dashboard/users', icon: Users });
+    items.push({ name: 'System Settings', href: '/dashboard/settings', icon: Settings });
   }
 
-  items.push({ name: 'Knowledge Gaps', href: '/dashboard/knowledge-gaps', icon: CircleAlert });
+  items.push({ name: 'Coverage Gaps', href: '/dashboard/knowledge-gaps', icon: CircleAlert });
 
   return items;
 }

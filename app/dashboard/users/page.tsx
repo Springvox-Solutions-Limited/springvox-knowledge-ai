@@ -222,10 +222,10 @@ export default function UsersPage() {
     <div className="admin-page">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-700">Admin Controls</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Identity & Access</p>
           <h1 className="text-3xl font-bold tracking-tight text-slate-950">Workspace Users</h1>
           <p className="text-sm text-slate-500">
-            Manage who can upload, manage documents, or stay in chat-only mode.
+            Control user permissions and manage roles across your secure workspace.
           </p>
         </div>
 
@@ -236,18 +236,18 @@ export default function UsersPage() {
               setInviteOpen(true);
               setCreatedInviteUrl(null);
             }}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm font-semibold text-cyan-700"
+            className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold !text-white shadow-xl shadow-slate-950/10 transition-all hover:bg-slate-800 whitespace-nowrap"
           >
-            <MailPlus size={16} />
+            <MailPlus size={16} className="!text-white" />
             Invite user
           </button>
           <div className="relative w-full sm:w-72">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search by email..."
-              className="admin-input py-3 pl-10 pr-4"
+              placeholder="Search by identity..."
+              className="admin-input py-3 pl-12 pr-4"
             />
           </div>
           <select
@@ -257,75 +257,76 @@ export default function UsersPage() {
           >
             <option value="all">All roles</option>
             <option value="viewer">Viewer</option>
-            <option value="content_manager">Content manager</option>
+            <option value="content_manager">Manager</option>
             <option value="admin">Admin</option>
           </select>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-300">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
           {error}
         </div>
       )}
 
-      <div className="admin-shell-card overflow-hidden">
+      <div className="admin-shell-card overflow-hidden border border-slate-200 bg-white">
         {loading ? (
-          <div className="flex items-center justify-center gap-3 px-6 py-16 text-sm text-slate-400">
-            <Loader2 size={18} className="animate-spin text-cyan-700" />
-            Loading workspace users...
+          <div className="flex items-center justify-center gap-3 px-6 py-24 text-sm text-slate-400">
+            <Loader2 size={18} className="animate-spin text-slate-400" />
+            Synchronizing user directory...
           </div>
         ) : filteredUsers.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <Users className="mx-auto text-slate-700" size={36} />
-            <p className="mt-4 text-sm font-semibold text-slate-950">No users found</p>
-            <p className="mt-2 text-xs text-slate-500">Try another search or role filter.</p>
+          <div className="px-6 py-24 text-center">
+             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 mx-auto">
+              <Users size={24} strokeWidth={1.5} />
+            </div>
+            <p className="mt-4 text-sm font-semibold text-slate-900">No users identified</p>
+            <p className="mt-2 text-xs text-slate-500">Try refining your search or clearing the role filter.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] border-collapse text-left">
               <thead>
-                <tr className="bg-slate-50">
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Email</th>
+                <tr className="bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Identity</th>
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Role</th>
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Workspace</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Created</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Updated</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 text-right">Change role</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Activity</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 text-right">Permissions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-50">
                 {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/80">
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-slate-900">{user.email || 'No email'}</p>
+                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-5">
+                      <p className="text-sm font-bold text-slate-900">{user.email || 'Anonymous'}</p>
                       {user.full_name && (
-                        <p className="mt-1 text-xs text-slate-500">{user.full_name}</p>
+                        <p className="mt-0.5 text-xs text-slate-500 font-medium">{user.full_name}</p>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5">
                       <span
                         className={cn(
-                          'rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]',
+                          'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
                           user.role === 'admin'
-                            ? 'border-cyan-200 bg-cyan-50 text-cyan-700'
+                            ? 'bg-slate-900 text-white'
                             : user.role === 'content_manager'
-                              ? 'border-sky-200 bg-sky-50 text-sky-700'
-                              : 'border-slate-200 bg-slate-50 text-slate-500',
+                              ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                              : 'bg-slate-100 text-slate-600 border border-slate-200',
                         )}
                       >
                         {user.role.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">{user.workspace_name}</td>
-                    <td className="px-6 py-4 text-xs text-slate-500">
-                      {new Date(user.created_at).toLocaleDateString()}
+                    <td className="px-6 py-5 text-xs font-bold text-slate-500 uppercase tracking-widest">{user.workspace_name}</td>
+                    <td className="px-6 py-5">
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Created: {new Date(user.created_at).toLocaleDateString()}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Updated: {new Date(user.updated_at).toLocaleDateString()}</p>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-xs text-slate-500">
-                      {new Date(user.updated_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex justify-end gap-1.5">
                         {ROLE_OPTIONS.map((roleOption) => (
                           <button
                             key={roleOption}
@@ -333,10 +334,10 @@ export default function UsersPage() {
                             disabled={saving || roleOption === user.role}
                             onClick={() => updateRole(user, roleOption, false)}
                             className={cn(
-                              'rounded-lg border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] transition-colors',
+                              'rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all',
                               roleOption === user.role
-                                ? 'border-cyan-200 bg-cyan-50 text-cyan-700'
-                                : 'border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900',
+                                ? 'bg-slate-50 text-slate-400 cursor-default'
+                                : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-950 hover:text-slate-950 disabled:opacity-30',
                             )}
                           >
                             {roleOption === 'content_manager' ? 'Manager' : roleOption}
@@ -352,51 +353,57 @@ export default function UsersPage() {
         )}
       </div>
 
-      <div className="admin-shell-card p-6">
-        <div className="mb-5 flex items-center justify-between">
+      <div className="admin-shell-card p-8 border border-slate-200 bg-white">
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-slate-950">Pending invitations</h2>
-            <p className="text-sm text-slate-500">Create an invite link and share it manually.</p>
+            <h2 className="text-lg font-bold tracking-tight text-slate-950">Active invitations</h2>
+            <p className="text-xs text-slate-500 mt-1">Pending access requests and generated links.</p>
           </div>
-          <span className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500">
+          <div className="flex h-8 items-center rounded-full bg-slate-50 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500 border border-slate-100">
             {invitations.filter((item) => item.status === 'pending').length} pending
-          </span>
+          </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {invitations.length === 0 ? (
-            <p className="text-sm text-slate-500">No invitations created yet.</p>
+            <div className="col-span-full py-8 text-center rounded-2xl border border-dashed border-slate-100">
+              <p className="text-xs text-slate-400 italic">No active invitations found.</p>
+            </div>
           ) : (
-            invitations.slice(0, 8).map((invitation) => (
-              <div key={invitation.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{invitation.email}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {invitation.role.replace('_', ' ')} • {invitation.status} • expires{' '}
-                      {new Date(invitation.expires_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(invitation.invite_url)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
-                    >
-                      <Copy size={12} />
-                      Copy link
-                    </button>
+            invitations.slice(0, 10).map((invitation) => (
+              <div key={invitation.id} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 group hover:border-slate-200 transition-all">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{invitation.email}</p>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {invitation.role.replace('_', ' ')} • {invitation.status}
+                      </p>
+                    </div>
                     {invitation.status === 'pending' && (
                       <button
                         type="button"
                         disabled={saving}
                         onClick={() => revokeInvitation(invitation.id)}
-                        className="rounded-lg border border-red-500/10 px-3 py-2 text-xs text-red-300"
+                        className="text-[10px] font-bold uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors"
                       >
                         Revoke
                       </button>
                     )}
                   </div>
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(invitation.invite_url)}
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-slate-200 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-950 shadow-sm transition-all hover:border-slate-400"
+                    >
+                      <Copy size={12} />
+                      Copy Invite URL
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400 italic">
+                    Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
             ))
@@ -405,37 +412,32 @@ export default function UsersPage() {
       </div>
 
       {confirmState && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/10">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <Shield size={18} className="text-cyan-700" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                <Shield size={28} strokeWidth={1.5} />
               </div>
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950">Confirm self-demotion</h2>
-                <p className="mt-2 text-sm leading-7 text-slate-400">
-                  You are about to change your own role to{' '}
-                  <span className="font-semibold text-slate-950">
-                    {confirmState.nextRole.replace('_', ' ')}
-                  </span>
-                  . This can remove your current admin access.
-                </p>
-              </div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-950">Security Warning</h2>
+              <p className="mt-3 text-sm leading-relaxed text-slate-500">
+                You are about to downgrade your own administrative privileges to <span className="font-bold text-slate-900 capitalize">"{confirmState.nextRole.replace('_', ' ')}"</span>.
+                This action is immediate and may restrict your access to this page.
+              </p>
             </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmState(null)}
-                className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700"
-              >
-                Cancel
-              </button>
+            <div className="mt-8 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={() => updateRole(confirmState.user, confirmState.nextRole, true)}
-                className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950"
+                className="w-full rounded-xl bg-red-600 py-4 text-sm font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
               >
-                Confirm role change
+                Confirm Demotion
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmState(null)}
+                className="w-full rounded-xl bg-white py-4 text-sm font-bold text-slate-500 transition-all hover:text-slate-950"
+              >
+                Keep Admin Access
               </button>
             </div>
           </div>
@@ -443,67 +445,67 @@ export default function UsersPage() {
       )}
 
       {inviteOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/10">
-            <div className="flex items-start justify-between gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-sm px-4">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-xl font-semibold text-slate-950">Invite user</h2>
-                <p className="mt-2 text-sm leading-7 text-slate-400">
-                  Create a manual invite link for a user to join this workspace.
-                </p>
+                <h2 className="text-xl font-bold tracking-tight text-slate-950">Invite user</h2>
+                <p className="mt-1 text-xs text-slate-500 font-medium">Create a secure entry link for this workspace.</p>
               </div>
-              <button type="button" onClick={() => setInviteOpen(false)} className="rounded-xl border border-slate-200 p-2 text-slate-500">
-                <X size={16} />
+              <button type="button" onClick={() => setInviteOpen(false)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-50 transition-colors">
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={createInvitation} className="mt-6 space-y-5">
-              <label className="block space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Email</span>
+            <form onSubmit={createInvitation} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
                 <input
                   value={inviteEmail}
                   onChange={(event) => setInviteEmail(event.target.value)}
                   className="admin-input"
-                  placeholder="person@company.com"
+                  placeholder="name@company.com"
+                  required
                 />
-              </label>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Role</span>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Workspace Role</label>
                 <select
                   value={inviteRole}
                   onChange={(event) => setInviteRole(event.target.value as AppRole)}
                   className="admin-input"
                 >
-                  <option value="viewer">Viewer</option>
-                  <option value="content_manager">Content manager</option>
-                  <option value="admin">Admin</option>
+                  <option value="viewer">Viewer (Read Only)</option>
+                  <option value="content_manager">Manager (Upload & Ingest)</option>
+                  <option value="admin">Admin (Full Control)</option>
                 </select>
-              </label>
+              </div>
 
               {createdInviteUrl && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Invite link</p>
-                  <p className="mt-2 break-all text-sm text-slate-700">{createdInviteUrl}</p>
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 space-y-4">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Invitation link ready</p>
+                    <p className="mt-2 break-all text-xs font-mono text-emerald-800 bg-white/50 p-3 rounded-lg border border-emerald-100">{createdInviteUrl}</p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => navigator.clipboard.writeText(createdInviteUrl)}
-                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/10 hover:bg-emerald-700 transition-all"
                   >
-                    <Copy size={12} />
-                    Copy invite link
+                    <Copy size={14} />
+                    Copy Invite Link
                   </button>
                 </div>
               )}
 
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setInviteOpen(false)} className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
-                  Close
-                </button>
-                <button type="submit" disabled={saving} className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950">
-                  {saving ? 'Creating...' : 'Create invite'}
-                </button>
-              </div>
+              {!createdInviteUrl && (
+                <div className="flex flex-col gap-3 pt-4">
+                  <button type="submit" disabled={saving} className="w-full rounded-xl bg-slate-950 py-4 text-sm font-bold text-white shadow-lg shadow-slate-950/10 transition-all hover:bg-slate-800 disabled:opacity-30">
+                    {saving ? 'Generating...' : 'Generate Invite Link'}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
