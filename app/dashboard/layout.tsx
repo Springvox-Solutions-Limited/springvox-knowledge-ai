@@ -83,12 +83,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex-1 flex flex-col p-6">
-          <div className="mb-10 flex items-center justify-between px-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <SpringVoxLogo variant="mark" theme="dark" imageClassName="h-8 w-8 rounded-xl" />
-                <span className="text-lg font-black tracking-tighter text-white">SPRINGVOX</span>
-              </div>
+          <div className="mb-10 flex items-start justify-between gap-4 px-2">
+            <div className="min-w-0 flex-1">
+              <SpringVoxLogo
+                variant="full"
+                theme="light"
+                className="h-11"
+                imageClassName="h-10 w-auto max-w-[190px] object-contain object-left"
+              />
               <div className="mt-5 flex items-center gap-2 px-1">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                 <span className="block truncate text-[9px] font-bold uppercase tracking-[0.25em] text-slate-500">
@@ -163,8 +165,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
       <main className="flex-1 overflow-hidden flex flex-col min-h-screen">
-        <header className="sticky top-0 z-20 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl md:px-8">
-            <div className="flex items-center gap-4">
+        <header className="sticky top-0 z-20 flex min-h-16 w-full items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl md:px-8">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
@@ -172,10 +174,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <PanelLeftOpen size={18} />
               </button>
-              <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.15em]">
-                 <span className="text-slate-400 hover:text-slate-950 transition-colors cursor-default">{workspace?.name || 'SpringVox'}</span>
+              <div className="flex min-w-0 items-center gap-2 text-[10px] font-bold uppercase tracking-[0.12em] sm:gap-3 sm:tracking-[0.15em]">
+                 <span className="truncate text-slate-400 hover:text-slate-950 transition-colors cursor-default">{workspace?.name || 'SpringVox'}</span>
                  <span className="text-slate-300">/</span>
-                 <span className="text-slate-950">{pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}</span>
+                 <span className="truncate text-slate-950">{pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}</span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -210,7 +212,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
-          <div className="mx-auto w-full max-w-7xl p-4 md:p-10">
+          <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 md:p-10">
               {children}
           </div>
         </div>

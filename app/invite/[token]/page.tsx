@@ -88,8 +88,8 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(180deg,#e9f6fb_0%,#f3f7fb_100%)] px-4 py-16 text-slate-900">
-      <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl shadow-slate-900/10">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(180deg,#e9f6fb_0%,#f3f7fb_100%)] px-4 py-10 text-slate-900 sm:py-16">
+      <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-900/10 sm:p-8">
         {loading ? (
           <div className="flex items-center gap-3 text-sm text-slate-500">
             <Loader2 size={18} className="animate-spin text-cyan-700" />

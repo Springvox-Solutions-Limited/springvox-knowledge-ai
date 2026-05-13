@@ -1,24 +1,30 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { AlertTriangle, Loader2, Search } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
-import { cn, truncate } from '@/src/lib/utils';
-import { isManagerRole, type UserProfile } from '@/src/lib/workspace';
+import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
+import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
+import { cn, truncate } from "@/src/lib/utils";
+import { isManagerRole, type UserProfile } from "@/src/lib/workspace";
 
 type KnowledgeGap = {
   id: string;
   question: string;
-  status: 'open' | 'reviewed' | 'resolved' | 'ignored';
+  status: "open" | "reviewed" | "resolved" | "ignored";
   occurrence_count: number;
   last_asked_at: string;
   created_at: string;
   sample_answer?: string | null;
 };
 
-const STATUS_OPTIONS: KnowledgeGap['status'][] = ['open', 'reviewed', 'resolved', 'ignored'];
+const STATUS_OPTIONS: KnowledgeGap["status"][] = [
+  "open",
+  "reviewed",
+  "resolved",
+  "ignored",
+];
 
 export default function KnowledgeGapsPage() {
   const router = useRouter();
@@ -26,8 +32,10 @@ export default function KnowledgeGapsPage() {
   const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGap[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | KnowledgeGap['status']>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | KnowledgeGap["status"]
+  >("all");
   const [error, setError] = useState<string | null>(null);
 
   const loadKnowledgeGaps = async () => {
@@ -37,30 +45,34 @@ export default function KnowledgeGapsPage() {
       setProfile(currentProfile);
 
       if (!currentProfile || !isManagerRole(currentProfile.role)) {
-        router.replace('/dashboard/chat');
+        router.replace("/dashboard/chat");
         return;
       }
 
       const accessToken = await getAccessToken();
       if (!accessToken) {
-        throw new Error('Authentication session expired');
+        throw new Error("Authentication session expired");
       }
 
-      const response = await fetch('/api/knowledge-gaps', {
+      const response = await fetch("/api/knowledge-gaps", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load knowledge gaps');
+        throw new Error("Failed to load knowledge gaps");
       }
 
       const data = await response.json();
       setKnowledgeGaps(data.knowledgeGaps || []);
       setError(null);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Failed to load knowledge gaps');
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load knowledge gaps",
+      );
     } finally {
       setLoading(false);
     }
@@ -70,38 +82,47 @@ export default function KnowledgeGapsPage() {
     loadKnowledgeGaps();
   }, []);
 
-  const updateGapStatus = async (id: string, status: KnowledgeGap['status']) => {
+  const updateGapStatus = async (
+    id: string,
+    status: KnowledgeGap["status"],
+  ) => {
     try {
       setSavingId(id);
       const accessToken = await getAccessToken();
       if (!accessToken) {
-        throw new Error('Authentication session expired');
+        throw new Error("Authentication session expired");
       }
 
-      const response = await fetch('/api/knowledge-gaps', {
-        method: 'PATCH',
+      const response = await fetch("/api/knowledge-gaps", {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ id, status }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update knowledge gap');
+        throw new Error("Failed to update knowledge gap");
       }
 
       await loadKnowledgeGaps();
     } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : 'Failed to update knowledge gap');
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Failed to update knowledge gap",
+      );
     } finally {
       setSavingId(null);
     }
   };
 
   const filteredKnowledgeGaps = knowledgeGaps.filter((gap) => {
-    const matchesSearch = !searchQuery || gap.question.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || gap.status === statusFilter;
+    const matchesSearch =
+      !searchQuery ||
+      gap.question.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || gap.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -112,121 +133,172 @@ export default function KnowledgeGapsPage() {
 
   return (
     <div className="admin-page">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Knowledge Coverage</p>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950">Knowledge Gaps</h1>
-          <p className="text-sm text-slate-500">
-            Review unanswered questions to identify areas where your documentation needs improvement.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative w-full sm:w-72">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search questions..."
-              className="admin-input py-3 pl-12 pr-4"
-            />
+      <div className="admin-hero-card">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
+              Intelligence Coverage
+            </p>
+            <h1 className="admin-hero-title">
+              Coverage Audit
+            </h1>
+            <p className="admin-hero-copy">
+              Monitor and resolve documentation gaps. Every unanswered question
+              is an opportunity to strengthen your knowledge base.
+            </p>
           </div>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as 'all' | KnowledgeGap['status'])}
-            className="admin-input"
-          >
-            <option value="all">All statuses</option>
-            {STATUS_OPTIONS.map((status) => (
-              <option key={status} value={status}>
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
+      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+        <AdminSearchInput
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search by question or topic..."
+          className="flex-1 lg:min-w-[20rem]"
+        />
+        <select
+          value={statusFilter}
+          onChange={(event) =>
+            setStatusFilter(
+              event.target.value as "all" | KnowledgeGap["status"],
+            )
+          }
+          className="admin-input shrink-0 px-4 py-3 text-sm font-medium transition-colors hover:border-slate-300 lg:min-w-[11rem] lg:w-auto"
+        >
+          <option value="all">All statuses</option>
+          {STATUS_OPTIONS.map((status) => (
+            <option key={status} value={status}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-          {error}
+        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-5 text-sm text-red-700 font-medium flex items-start gap-3">
+          <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold">Error loading gaps</p>
+            <p className="text-xs mt-1 opacity-90">{error}</p>
+          </div>
         </div>
       )}
 
-      <div className="admin-shell-card border border-slate-200 bg-white">
+      <div className="admin-shell-card border border-slate-200 bg-white overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center gap-3 px-6 py-24 text-sm text-slate-400">
-            <Loader2 size={18} className="animate-spin text-slate-400" />
-            Analyzing coverage gaps...
+          <div className="flex flex-col items-center justify-center gap-4 px-6 py-24">
+            <div className="relative w-12 h-12">
+              <Loader2 size={24} className="animate-spin text-slate-400" />
+            </div>
+            <p className="text-sm font-medium text-slate-600">
+              Analyzing coverage gaps...
+            </p>
           </div>
         ) : filteredKnowledgeGaps.length === 0 ? (
           <div className="px-6 py-24 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 mx-auto">
-              <AlertTriangle size={24} strokeWidth={1.5} />
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-500 mx-auto mb-4">
+              <AlertTriangle size={28} strokeWidth={1.5} />
             </div>
-            <p className="mt-4 text-sm font-semibold text-slate-900">No coverage gaps identified</p>
-            <p className="mt-2 text-xs text-slate-500">All recent questions have been answered using your knowledge base.</p>
+            <p className="text-lg font-bold text-slate-950">
+              No coverage gaps identified
+            </p>
+            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
+              All recent questions have been answered using your knowledge base.
+              Your documentation coverage is excellent.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filteredKnowledgeGaps.map((gap) => (
-              <div key={gap.id} className="p-6 transition-colors hover:bg-slate-50/50">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            {filteredKnowledgeGaps.map((gap, idx) => (
+              <div
+                key={gap.id}
+                className="p-6 lg:p-8 transition-all hover:bg-slate-50/50 group"
+              >
+                <div className="flex flex-col gap-6 lg:gap-8">
                   <div className="space-y-4 flex-1">
                     <div className="flex flex-wrap items-center gap-3">
                       <span
                         className={cn(
-                          'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
-                          gap.status === 'open'
-                            ? 'bg-red-50 text-red-700 border border-red-100'
-                            : gap.status === 'resolved'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                              : gap.status === 'ignored'
-                                ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                                : 'bg-blue-50 text-blue-700 border border-blue-100',
+                          "rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border transition-colors",
+                          gap.status === "open"
+                            ? "bg-red-50 text-red-700 border-red-200"
+                            : gap.status === "resolved"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : gap.status === "ignored"
+                                ? "bg-slate-100 text-slate-600 border-slate-200"
+                                : "bg-blue-50 text-blue-700 border-blue-200",
                         )}
                       >
                         {gap.status}
                       </span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                        {gap.occurrence_count} {gap.occurrence_count === 1 ? 'ASK' : 'ASKS'}
+                      <div className="h-6 w-px bg-slate-200" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <span className="font-black text-slate-900">
+                          {gap.occurrence_count}
+                        </span>{" "}
+                        {gap.occurrence_count === 1 ? "ask" : "asks"}
                       </span>
                     </div>
-                    <p className="text-lg font-semibold tracking-tight text-slate-900 leading-snug">{gap.question}</p>
-                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-medium text-slate-500">
-                      <span className="flex items-center gap-1.5">
-                        <span className="text-slate-300">Added:</span> {new Date(gap.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <p className="text-lg lg:text-xl font-semibold tracking-tight text-slate-950 leading-snug">
+                      {gap.question}
+                    </p>
+                    <div className="flex flex-wrap gap-x-8 gap-y-3 text-xs font-medium text-slate-500 pt-2">
+                      <span className="flex items-center gap-2">
+                        <span className="text-slate-300">•</span>
+                        <span className="text-slate-400">Reported:</span>{" "}
+                        {new Date(gap.created_at).toLocaleDateString(
+                          undefined,
+                          { month: "short", day: "numeric", year: "numeric" },
+                        )}
                       </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="text-slate-300">Last seen:</span> {new Date(gap.last_asked_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      <span className="flex items-center gap-2">
+                        <span className="text-slate-300">•</span>
+                        <span className="text-slate-400">Last seen:</span>{" "}
+                        {new Date(gap.last_asked_at).toLocaleDateString(
+                          undefined,
+                          { month: "short", day: "numeric", year: "numeric" },
+                        )}
                       </span>
                     </div>
                     {gap.sample_answer && (
-                      <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Fallback response</p>
-                        <p className="text-xs leading-relaxed text-slate-600 italic">
-                          "{truncate(gap.sample_answer, 140)}"
+                      <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-4 mt-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                          Fallback response
+                        </p>
+                        <p className="text-sm leading-relaxed text-slate-700">
+                          "{truncate(gap.sample_answer, 180)}"
                         </p>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 lg:flex-nowrap">
-                    {STATUS_OPTIONS.map((status) => (
-                      <button
-                        key={status}
-                        type="button"
-                        disabled={savingId === gap.id || status === gap.status}
-                        onClick={() => updateGapStatus(gap.id, status)}
-                        className={cn(
-                          'rounded-lg px-3 py-2 text-[10px] font-bold uppercase tracking-wider transition-all',
-                          status === gap.status
-                            ? 'bg-slate-950 text-white shadow-sm'
-                            : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:text-slate-900 disabled:opacity-30',
-                        )}
-                      >
-                        {savingId === gap.id && status === gap.status ? '...' : status}
-                      </button>
-                    ))}
+                  <div className="flex flex-wrap gap-2 lg:flex-nowrap pt-2 border-t border-slate-100">
+                    <div className="pt-2 flex items-center gap-2 w-full lg:w-auto">
+                      {STATUS_OPTIONS.map((status) => (
+                        <button
+                          key={status}
+                          type="button"
+                          disabled={savingId === gap.id}
+                          onClick={() => updateGapStatus(gap.id, status)}
+                          className={cn(
+                            "rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all border",
+                            status === gap.status
+                              ? "bg-slate-950 text-white border-slate-950 shadow-lg shadow-slate-950/20"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed",
+                          )}
+                        >
+                          {savingId === gap.id && status === gap.status ? (
+                            <Loader2
+                              size={14}
+                              className="animate-spin inline"
+                            />
+                          ) : (
+                            status
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

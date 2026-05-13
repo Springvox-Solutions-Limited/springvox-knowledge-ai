@@ -134,18 +134,18 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-8 lg:space-y-10">
       {/* Header Section */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">
             <Activity size={12} />
             Workspace Intelligence
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
             {data.workspace?.name || 'Workspace'} Dashboard
           </h1>
-          <p className="text-base text-slate-500 font-medium">
+          <p className="text-sm font-medium text-slate-500 sm:text-base">
             Real-time insights into knowledge coverage and AI accuracy.
           </p>
         </div>
@@ -185,11 +185,11 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Main Analytics Content */}
-      <div className="grid gap-10 lg:grid-cols-[1fr,400px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr,400px] lg:gap-10">
         {/* Line Chart Section */}
-        <div className="rounded-[40px] border border-slate-200 bg-white p-10 shadow-sm">
-          <div className="mb-10 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
+          <div className="mb-6 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100">
                 <BarChart3 size={20} />
               </div>
@@ -200,7 +200,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           
-          <div className="h-[350px] w-full">
+          <div className="h-[280px] w-full sm:h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data.dailyQuestionCounts}>
                 <defs>
@@ -247,7 +247,7 @@ export default function AnalyticsPage() {
 
         {/* Pie Chart / Distribution Section */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-[40px] border border-slate-200 bg-white p-10 shadow-sm">
+          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
             <div className="mb-8">
               <h2 className="text-xl font-black tracking-tight text-slate-950">Coverage Mix</h2>
               <p className="text-sm font-medium text-slate-500">Distribution of answer types.</p>
@@ -291,7 +291,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="rounded-[40px] border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8">
             <h2 className="text-lg font-black tracking-tight text-slate-950">Member Directory</h2>
             <div className="mt-6 space-y-3">
               {[
@@ -310,9 +310,9 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Bottom Activity Section */}
-      <div className="grid gap-10 xl:grid-cols-[1.2fr,0.8fr]">
-        <div className="rounded-[40px] border border-slate-200 bg-white p-10 shadow-sm overflow-hidden">
-          <div className="mb-8 flex items-center justify-between">
+      <div className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr] xl:gap-10">
+        <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
+          <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-2xl font-black tracking-tight text-slate-950">Recent Query Flow</h2>
             <Link href="/dashboard/chat" className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-950 transition-colors flex items-center gap-2">
               View All <ArrowRight size={12} />
@@ -323,7 +323,7 @@ export default function AnalyticsPage() {
             {data.recentQuestions.length === 0 ? (
               <p className="text-sm text-slate-500 italic">No activity recorded yet.</p>
             ) : (
-              <table className="w-full border-collapse text-left">
+              <table className="w-full min-w-[680px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     <th className="pb-4 pr-4">Question</th>
@@ -371,7 +371,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="rounded-[40px] border border-slate-200 bg-white p-10 shadow-sm">
+        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
           <div className="mb-8">
             <h2 className="text-2xl font-black tracking-tight text-slate-950">Active Knowledge Gaps</h2>
             <p className="mt-1 text-sm font-medium text-slate-500">Queries that failed to find source context.</p>

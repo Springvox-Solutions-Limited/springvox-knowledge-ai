@@ -83,7 +83,7 @@ export default function UploadPage() {
 
   return (
     <div className="admin-page">
-      <div className="admin-shell-card p-8 md:p-10 border border-slate-200 bg-white">
+      <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8 md:p-10">
         <div className="space-y-4">
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Knowledge Ingestion</p>
           <h1 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Train your workspace assistant.</h1>
@@ -108,17 +108,17 @@ export default function UploadPage() {
          ))}
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:gap-8">
         <div className="space-y-6">
         <div 
           {...getRootProps()} 
           className={cn(
-            "relative group flex min-h-[360px] cursor-pointer flex-col items-center justify-center gap-5 rounded-[2rem] border-2 border-dashed bg-white p-12 transition-all",
+            "relative group flex min-h-[320px] cursor-pointer flex-col items-center justify-center gap-5 rounded-[2rem] border-2 border-dashed bg-white p-6 transition-all sm:min-h-[360px] sm:p-12",
             isDragActive ? "border-slate-400 bg-slate-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
           )}
         >
           <input {...getInputProps()} />
-          <div className="absolute inset-x-10 top-8 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <div className="absolute inset-x-4 top-4 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:inset-x-10 sm:top-8 sm:text-[10px] sm:tracking-[0.18em]">
             <span>PDF, TXT ONLY</span>
             <span>MAX 4MB</span>
           </div>
@@ -138,13 +138,13 @@ export default function UploadPage() {
         </div>
 
         {file && (
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-in zoom-in-95 duration-200">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
                 <File size={18} className="text-slate-500" />
               </div>
-              <div className="space-y-0.5">
-                <p className="max-w-[200px] truncate text-sm font-semibold text-slate-900">{file.name}</p>
+              <div className="min-w-0 space-y-0.5">
+                <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
               </div>
             </div>
@@ -200,7 +200,7 @@ export default function UploadPage() {
         )}
         </div>
 
-        <div className="admin-shell-card p-8 border border-slate-200 bg-white">
+        <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8">
           <div className="space-y-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Processing Flow</p>
             <h2 className="text-xl font-bold tracking-tight text-slate-950">Secure Pipeline</h2>

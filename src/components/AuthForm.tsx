@@ -36,7 +36,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   };
 
   return (
-    <div className="w-full max-w-sm space-y-8 rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_30px_80px_rgba(15,23,42,0.08)]">
+    <div className="w-full max-w-sm space-y-6 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.08)] sm:space-y-8 sm:p-8">
       <div className="text-center space-y-3">
         <div className="flex justify-center">
           <SpringVoxLogo variant="full" theme="light" imageClassName="h-10" />
@@ -49,7 +49,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
         <div className="space-y-1">
           <label className="mb-1 ml-1 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Email Address</label>
           <div className="relative group">
@@ -88,7 +88,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
 
         <button
           disabled={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 py-4 font-bold text-slate-950 shadow-xl shadow-cyan-400/10 transition-all hover:from-teal-400 hover:to-cyan-400 disabled:opacity-30"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 py-3.5 font-bold text-slate-950 shadow-xl shadow-cyan-400/10 transition-all hover:from-teal-400 hover:to-cyan-400 disabled:opacity-30 sm:py-4"
         >
           {loading ? <Loader2 className="animate-spin" size={18} /> : (
             <>
@@ -99,7 +99,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         </button>
       </form>
 
-      <div className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">
+      <div className="text-center text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
         {mode === 'login' ? (
           <p>New here? <Link href="/register" className="ml-1 text-cyan-700 hover:underline">Register</Link></p>
         ) : (
