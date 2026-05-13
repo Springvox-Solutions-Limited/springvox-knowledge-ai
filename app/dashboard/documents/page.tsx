@@ -10,10 +10,12 @@ import {
   Clock,
   Search,
   Database,
-  Loader2
+  Loader2,
+  Upload
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { type UserProfile } from '@/src/lib/workspace';
+import Link from 'next/link';
 
 type DocumentRecord = {
   id: string;
@@ -103,14 +105,23 @@ export default function DocumentsPage() {
           <h1 className="text-3xl font-bold tracking-tight text-[#E2E8F0]">Your Knowledge Base</h1>
           <p className="text-sm text-slate-500">Review ingestion status, source chunks, and any failed processing runs.</p>
         </div>
-        <div className="relative max-w-sm w-full">
-           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-           <input 
-             value={searchQuery}
-             onChange={(event) => setSearchQuery(event.target.value)}
-             className="w-full rounded-xl border border-[#2D3039] bg-[#1A1C20] py-3 pl-10 pr-4 text-sm text-[#E2E8F0] focus:outline-none focus:border-accent/50"
-             placeholder="Search documents..."
-           />
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <div className="relative max-w-sm w-full">
+             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+             <input 
+               value={searchQuery}
+               onChange={(event) => setSearchQuery(event.target.value)}
+               className="w-full rounded-xl border border-[#2D3039] bg-[#1A1C20] py-3 pl-10 pr-4 text-sm text-[#E2E8F0] focus:outline-none focus:border-accent/50"
+               placeholder="Search documents..."
+             />
+          </div>
+          <Link
+            href="/dashboard/upload"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-black"
+          >
+            <Upload size={16} />
+            Upload document
+          </Link>
         </div>
       </div>
 

@@ -82,13 +82,13 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10">
+    <div className="space-y-10">
       <div className="rounded-[2rem] border border-[#2D3039] bg-[radial-gradient(circle_at_top_left,rgba(255,107,0,0.12),transparent_35%),linear-gradient(180deg,#15171C_0%,#101217_100%)] p-8 md:p-10 shadow-2xl shadow-black/30">
         <div className="space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-accent">Knowledge Ingestion</p>
-          <h1 className="text-3xl font-bold tracking-tight text-[#E2E8F0] md:text-4xl">Upload documents into your private AI workspace.</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-accent">Document Upload</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#E2E8F0] md:text-4xl">Upload approved documents into your workspace.</h1>
           <p className="max-w-2xl text-sm leading-7 text-slate-400">
-            SpringVox ingests secure PDF and TXT files, extracts text, chunks them, generates embeddings, and indexes them for grounded answers.
+            Use this admin workspace to add PDF and TXT files that should power your team assistant.
           </p>
         </div>
       </div>

@@ -4,25 +4,28 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
   BarChart3, 
+  ChartColumnBig,
   FileText, 
   MessageSquare, 
   Upload, 
   Users,
   CircleAlert,
+  Settings,
   LogOut, 
   PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react';
-import { getCurrentUserProfile } from '@/src/lib/auth-client';
+import { getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
-import { isAdminRole, isManagerRole, type UserProfile } from '@/src/lib/workspace';
+import { isAdminRole, isManagerRole, type UserProfile, type WorkspaceSettings } from '@/src/lib/workspace';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [workspace, setWorkspace] = useState<WorkspaceSettings | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -40,6 +43,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       try {
         const currentProfile = await getCurrentUserProfile();
         setProfile(currentProfile);
+        const currentWorkspace = await getCurrentWorkspaceSettings();
+        setWorkspace(currentWorkspace);
 
         if (!currentProfile?.workspace_id) {
           router.replace('/login');
@@ -80,7 +85,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-accent rounded flex items-center justify-center font-bold text-black shadow-lg shadow-accent/20">S</div>
-              <span className="font-bold text-lg tracking-tight">SpringVox<span className="text-accent">.AI</span></span>
+              <div className="min-w-0">
+                <span className="block truncate font-bold text-lg tracking-tight">SpringVox<span className="text-accent">.AI</span></span>
+                <span className="block truncate text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                  {workspace?.name || 'Default Workspace'}
+                </span>
+              </div>
             </div>
             <button
               type="button"
@@ -120,10 +130,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                  <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-tr from-accent to-orange-400 shadow-lg shadow-accent/10"></div>
                  <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-[#E2E8F0]" title={user.email || ''}>
-                      {user.email?.split('@')[0]}
+                      {workspace?.name || user.email?.split('@')[0]}
                     </p>
                     <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      {isManagerRole(profile.role) ? 'Secure Workspace' : 'Workspace Viewer'}
+                      {workspace?.assistant_name || (isManagerRole(profile.role) ? 'Secure Workspace' : 'Workspace Viewer')}
                     </p>
                  </div>
               </div>
@@ -158,7 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <PanelLeftOpen size={16} />
                 </button>
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                   <span className="hover:text-slate-300 cursor-pointer uppercase tracking-wider">Workspace</span>
+                   <span className="hover:text-slate-300 cursor-pointer uppercase tracking-wider">{workspace?.slug || 'Workspace'}</span>
                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
                    <span className="text-slate-300 uppercase tracking-wider capitalize">{pathname.split('/').pop() || 'Knowledge Engine'}</span>
                 </div>
@@ -192,7 +202,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="mx-auto w-full max-w-6xl p-4 md:p-8">
+          <div className="w-full max-w-[1240px] p-4 md:p-8">
               {children}
           </div>
         </div>
@@ -210,7 +220,7 @@ function isAllowedPath(role: UserProfile['role'], pathname: string) {
     return pathname === '/dashboard/chat';
   }
 
-  if (!isAdminRole(role) && pathname === '/dashboard/users') {
+  if (!isAdminRole(role) && (pathname === '/dashboard/users' || pathname === '/dashboard/settings')) {
     return false;
   }
 
@@ -227,10 +237,12 @@ function getNavItems(role: UserProfile['role']) {
     { name: 'Documents', href: '/dashboard/documents', icon: FileText },
     { name: 'Upload', href: '/dashboard/upload', icon: Upload },
     { name: 'Chat', href: '/dashboard/chat', icon: MessageSquare },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: ChartColumnBig },
   ];
 
   if (isAdminRole(role)) {
     items.push({ name: 'Users', href: '/dashboard/users', icon: Users });
+    items.push({ name: 'Settings', href: '/dashboard/settings', icon: Settings });
   }
 
   items.push({ name: 'Knowledge Gaps', href: '/dashboard/knowledge-gaps', icon: CircleAlert });

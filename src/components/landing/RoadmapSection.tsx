@@ -9,13 +9,14 @@ const currentItems = [
 ];
 
 const roadmapItems = [
-  'Better document parsing with OCR support',
-  'Background processing for larger files',
+  'Subdomain workspace routing',
+  'Email invite sending',
+  'Larger document processing',
+  'Better PDF parsing and OCR support',
   'DOCX and XLSX support',
-  'More team and workspace management controls',
-  'Knowledge analytics and admin insights',
-  'Integrations with cloud drives and internal systems',
-  'Optional deployment paths for specific organizations',
+  'Background processing',
+  'Voice input and text-to-speech',
+  'Billing and self-service SaaS onboarding',
 ];
 
 export function RoadmapSection() {
@@ -62,7 +63,7 @@ export function RoadmapSection() {
             </div>
             <div className="mt-6 grid gap-3">
               {roadmapItems.map((item, index) => {
-                const icons = [ScanText, Workflow, Sheet, Compass, Compass, Compass, Compass];
+                const icons = [Compass, Compass, Workflow, ScanText, Sheet, Workflow, Compass, Compass];
                 const Icon = icons[index] || Compass;
                 return (
                   <div key={item} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">

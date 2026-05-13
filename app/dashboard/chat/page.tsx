@@ -14,12 +14,24 @@ import {
   Send,
   ShieldCheck,
   Square,
+  ThumbsDown,
+  ThumbsUp,
   X,
 } from 'lucide-react';
 
-import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
+import {
+  getAccessToken,
+  getCurrentUserProfile,
+  getCurrentWorkspaceSettings,
+} from '@/src/lib/auth-client';
+import { supabase } from '@/src/lib/supabase';
 import { cn, truncate } from '@/src/lib/utils';
-import { isManagerRole, type UserProfile } from '@/src/lib/workspace';
+import {
+  isManagerRole,
+  type FeedbackRating,
+  type UserProfile,
+  type WorkspaceSettings,
+} from '@/src/lib/workspace';
 
 type Citation = {
   filename: string;
@@ -38,20 +50,27 @@ type Message = {
   citations?: Citation[];
   statusMessage?: string;
   error?: boolean;
+  chatMessageId?: string;
+  feedbackSubmitted?: boolean;
+  feedbackRating?: FeedbackRating | null;
 };
 
 const EMPTY_PROMPTS = [
-  'Summarize my uploaded document',
-  'List the key products and services',
-  'What are the main features mentioned?',
-  'What should I know from this document?',
+  'Summarize the uploaded documents',
+  'What services are mentioned?',
+  'What are the main policies?',
+  'What should I know from these documents?',
 ];
+
+const EXTRA_FEEDBACK_OPTIONS: FeedbackRating[] = ['wrong', 'outdated', 'needs_more_detail'];
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [workspace, setWorkspace] = useState<WorkspaceSettings | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [selectedSource, setSelectedSource] = useState<Citation | null>(null);
@@ -60,14 +79,76 @@ export default function ChatPage() {
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [retryQuestion, setRetryQuestion] = useState<string | null>(null);
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
+  const [feedbackLoadingMessageId, setFeedbackLoadingMessageId] = useState<string | null>(null);
+  const [expandedFeedbackMessageId, setExpandedFeedbackMessageId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const startedAtRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const typingQueueRef = useRef('');
+  const typingIntervalRef = useRef<number | null>(null);
+  const typingMessageIdRef = useRef<string | null>(null);
+  const pendingCompletionRef = useRef<{
+    messageId: string;
+    payload: {
+      answer: string;
+      citations: Citation[];
+      chatMessageId?: string;
+      statusMessage?: string;
+    };
+  } | null>(null);
 
   useEffect(() => {
-    getCurrentUserProfile()
-      .then((currentProfile) => setProfile(currentProfile))
-      .catch(() => setProfile(null));
+    async function loadChatContext() {
+      try {
+        const [currentProfile, currentWorkspace] = await Promise.all([
+          getCurrentUserProfile(),
+          getCurrentWorkspaceSettings(),
+        ]);
+
+        setProfile(currentProfile);
+        setWorkspace(currentWorkspace);
+
+        if (!currentProfile?.workspace_id) {
+          setHistoryLoading(false);
+          return;
+        }
+
+        const { data: history, error } = await supabase
+          .from('chat_messages')
+          .select('id, question, answer, citations, created_at')
+          .eq('workspace_id', currentProfile.workspace_id)
+          .order('created_at', { ascending: true })
+          .limit(30);
+
+        if (error) {
+          throw error;
+        }
+
+        const loadedMessages: Message[] = [];
+        for (const item of history || []) {
+          loadedMessages.push({
+            id: `question-${item.id}`,
+            role: 'user',
+            content: item.question,
+          });
+          loadedMessages.push({
+            id: `answer-${item.id}`,
+            role: 'ai',
+            content: item.answer,
+            citations: Array.isArray(item.citations) ? (item.citations as Citation[]) : [],
+            chatMessageId: item.id,
+          });
+        }
+
+        setMessages(loadedMessages);
+      } catch {
+        setMessages([]);
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+
+    loadChatContext();
   }, []);
 
   useEffect(() => {
@@ -93,6 +174,12 @@ export default function ChatPage() {
     return () => window.clearInterval(interval);
   }, [loading]);
 
+  useEffect(() => {
+    return () => {
+      stopTypingBuffer();
+    };
+  }, []);
+
   const handleCopyAnswer = async (content: string, id: string) => {
     await navigator.clipboard.writeText(content);
     setCopiedIndex(id);
@@ -105,10 +192,70 @@ export default function ChatPage() {
     );
   };
 
-  const handleSend = async (
-    event?: React.FormEvent,
-    explicitQuestion?: string,
-  ) => {
+  const stopTypingBuffer = () => {
+    if (typingIntervalRef.current) {
+      window.clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    typingQueueRef.current = '';
+    typingMessageIdRef.current = null;
+    pendingCompletionRef.current = null;
+  };
+
+  const finalizePendingCompletion = () => {
+    const pending = pendingCompletionRef.current;
+    if (!pending) {
+      return;
+    }
+
+    updateMessage(pending.messageId, (message) => ({
+      ...message,
+      content: pending.payload.answer || message.content,
+      citations: pending.payload.citations || [],
+      statusMessage: pending.payload.statusMessage || message.statusMessage,
+      chatMessageId: pending.payload.chatMessageId,
+    }));
+
+    pendingCompletionRef.current = null;
+    if (typingIntervalRef.current) {
+      window.clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    typingMessageIdRef.current = null;
+  };
+
+  const startTypingBuffer = (messageId: string) => {
+    typingMessageIdRef.current = messageId;
+
+    if (typingIntervalRef.current) {
+      return;
+    }
+
+    typingIntervalRef.current = window.setInterval(() => {
+      const activeId = typingMessageIdRef.current;
+      if (!activeId) {
+        stopTypingBuffer();
+        return;
+      }
+
+      if (!typingQueueRef.current) {
+        if (pendingCompletionRef.current) {
+          finalizePendingCompletion();
+        }
+        return;
+      }
+
+      const nextSlice = typingQueueRef.current.slice(0, 5);
+      typingQueueRef.current = typingQueueRef.current.slice(5);
+
+      updateMessage(activeId, (message) => ({
+        ...message,
+        content: message.content + nextSlice,
+      }));
+    }, 20);
+  };
+
+  const handleSend = async (event?: React.FormEvent, explicitQuestion?: string) => {
     event?.preventDefault();
 
     const question = (explicitQuestion ?? input).trim();
@@ -116,13 +263,15 @@ export default function ChatPage() {
       return;
     }
 
+    stopTypingBuffer();
+
     const userMessageId = crypto.randomUUID();
     const assistantMessageId = crypto.randomUUID();
 
     setMessages((currentMessages) => [
       ...currentMessages,
       { id: userMessageId, role: 'user', content: question },
-      { id: assistantMessageId, role: 'ai', content: '', statusMessage: 'Starting answer...' },
+      { id: assistantMessageId, role: 'ai', content: '', statusMessage: 'Thinking...' },
     ]);
     setActiveMessageId(assistantMessageId);
     setRetryQuestion(question);
@@ -186,19 +335,30 @@ export default function ChatPage() {
           }
 
           if (eventName === 'chunk') {
-            updateMessage(assistantMessageId, (message) => ({
-              ...message,
-              content: message.content + String(payload.delta || ''),
-            }));
+            typingQueueRef.current += String(payload.delta || '');
+            startTypingBuffer(assistantMessageId);
           }
 
           if (eventName === 'complete') {
-            updateMessage(assistantMessageId, (message) => ({
-              ...message,
-              content: String(payload.answer || message.content),
+            const completionPayload = {
+              answer: String(payload.answer || ''),
               citations: Array.isArray(payload.citations) ? (payload.citations as Citation[]) : [],
+              chatMessageId: typeof payload.chatMessageId === 'string' ? payload.chatMessageId : undefined,
               statusMessage: String(payload.statusMessage || ''),
-            }));
+            };
+
+            if (typingQueueRef.current) {
+              pendingCompletionRef.current = {
+                messageId: assistantMessageId,
+                payload: completionPayload,
+              };
+            } else {
+              pendingCompletionRef.current = {
+                messageId: assistantMessageId,
+                payload: completionPayload,
+              };
+              finalizePendingCompletion();
+            }
           }
 
           if (eventName === 'error') {
@@ -207,6 +367,7 @@ export default function ChatPage() {
         }
       }
     } catch (error) {
+      stopTypingBuffer();
       if ((error as Error).name === 'AbortError') {
         updateMessage(assistantMessageId, (message) => ({
           ...message,
@@ -229,6 +390,7 @@ export default function ChatPage() {
   };
 
   const handleStopGenerating = () => {
+    stopTypingBuffer();
     abortControllerRef.current?.abort();
   };
 
@@ -277,190 +439,257 @@ export default function ChatPage() {
     setSourceError(null);
   };
 
+  const submitFeedback = async (messageId: string, rating: FeedbackRating) => {
+    const targetMessage = messages.find((message) => message.id === messageId);
+    if (!targetMessage?.chatMessageId) {
+      return;
+    }
+
+    try {
+      setFeedbackLoadingMessageId(messageId);
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error('Authentication session expired');
+      }
+
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          chatMessageId: targetMessage.chatMessageId,
+          rating,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save feedback');
+      }
+
+      updateMessage(messageId, (message) => ({
+        ...message,
+        feedbackSubmitted: true,
+        feedbackRating: rating,
+      }));
+      setExpandedFeedbackMessageId(null);
+    } catch {
+      updateMessage(messageId, (message) => ({
+        ...message,
+        feedbackSubmitted: true,
+      }));
+    } finally {
+      setFeedbackLoadingMessageId(null);
+    }
+  };
+
   const isViewer = profile?.role === 'viewer';
+  const assistantName =
+    workspace?.assistant_name ||
+    (isViewer ? 'SpringVox Assistant' : 'SpringVox Knowledge AI');
+  const companyName = workspace?.name || 'your company';
+  const welcomeMessage =
+    workspace?.welcome_message ||
+    `Ask questions from ${companyName}'s approved knowledge base.`;
 
   return (
     <>
-      <div className="mx-auto flex h-[calc(100vh-165px)] max-w-6xl flex-col">
+      <div className="mx-auto flex h-[calc(100vh-165px)] max-w-[920px] flex-col">
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto scrollbar-hide px-2 pb-44 pt-4 md:px-4"
+          className="flex-1 overflow-y-auto scrollbar-hide px-3 pb-44 pt-6 sm:px-5"
         >
-          {messages.length === 0 && (
-            <div className="flex h-full flex-col items-center justify-center space-y-6 pt-24 text-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-accent text-black shadow-2xl shadow-accent/20">
-                <BrainCircuit size={40} />
+          {historyLoading ? (
+            <div className="flex items-center gap-3 pt-10 text-sm text-slate-400">
+              <Loader2 size={18} className="animate-spin text-accent" />
+              Loading your recent conversations...
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center space-y-7 pt-16 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-accent/20 bg-accent/10 text-accent shadow-[0_20px_60px_rgba(255,107,0,0.12)]">
+                <BrainCircuit size={30} />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold tracking-tight text-[#E2E8F0]">
-                  Ask a question about your uploaded documents.
+              <div className="space-y-3">
+                <h2 className="text-2xl font-semibold tracking-tight text-[#E2E8F0] sm:text-3xl">
+                  {isViewer
+                    ? `Ask questions from ${companyName}'s approved knowledge base.`
+                    : `Test how users will experience ${companyName}.`}
                 </h2>
-                <p className="max-w-md text-sm text-slate-500">
-                  SpringVox answers from approved documents and shows the supporting sources separately.
+                <p className="max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
+                  {isViewer
+                    ? welcomeMessage
+                    : `${welcomeMessage} This is the same experience end users will rely on when they ask questions.`}
                 </p>
               </div>
-              <div className="grid w-full max-w-2xl gap-3 px-4 md:grid-cols-2">
+              <div className="grid w-full max-w-3xl gap-3 md:grid-cols-2">
                 {EMPTY_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     onClick={() => setInput(prompt)}
-                    className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4 text-left text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400 transition-all hover:border-accent/50 hover:bg-[#1A1C20]"
+                    className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3.5 text-left text-sm text-slate-300 transition-all hover:border-accent/30 hover:bg-white/[0.05]"
                   >
                     {prompt}
                   </button>
                 ))}
               </div>
             </div>
-          )}
-
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                'mb-8 flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300',
-                message.role === 'user' ? 'flex-row-reverse' : 'flex-row',
-              )}
-            >
-              <div
-                className={cn(
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm',
-                  message.role === 'user'
-                    ? 'bg-accent font-bold text-black'
-                    : 'border border-[#2D3039] bg-[#15171C]',
-                )}
-              >
-                {message.role === 'user' ? (
-                  <span className="text-[10px]">YOU</span>
-                ) : (
-                  <BrainCircuit size={14} className="text-accent" />
-                )}
-              </div>
-
-              <div
-                className={cn(
-                  'space-y-4 max-w-[92%] md:max-w-[84%] xl:max-w-[78%]',
-                  message.role === 'user' ? 'items-end' : 'items-start',
-                )}
-              >
+          ) : (
+            messages.map((message) => (
+              <div key={message.id} className="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div
                   className={cn(
-                    'rounded-[1.6rem] border text-sm leading-7 shadow-xl',
-                    message.role === 'user'
-                      ? 'rounded-tr-none border-accent/20 bg-accent/10 text-[#E2E8F0]'
-                      : 'rounded-tl-none border-[#2D3039] bg-[#15171C] text-slate-200',
+                    'space-y-3',
+                    message.role === 'user' ? 'ml-auto max-w-[82%] sm:max-w-[72%]' : 'max-w-full',
                   )}
                 >
-                  {message.role === 'ai' ? (
-                    <>
-                      <div className="flex items-center justify-between border-b border-[#2D3039] px-5 py-3">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                          Answer
-                        </p>
-                        <div className="flex items-center gap-2">
-                          {message.error && retryQuestion && (
-                            <button
-                              type="button"
-                              onClick={(event) => handleSend(event, retryQuestion)}
-                              disabled={loading}
-                              className="flex items-center gap-2 rounded-lg border border-[#2D3039] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 transition-colors hover:text-white"
-                            >
-                              <RefreshCw size={12} />
-                              Retry
-                            </button>
-                          )}
+                  {message.role === 'user' ? (
+                    <div className="rounded-[1.4rem] rounded-br-md bg-accent px-4 py-3 text-sm leading-7 text-black shadow-[0_16px_40px_rgba(255,107,0,0.14)]">
+                      <div className="whitespace-pre-wrap">{message.content}</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-xs text-slate-500">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/8 bg-white/[0.03]">
+                          <BrainCircuit size={13} className="text-accent" />
+                        </div>
+                        <span>{assistantName}</span>
+                      </div>
+
+                      {!!message.content && (
+                        <div className="markdown-container pl-10 text-[15px] leading-8 text-slate-200">
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        </div>
+                      )}
+
+                      {(message.statusMessage || (loading && activeMessageId === message.id)) && (
+                        <div className="pl-10">
+                          <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-slate-400">
+                            {loading && activeMessageId === message.id ? (
+                              <Loader2 size={13} className="animate-spin text-accent" />
+                            ) : (
+                              <ShieldCheck size={13} className="text-accent" />
+                            )}
+                            <span>{getVisibleStatus(message.statusMessage || '', isViewer, loading && activeMessageId === message.id)}</span>
+                            {loading && activeMessageId === message.id && (
+                              <span className="rounded-full border border-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                                Thinking for {elapsedSeconds.toFixed(1)}s
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="pl-10">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           {!!message.content && (
                             <button
                               type="button"
                               onClick={() => handleCopyAnswer(message.content, message.id)}
-                              className="flex items-center gap-2 rounded-lg border border-[#2D3039] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 transition-colors hover:text-white"
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/[0.04] hover:text-white"
                             >
                               {copiedIndex === message.id ? (
                                 <Check size={12} className="text-green-400" />
                               ) : (
                                 <Copy size={12} />
                               )}
-                              {copiedIndex === message.id ? 'Copied' : 'Copy answer'}
+                              {copiedIndex === message.id ? 'Copied' : 'Copy'}
+                            </button>
+                          )}
+                          {message.error && retryQuestion && (
+                            <button
+                              type="button"
+                              onClick={(event) => handleSend(event, retryQuestion)}
+                              disabled={loading}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/[0.04] hover:text-white"
+                            >
+                              <RefreshCw size={12} />
+                              Retry
+                            </button>
+                          )}
+                          {loading && activeMessageId === message.id && (
+                            <button
+                              type="button"
+                              onClick={handleStopGenerating}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/[0.04] hover:text-white"
+                            >
+                              <Square size={11} className="fill-current" />
+                              Stop
                             </button>
                           )}
                         </div>
                       </div>
-                      <div className="px-5 py-5">
-                        <div className="markdown-container">
-                          <ReactMarkdown>{message.content || ' '}</ReactMarkdown>
-                        </div>
 
-                        {(message.statusMessage || (loading && activeMessageId === message.id)) && (
-                          <div className="mt-5 rounded-2xl border border-[#2D3039] bg-[#101217] px-4 py-3">
-                            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                              {loading && activeMessageId === message.id ? (
-                                <Loader2 size={14} className="animate-spin text-accent" />
-                              ) : (
-                                <ShieldCheck size={14} className="text-accent" />
-                              )}
-                              <span>{message.statusMessage}</span>
-                              {loading && activeMessageId === message.id && (
-                                <span className="rounded-full border border-[#2D3039] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                                  Thinking for {elapsedSeconds.toFixed(1)}s
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="whitespace-pre-wrap px-5 py-4">{message.content}</div>
+                      {message.citations && message.citations.length > 0 && (
+                        <CitationList citations={message.citations} onOpenSource={openSource} />
+                      )}
+
+                      {message.chatMessageId && (
+                        <FeedbackRow
+                          loading={feedbackLoadingMessageId === message.id}
+                          submitted={message.feedbackSubmitted === true}
+                          rating={message.feedbackRating || null}
+                          expanded={expandedFeedbackMessageId === message.id}
+                          onHelpful={() => submitFeedback(message.id, 'helpful')}
+                          onNotHelpful={() => submitFeedback(message.id, 'not_helpful')}
+                          onToggleMore={() =>
+                            setExpandedFeedbackMessageId((current) =>
+                              current === message.id ? null : message.id,
+                            )
+                          }
+                          onSelectMore={(rating) => submitFeedback(message.id, rating)}
+                        />
+                      )}
+                    </div>
                   )}
                 </div>
-
-                {message.citations && message.citations.length > 0 && (
-                  <CitationList
-                    citations={message.citations}
-                    onOpenSource={openSource}
-                  />
-                )}
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
-        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(11,12,14,0)_0%,rgba(11,12,14,0.92)_28%,rgba(11,12,14,1)_100%)] px-2 pb-4 pt-8 md:px-4">
-          <form onSubmit={handleSend} className="relative mx-auto flex max-w-4xl gap-2">
-            <div className="group relative flex-1">
-              <input
-                className="w-full rounded-2xl border border-[#2D3039] bg-[#1A1C20] py-4 pl-5 pr-28 text-sm text-[#E2E8F0] shadow-2xl shadow-black/50 transition-all focus:border-accent/50 focus:outline-none"
-                placeholder="Ask your documents anything..."
+        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(11,12,14,0)_0%,rgba(11,12,14,0.9)_22%,rgba(11,12,14,1)_100%)] px-3 pb-5 pt-10 sm:px-5">
+          <form onSubmit={handleSend} className="relative mx-auto max-w-[920px]">
+            <div className="rounded-[28px] border border-white/8 bg-[#14161B]/95 shadow-[0_20px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+              <textarea
+                rows={1}
+                className="max-h-48 min-h-[64px] w-full resize-none bg-transparent px-5 py-4 pr-24 text-sm leading-7 text-[#E2E8F0] outline-none placeholder:text-slate-500"
+                placeholder="Ask anything from your approved documents..."
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void handleSend();
+                  }
+                }}
                 disabled={loading}
               />
-              <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
-                {loading ? (
+              <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                {loading && (
                   <button
                     type="button"
                     onClick={handleStopGenerating}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#2D3039] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300 transition-colors hover:text-white"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-2 text-[11px] text-slate-300 transition-colors hover:text-white"
                   >
-                    <Square size={12} className="fill-current" />
+                    <Square size={11} className="fill-current" />
                     Stop
                   </button>
-                ) : (
-                  <div className="hidden text-[10px] font-bold uppercase tracking-widest text-slate-600 md:block">
-                    Return ↵
-                  </div>
                 )}
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="rounded-lg bg-accent p-2 text-black shadow-lg shadow-accent/20 transition-all hover:bg-orange-600 disabled:opacity-30"
+                  className="rounded-full bg-accent p-2.5 text-black shadow-[0_12px_30px_rgba(255,107,0,0.2)] transition-all hover:bg-orange-600 disabled:opacity-30"
                 >
-                  <Send size={18} />
+                  <Send size={16} />
                 </button>
               </div>
             </div>
           </form>
-          <p className="mt-4 text-center font-mono text-[10px] uppercase tracking-[0.4em] text-slate-500">
-            {isViewer ? 'SPRINGVOX KNOWLEDGE ASSISTANT' : 'SPRINGVOX KNOWLEDGE ENGINE • 1.0'}
+          <p className="mt-3 text-center text-xs text-slate-500">
+            {isViewer
+              ? 'Answers come from approved documents when support is available.'
+              : 'Streaming answers stay grounded in approved workspace documents.'}
           </p>
         </div>
       </div>
@@ -475,6 +704,22 @@ export default function ChatPage() {
       />
     </>
   );
+}
+
+function getVisibleStatus(statusMessage: string, isViewer: boolean, isActive: boolean) {
+  if (isViewer && isActive) {
+    return 'Thinking...';
+  }
+
+  if (isViewer && !isActive) {
+    if (statusMessage.toLowerCase().includes('no supported answer')) {
+      return 'Answer not found in approved documents.';
+    }
+
+    return 'Answer prepared from approved documents.';
+  }
+
+  return statusMessage || 'Thinking...';
 }
 
 function CitationList({
@@ -497,58 +742,41 @@ function CitationList({
     .slice(0, 5);
 
   return (
-    <div className="w-full rounded-2xl border border-[#2D3039] bg-[#101217] p-3 md:p-4">
+    <div className="pl-10">
       <button
         type="button"
         onClick={() => setExpanded((currentValue) => !currentValue)}
-        className="flex w-full items-center justify-between gap-3 text-left"
+        className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-2 text-left text-xs text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-white"
       >
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
-          <ShieldCheck size={12} className="text-accent" />
-          Sources
-          <span className="rounded-full border border-[#2D3039] px-2 py-0.5 text-[9px] text-slate-500">
-            {uniqueCitations.length}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            {expanded ? 'Hide sources' : 'Show sources'}
-          </span>
-          {expanded ? (
-            <ChevronUp size={14} className="text-slate-500" />
-          ) : (
-            <ChevronDown size={14} className="text-slate-500" />
-          )}
-        </div>
+        <ShieldCheck size={12} className="text-accent" />
+        <span>Sources</span>
+        <span className="text-slate-500">· {uniqueCitations.length}</span>
+        {expanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
       </button>
 
       {expanded && (
-        <div className="mt-4 grid gap-3">
+        <div className="mt-3 grid gap-2.5">
           {uniqueCitations.map((citation) => (
             <button
               type="button"
               key={`${citation.filename}-${citation.chunk_index}`}
               onClick={() => onOpenSource(citation)}
-              className="rounded-xl border border-[#2D3039] bg-[#15171C] p-4 text-left transition-colors hover:border-accent/30"
+              className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-left transition-colors hover:border-accent/30 hover:bg-white/[0.05]"
             >
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#2D3039] bg-[#0D0F12]">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/8 bg-[#0D0F12]">
                   <FileText size={14} className="text-accent" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#E2E8F0]">{citation.filename}</p>
-                      <p className="mt-1 text-[10px] font-mono uppercase tracking-[0.18em] text-slate-500">
-                        Chunk {citation.chunk_index}
-                      </p>
+                      <p className="text-sm font-medium text-[#E2E8F0]">{citation.filename}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">Chunk {citation.chunk_index}</p>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent">
-                      View source
-                    </span>
+                    <span className="text-[11px] text-accent">View source</span>
                   </div>
-                  <p className="mt-3 text-xs leading-6 text-slate-400">
-                    {truncate(citation.preview, 160)}
+                  <p className="mt-2 text-xs leading-6 text-slate-400">
+                    {truncate(citation.preview, 120)}
                   </p>
                 </div>
               </div>
@@ -557,15 +785,85 @@ function CitationList({
         </div>
       )}
 
-      {!expanded && (
-        <p className="mt-2 pl-5 text-xs leading-6 text-slate-500">
-          View the supporting document sections used to ground this answer.
-        </p>
-      )}
       {citations.length > uniqueCitations.length && (
-        <p className="mt-2 pl-5 text-[10px] font-mono uppercase tracking-[0.16em] text-slate-600">
-          Showing top 5 unique sources
+        <p className="mt-2 text-[11px] text-slate-600">Showing top 5 unique sources</p>
+      )}
+    </div>
+  );
+}
+
+function FeedbackRow({
+  loading,
+  submitted,
+  rating,
+  expanded,
+  onHelpful,
+  onNotHelpful,
+  onToggleMore,
+  onSelectMore,
+}: {
+  loading: boolean;
+  submitted: boolean;
+  rating: FeedbackRating | null;
+  expanded: boolean;
+  onHelpful: () => void;
+  onNotHelpful: () => void;
+  onToggleMore: () => void;
+  onSelectMore: (rating: FeedbackRating) => void;
+}) {
+  return (
+    <div className="pl-10">
+      {submitted ? (
+        <p className="text-xs text-slate-500">
+          Thanks for the feedback{rating ? ` · ${rating.replaceAll('_', ' ')}` : ''}.
         </p>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onHelpful}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:text-white"
+            >
+              <ThumbsUp size={12} />
+              Helpful
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onNotHelpful}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/8 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:text-white"
+            >
+              <ThumbsDown size={12} />
+              Not helpful
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onToggleMore}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-white/[0.04] hover:text-white"
+            >
+              More options
+            </button>
+            {loading && <Loader2 size={13} className="animate-spin text-accent" />}
+          </div>
+
+          {expanded && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {EXTRA_FEEDBACK_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => onSelectMore(option)}
+                  className="rounded-full border border-white/8 px-3 py-1.5 text-xs text-slate-400 transition-colors hover:text-white"
+                >
+                  {option.replaceAll('_', ' ')}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -644,17 +942,13 @@ function SourceDrawer({
 
             <div className="space-y-5">
               <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                  {managerView ? 'Section' : 'Section'}
-                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Section</p>
                 <p className="mt-2 text-sm text-[#E2E8F0]">Chunk {citation?.chunk_index || 0}</p>
               </div>
 
               <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                    {managerView ? 'Excerpt' : 'Excerpt'}
-                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Excerpt</p>
                   <button
                     type="button"
                     onClick={handleCopyExcerpt}
@@ -670,18 +964,14 @@ function SourceDrawer({
               </div>
 
               <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                  Preview
-                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Preview</p>
                 <p className="mt-3 text-sm leading-7 text-slate-300">
                   {citation?.preview || 'No preview available.'}
                 </p>
               </div>
 
               <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                  Uploaded
-                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Uploaded</p>
                 <p className="mt-3 text-sm text-slate-300">
                   {citation?.uploaded_at ? new Date(citation.uploaded_at).toLocaleString() : 'Unknown'}
                 </p>
@@ -689,9 +979,7 @@ function SourceDrawer({
 
               {managerView && (
                 <div className="rounded-2xl border border-[#2D3039] bg-[#15171C] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                    Source metadata
-                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Source metadata</p>
                   <div className="mt-3 space-y-2 text-sm text-slate-300">
                     <p>Document ID: {citation?.document_id || 'Unknown'}</p>
                     <p>Uploaded by: {citation?.uploaded_by || 'Unknown'}</p>

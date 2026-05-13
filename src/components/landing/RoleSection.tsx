@@ -7,10 +7,10 @@ const roles = [
     badge: 'Manage the knowledge workspace',
     items: [
       { icon: UploadCloud, label: 'Upload approved documents' },
-      { icon: LibraryBig, label: 'Manage document library' },
-      { icon: LayoutDashboard, label: 'View dashboard' },
-      { icon: MessageCircleMore, label: 'Ask questions' },
-      { icon: UserRound, label: 'Keep knowledge controlled' },
+      { icon: UserRound, label: 'Invite users manually' },
+      { icon: LibraryBig, label: 'Manage users and roles' },
+      { icon: LayoutDashboard, label: 'Review analytics and knowledge gaps' },
+      { icon: MessageCircleMore, label: 'Review feedback and test answers' },
     ],
   },
   {
@@ -21,7 +21,7 @@ const roles = [
       { icon: MessageCircleMore, label: 'Ask questions' },
       { icon: LayoutDashboard, label: 'Get simple answers' },
       { icon: LibraryBig, label: 'See sources' },
-      { icon: UserRound, label: 'No upload or admin complexity' },
+      { icon: UserRound, label: 'No admin complexity' },
     ],
   },
 ];

@@ -1,5 +1,5 @@
 import { supabase } from '@/src/lib/supabase';
-import type { UserProfile } from '@/src/lib/workspace';
+import type { UserProfile, WorkspaceSettings } from '@/src/lib/workspace';
 
 export async function getAccessToken() {
   const { data, error } = await supabase.auth.getSession();
@@ -33,4 +33,24 @@ export async function getCurrentUserProfile() {
   }
 
   return data as UserProfile;
+}
+
+export async function getCurrentWorkspaceSettings() {
+  const profile = await getCurrentUserProfile();
+
+  if (!profile?.workspace_id) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('id, name, slug, logo_url, primary_color, welcome_message, assistant_name, support_email, industry, website, updated_at')
+    .eq('id', profile.workspace_id)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as WorkspaceSettings;
 }

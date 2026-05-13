@@ -262,15 +262,19 @@ export async function POST(req: Request) {
             sendEvent('status', { message: statuses.attaching });
           }
 
-          const { error: insertError } = await supabase.from('chat_messages').insert({
-            user_id: user.id,
-            workspace_id: profile.workspace_id,
-            question: normalizedQuestion,
-            answer,
-            citations,
-          });
+          const { data: insertedMessage, error: insertError } = await supabase
+            .from('chat_messages')
+            .insert({
+              user_id: user.id,
+              workspace_id: profile.workspace_id,
+              question: normalizedQuestion,
+              answer,
+              citations,
+            })
+            .select('id')
+            .single();
 
-          if (insertError) {
+          if (insertError || !insertedMessage) {
             throw insertError;
           }
 
@@ -287,6 +291,7 @@ export async function POST(req: Request) {
           sendEvent('complete', {
             answer,
             citations,
+            chatMessageId: insertedMessage.id,
             statusMessage:
               answer === STRICT_NO_ANSWER
                 ? 'No supported answer found in the uploaded documents.'

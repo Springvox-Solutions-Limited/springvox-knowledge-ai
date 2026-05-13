@@ -4,10 +4,10 @@ import { ArrowRight, Play, ShieldCheck } from 'lucide-react';
 import { ProductMockup } from './ProductMockup';
 
 const trustPoints = [
-  'Answers from uploaded documents',
+  'Company workspace knowledge',
   'Source-backed responses',
-  'Admin-controlled knowledge',
-  'Clean chat experience for users',
+  'Admin-controlled uploads and roles',
+  'Clean viewer chat experience',
 ];
 
 export function HeroSection() {
@@ -19,16 +19,16 @@ export function HeroSection() {
           <div className="relative">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#FF6B00]/20 bg-[#FF6B00]/8 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.26em] text-[#FFB27A]">
               <ShieldCheck className="h-3.5 w-3.5" />
-              Private knowledge assistant
+              Private AI knowledge assistant
             </div>
 
             <h1 className="mt-7 max-w-3xl text-4xl font-semibold tracking-tight text-[#F7FAFC] sm:text-5xl lg:text-6xl lg:leading-[1.05]">
-              Turn your trusted documents into a private AI knowledge assistant.
+              Turn company documents into a trusted AI assistant.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              SpringVox Knowledge AI helps teams upload approved documents and let users ask questions
-              with answers grounded in verified sources.
+              SpringVox Knowledge AI helps teams upload approved knowledge, invite users, and answer
+              staff questions with source-backed AI responses.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">

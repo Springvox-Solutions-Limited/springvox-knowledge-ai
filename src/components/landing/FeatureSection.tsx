@@ -1,23 +1,29 @@
 import {
   BookCheck,
+  ChartNoAxesCombined,
   FileLock2,
   FolderCog,
+  MessageSquareCode,
   MessageSquareQuote,
   ShieldCheck,
+  UserPlus,
   UsersRound,
   XCircle,
   FileType2,
 } from 'lucide-react';
 
 const features = [
-  { icon: FileLock2, title: 'Private document upload', description: 'Upload approved PDF and TXT files into a controlled workspace.' },
-  { icon: ShieldCheck, title: 'Admin-controlled knowledge base', description: 'Content stays curated by the people responsible for what should be searchable.' },
-  { icon: UsersRound, title: 'Role-based access', description: 'Admins, content managers, and viewers each see only the experience they need.' },
-  { icon: MessageSquareQuote, title: 'Clean chat-only viewer interface', description: 'End users ask questions without dealing with document management or technical setup.' },
-  { icon: BookCheck, title: 'Source-backed AI responses', description: 'Answers include sources so users can verify what the assistant is relying on.' },
-  { icon: XCircle, title: 'Strict “I don’t know” fallback', description: 'If the answer is not in the uploaded documents, the assistant says so clearly.' },
+  { icon: FolderCog, title: 'Company workspace', description: 'Keep approved knowledge inside a shared workspace for one team or organization.' },
+  { icon: FileLock2, title: 'Admin / manager uploads', description: 'Admins and content managers control which PDF and TXT documents become searchable.' },
+  { icon: MessageSquareQuote, title: 'Viewer chat-only access', description: 'Staff get a clean assistant experience without dashboard or document-management complexity.' },
+  { icon: MessageSquareCode, title: 'Streaming answers', description: 'Answers reveal progressively in chat for a more natural assistant experience.' },
+  { icon: BookCheck, title: 'Verified sources', description: 'Responses include supporting sources so users can check where the answer came from.' },
+  { icon: XCircle, title: 'Knowledge gap tracking', description: 'Unsupported questions are captured so admins can improve the document set over time.' },
+  { icon: UsersRound, title: 'User role management', description: 'Control who can upload, manage users, or stay in viewer mode.' },
+  { icon: UserPlus, title: 'Manual invite links', description: 'Invite workspace users by email with shareable links, even before email sending is added.' },
+  { icon: ChartNoAxesCombined, title: 'Basic analytics', description: 'Review real workspace activity from documents, questions, feedback, and knowledge gaps.' },
+  { icon: ShieldCheck, title: 'Feedback on answers', description: 'Users can mark helpful answers, outdated answers, or unsupported responses.' },
   { icon: FileType2, title: 'PDF/TXT support', description: 'The current MVP supports text-based PDF and TXT documents up to 4MB.' },
-  { icon: FolderCog, title: 'Shared workspace knowledge', description: 'Uploaded documents serve a shared workspace so approved content can support multiple users.' },
 ];
 
 export function FeatureSection() {

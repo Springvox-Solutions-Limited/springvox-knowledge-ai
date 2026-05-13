@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Loader2, Search, Shield, Users } from 'lucide-react';
+import { Copy, Loader2, MailPlus, Search, Shield, Users, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
@@ -19,12 +19,23 @@ type ManagedUser = {
   updated_at: string;
 };
 
+type Invitation = {
+  id: string;
+  email: string;
+  role: AppRole;
+  status: 'pending' | 'accepted' | 'revoked' | 'expired';
+  expires_at: string;
+  created_at: string;
+  invite_url: string;
+};
+
 const ROLE_OPTIONS: AppRole[] = ['viewer', 'content_manager', 'admin'];
 
 export default function UsersPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +45,10 @@ export default function UsersPage() {
     user: ManagedUser;
     nextRole: AppRole;
   } | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<AppRole>('viewer');
+  const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -63,6 +78,16 @@ export default function UsersPage() {
 
       const data = await response.json();
       setUsers(data.users || []);
+      const inviteResponse = await fetch('/api/invitations', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (inviteResponse.ok) {
+        const inviteData = await inviteResponse.json();
+        setInvitations(inviteData.invitations || []);
+      }
       setError(null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load users');
@@ -124,6 +149,71 @@ export default function UsersPage() {
     }
   };
 
+  const createInvitation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      setSaving(true);
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error('Authentication session expired');
+      }
+
+      const response = await fetch('/api/invitations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          email: inviteEmail,
+          role: inviteRole,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create invitation');
+      }
+
+      setCreatedInviteUrl(data.invitation.invite_url);
+      setInviteEmail('');
+      await loadUsers();
+    } catch (inviteError) {
+      setError(inviteError instanceof Error ? inviteError.message : 'Failed to create invitation');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const revokeInvitation = async (id: string) => {
+    try {
+      setSaving(true);
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error('Authentication session expired');
+      }
+
+      const response = await fetch('/api/invitations/revoke', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to revoke invitation');
+      }
+
+      await loadUsers();
+    } catch (inviteError) {
+      setError(inviteError instanceof Error ? inviteError.message : 'Failed to revoke invitation');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (profile && !isAdminRole(profile.role)) {
     return null;
   }
@@ -140,6 +230,17 @@ export default function UsersPage() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => {
+              setInviteOpen(true);
+              setCreatedInviteUrl(null);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-accent/20 bg-accent/10 px-4 py-3 text-sm font-semibold text-accent"
+          >
+            <MailPlus size={16} />
+            Invite user
+          </button>
           <div className="relative w-full sm:w-72">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
@@ -251,6 +352,58 @@ export default function UsersPage() {
         )}
       </div>
 
+      <div className="rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-xl shadow-black/20">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-[#E2E8F0]">Pending invitations</h2>
+            <p className="text-sm text-slate-500">Create an invite link and share it manually.</p>
+          </div>
+          <span className="rounded-full border border-[#2D3039] px-3 py-1 text-xs text-slate-400">
+            {invitations.filter((item) => item.status === 'pending').length} pending
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {invitations.length === 0 ? (
+            <p className="text-sm text-slate-500">No invitations created yet.</p>
+          ) : (
+            invitations.slice(0, 8).map((invitation) => (
+              <div key={invitation.id} className="rounded-2xl border border-[#2D3039] bg-[#101217] p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-[#E2E8F0]">{invitation.email}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {invitation.role.replace('_', ' ')} • {invitation.status} • expires{' '}
+                      {new Date(invitation.expires_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(invitation.invite_url)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-[#2D3039] px-3 py-2 text-xs text-slate-300"
+                    >
+                      <Copy size={12} />
+                      Copy link
+                    </button>
+                    {invitation.status === 'pending' && (
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => revokeInvitation(invitation.id)}
+                        className="rounded-lg border border-red-500/10 px-3 py-2 text-xs text-red-300"
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {confirmState && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-lg rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-2xl shadow-black/40">
@@ -285,6 +438,73 @@ export default function UsersPage() {
                 Confirm role change
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {inviteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-xl rounded-3xl border border-[#2D3039] bg-[#15171C] p-6 shadow-2xl shadow-black/40">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-[#E2E8F0]">Invite user</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-400">
+                  Create a manual invite link for a user to join this workspace.
+                </p>
+              </div>
+              <button type="button" onClick={() => setInviteOpen(false)} className="rounded-xl border border-[#2D3039] p-2 text-slate-400">
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={createInvitation} className="mt-6 space-y-5">
+              <label className="block space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Email</span>
+                <input
+                  value={inviteEmail}
+                  onChange={(event) => setInviteEmail(event.target.value)}
+                  className="w-full rounded-xl border border-[#2D3039] bg-[#101217] px-4 py-3 text-sm text-[#E2E8F0] focus:border-accent/50 focus:outline-none"
+                  placeholder="person@company.com"
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Role</span>
+                <select
+                  value={inviteRole}
+                  onChange={(event) => setInviteRole(event.target.value as AppRole)}
+                  className="w-full rounded-xl border border-[#2D3039] bg-[#101217] px-4 py-3 text-sm text-[#E2E8F0] focus:border-accent/50 focus:outline-none"
+                >
+                  <option value="viewer">Viewer</option>
+                  <option value="content_manager">Content manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
+
+              {createdInviteUrl && (
+                <div className="rounded-2xl border border-[#2D3039] bg-[#101217] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Invite link</p>
+                  <p className="mt-2 break-all text-sm text-slate-300">{createdInviteUrl}</p>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(createdInviteUrl)}
+                    className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[#2D3039] px-3 py-2 text-xs text-slate-300"
+                  >
+                    <Copy size={12} />
+                    Copy invite link
+                  </button>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => setInviteOpen(false)} className="rounded-xl border border-[#2D3039] px-4 py-3 text-sm text-slate-300">
+                  Close
+                </button>
+                <button type="submit" disabled={saving} className="rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-black">
+                  {saving ? 'Creating...' : 'Create invite'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

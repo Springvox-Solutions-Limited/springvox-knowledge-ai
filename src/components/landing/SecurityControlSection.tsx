@@ -2,6 +2,7 @@ import { KeyRound, Lock, Shield, UserCog } from 'lucide-react';
 
 const controls = [
   'Designed with role-based access',
+  'Workspace-scoped data boundaries',
   'Admins control uploaded knowledge',
   'Users only see what their role allows',
   'Sensitive API keys remain server-side',

@@ -1,4 +1,4 @@
-import { CheckCircle2, FileText, MessageSquareText, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, CircleAlert, FileText, MessageSquareText, ShieldCheck, UserPlus2 } from 'lucide-react';
 
 export function ProductMockup() {
   return (
@@ -69,7 +69,7 @@ export function ProductMockup() {
             <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
               <div className="mb-3 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-[#FF6B00]" />
-                <p className="text-[11px] uppercase tracking-[0.24em] text-[#8DA2C7]">Document status</p>
+                <p className="text-[11px] uppercase tracking-[0.24em] text-[#8DA2C7]">Admin workspace</p>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-[#0F1115] px-3 py-3">
@@ -81,6 +81,18 @@ export function ProductMockup() {
                 <p className="text-xs leading-5 text-slate-400">
                   Admin-approved content is uploaded, indexed, and ready for source-backed answers.
                 </p>
+                <div className="rounded-2xl border border-white/8 bg-[#0F1115] px-3 py-3">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold text-[#F7FAFC]">
+                    <UserPlus2 className="h-3.5 w-3.5 text-[#FF6B00]" />
+                    Invite link created for new staff
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/8 bg-[#0F1115] px-3 py-3">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold text-[#F7FAFC]">
+                    <CircleAlert className="h-3.5 w-3.5 text-[#FF6B00]" />
+                    Knowledge gap captured for unanswered policy question
+                  </div>
+                </div>
               </div>
             </div>
           </div>
