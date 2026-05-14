@@ -9,22 +9,22 @@ export function UseCasesSection() {
   ];
 
   return (
-    <section id="sectors" className="bg-white py-24 lg:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mb-20 text-center">
+    <section id="sectors" className="bg-white py-16 sm:py-24 lg:py-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 text-center sm:mb-20">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">Expertise</p>
-          <h2 className="text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
+          <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
             Our <span className="text-slate-400">Industries.</span>
           </h2>
-          <p className="mt-6 mx-auto max-w-2xl text-xl leading-relaxed text-slate-500 font-medium">
+          <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-relaxed text-slate-500 sm:mt-6 sm:text-xl">
             Our platform is built to handle the unique challenges of different sectors, 
             ensuring every department operates from the same verified context.
           </p>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4 lg:gap-8">
           {sectors.map((sector) => (
-            <div key={sector.name} className="group relative rounded-[32px] border border-slate-100 bg-slate-50/30 p-8 transition-all hover:bg-white hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-100">
+            <div key={sector.name} className="group relative rounded-[28px] border border-slate-100 bg-slate-50/30 p-6 transition-all hover:border-slate-950 hover:bg-white hover:shadow-2xl hover:shadow-slate-100 sm:rounded-[32px] sm:p-8">
               <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-950 shadow-sm border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-colors">
                 <sector.icon size={20} />
               </div>
@@ -34,7 +34,7 @@ export function UseCasesSection() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {sector.tags.map((tag) => (
-                  <span key={tag} className="text-[9px] font-bold uppercase tracking-widest text-slate-400 border border-slate-200 rounded-full px-3 py-1">
+                  <span key={tag} className="rounded-full border border-slate-200 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">
                     {tag}
                   </span>
                 ))}

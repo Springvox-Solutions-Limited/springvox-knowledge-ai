@@ -11,20 +11,20 @@ const controls = [
 
 export function SecurityControlSection() {
   return (
-    <section className="mx-auto max-w-7xl px-5 py-20 sm:px-6 lg:px-8 lg:py-24">
+    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
       <div className="grid gap-10 lg:grid-cols-[0.92fr,1.08fr] lg:gap-16">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">Security and control</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
             Practical controls for a document-grounded assistant.
           </h2>
-          <p className="mt-5 max-w-xl text-base leading-8 text-slate-600">
+          <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
             SpringVox is built to keep knowledge curation in admin hands while giving everyday users a
             simpler way to ask questions. The focus is controlled access, server-side secrets, and source-backed answers.
           </p>
         </div>
 
-        <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-6">
           <div className="grid gap-3">
             {controls.map((item, index) => {
               const icons = [Shield, UserCog, Lock, KeyRound, Shield];

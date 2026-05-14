@@ -29,20 +29,20 @@ export function FeatureSection() {
   ];
 
   return (
-    <section id="features" className="bg-white py-24 lg:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-24 items-start">
-          <div className="sticky top-40">
+    <section id="features" className="bg-white py-16 sm:py-24 lg:py-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-24">
+          <div className="lg:sticky lg:top-40">
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">Solutions</p>
-            <h2 className="text-4xl font-black tracking-tighter text-slate-950 sm:text-6xl lg:leading-[1.1]">
+            <h2 className="text-3xl font-black tracking-tighter text-slate-950 sm:text-5xl lg:text-6xl lg:leading-[1.1]">
               Accuracy for Your <br />
               <span className="text-slate-400">Entire Team.</span>
             </h2>
-            <p className="mt-8 text-xl leading-relaxed text-slate-500 font-medium">
+            <p className="mt-5 text-base font-medium leading-relaxed text-slate-500 sm:mt-8 sm:text-xl">
               We provide the secure bridge between your company data and 
               the power of AI. No hallucinations, just reliable answers.
             </p>
-            <div className="mt-12 space-y-6">
+            <div className="mt-8 space-y-4 sm:mt-12 sm:space-y-6">
               {['SOC2 Compliant Architecture', 'End-to-End Encryption', 'Source-Backed Verification'].map((trust) => (
                 <div key={trust} className="flex items-center gap-4 text-sm font-bold text-slate-900">
                   <div className="h-1.5 w-1.5 rounded-full bg-slate-950" />
@@ -52,17 +52,17 @@ export function FeatureSection() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {primaryFeatures.map((feature) => (
               <div
                 key={feature.title}
-                className="group rounded-[32px] border border-slate-100 bg-white p-10 shadow-sm transition-all hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-100"
+                className="group rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm transition-all hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-100 sm:rounded-[32px] sm:p-8 lg:p-10"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-colors mb-8">
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-950 transition-colors group-hover:bg-slate-950 group-hover:text-white sm:mb-8 sm:h-14 sm:w-14">
                   <feature.icon size={24} />
                 </div>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">{feature.detail}</p>
-                <h3 className="text-2xl font-black text-slate-950 tracking-tight">{feature.title}</h3>
+                <h3 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{feature.title}</h3>
                 <p className="mt-4 text-sm leading-relaxed text-slate-500 font-medium">{feature.description}</p>
               </div>
             ))}
