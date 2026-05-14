@@ -11,14 +11,14 @@ export function LandingCTA() {
         
         <div className="relative flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-6">Final Integration</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500 mb-6">Get started</p>
             <h2 className="text-2xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl lg:leading-[1.1]">
-              Secure your <br />
-              <span className="text-slate-400">Knowledge Edge today.</span>
+              Create a workspace for your organisation <br />
+              <span className="text-slate-400">and start with approved documents.</span>
             </h2>
             <p className="mt-5 text-base font-medium leading-relaxed text-slate-400 sm:mt-8 sm:text-lg">
-              Join leading organizations transitioning from fragmented documentation to unified, 
-              source-backed AI intelligence. Deploy your workspace in minutes.
+              Upload your first documents, invite your team, and give staff a simpler
+              way to get answers from company information.
             </p>
           </div>
 
@@ -27,14 +27,14 @@ export function LandingCTA() {
               href="/register"
               className="group inline-flex items-center justify-center gap-3 rounded-2xl bg-white px-6 py-4 text-sm font-bold text-slate-950 shadow-2xl transition-all hover:scale-[1.03] hover:bg-slate-50 active:scale-95 sm:px-10 sm:py-6 sm:text-base"
             >
-              Start Your Project
+              Create a company workspace
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
               href="/login"
               className="inline-flex items-center justify-center rounded-2xl border-2 border-white/20 bg-white/5 px-6 py-4 text-sm font-bold !text-white transition-all hover:border-white/40 hover:bg-white/10 sm:px-10 sm:py-6 sm:text-base"
             >
-              Client Portal
+              Login
             </Link>
           </div>
         </div>

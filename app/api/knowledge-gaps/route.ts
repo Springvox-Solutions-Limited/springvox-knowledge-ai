@@ -1,12 +1,12 @@
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { KNOWLEDGE_GAP_STATUSES } from '@/src/lib/knowledge-gaps';
-import { MANAGER_ROLES } from '@/src/lib/workspace';
+import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
-    const { profile } = await getAuthenticatedUserWithProfile(req, MANAGER_ROLES);
+    const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
     const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const { user, profile } = await getAuthenticatedUserWithProfile(req, MANAGER_ROLES);
+    const { user, profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
     const body = await req.json();
     const gapId = typeof body.id === 'string' ? body.id : '';
     const status = typeof body.status === 'string' ? body.status : '';

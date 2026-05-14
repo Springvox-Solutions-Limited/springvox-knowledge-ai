@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createClient, type User } from '@supabase/supabase-js';
-import type { AppRole, UserProfile } from '@/src/lib/workspace';
+import type { AnyAppRole, UserProfile } from '@/src/lib/workspace';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -57,7 +57,7 @@ export async function getAuthenticatedUser(request: Request): Promise<User> {
 
 export async function getAuthenticatedUserWithProfile(
   request: Request,
-  allowedRoles?: AppRole[],
+  allowedRoles?: AnyAppRole[],
 ): Promise<{ user: User; profile: UserProfile }> {
   const user = await getAuthenticatedUser(request);
   const supabase = getSupabaseAdmin();

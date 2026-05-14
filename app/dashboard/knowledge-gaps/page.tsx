@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import { cn, truncate } from "@/src/lib/utils";
-import { isManagerRole, type UserProfile } from "@/src/lib/workspace";
+import { isWorkspaceAdminRole, type UserProfile } from "@/src/lib/workspace";
 
 type KnowledgeGap = {
   id: string;
@@ -44,7 +44,7 @@ export default function KnowledgeGapsPage() {
       const currentProfile = await getCurrentUserProfile();
       setProfile(currentProfile);
 
-      if (!currentProfile || !isManagerRole(currentProfile.role)) {
+      if (!currentProfile || !isWorkspaceAdminRole(currentProfile.role)) {
         router.replace("/dashboard/chat");
         return;
       }
@@ -127,7 +127,7 @@ export default function KnowledgeGapsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  if (profile && !isManagerRole(profile.role)) {
+  if (profile && !isWorkspaceAdminRole(profile.role)) {
     return null;
   }
 
@@ -137,14 +137,14 @@ export default function KnowledgeGapsPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
-              Intelligence Coverage
+              Question review
             </p>
             <h1 className="admin-hero-title">
-              Coverage Audit
+              Unanswered questions
             </h1>
             <p className="admin-hero-copy">
-              Monitor and resolve documentation gaps. Every unanswered question
-              is an opportunity to strengthen your knowledge base.
+              Review questions that still need better document coverage and use them
+              to improve your workspace over time.
             </p>
           </div>
         </div>
@@ -192,7 +192,7 @@ export default function KnowledgeGapsPage() {
               <Loader2 size={24} className="animate-spin text-slate-400" />
             </div>
             <p className="text-sm font-medium text-slate-600">
-              Analyzing coverage gaps...
+              Loading unanswered questions...
             </p>
           </div>
         ) : filteredKnowledgeGaps.length === 0 ? (
@@ -201,11 +201,10 @@ export default function KnowledgeGapsPage() {
               <AlertTriangle size={28} strokeWidth={1.5} />
             </div>
             <p className="text-lg font-bold text-slate-950">
-              No coverage gaps identified
+              No unanswered questions found
             </p>
             <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
-              All recent questions have been answered using your knowledge base.
-              Your documentation coverage is excellent.
+              Recent questions are being answered from your uploaded documents.
             </p>
           </div>
         ) : (
@@ -264,7 +263,7 @@ export default function KnowledgeGapsPage() {
                     {gap.sample_answer && (
                       <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-4 mt-3">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                          Fallback response
+                          No answer found
                         </p>
                         <p className="text-sm leading-relaxed text-slate-700">
                           "{truncate(gap.sample_answer, 180)}"

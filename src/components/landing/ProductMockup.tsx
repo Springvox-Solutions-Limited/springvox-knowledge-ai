@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleAlert, FileText, MessageSquareText, ShieldCheck, UserPlus2 } from 'lucide-react';
+import { CheckCircle2, FileText, MessageSquareText, ShieldCheck } from 'lucide-react';
 
 export function ProductMockup() {
   return (
@@ -9,12 +9,12 @@ export function ProductMockup() {
         <div className="overflow-hidden rounded-[24px] border border-slate-100 bg-slate-50/30 p-3 sm:rounded-[32px] sm:p-6">
           <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Secure Workspace</p>
-              <p className="mt-1 text-sm font-black text-slate-950">Company Knowledge Hub</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Company workspace</p>
+              <p className="mt-1 text-sm font-black text-slate-950">Approved document library</p>
             </div>
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-white">
               <CheckCircle2 size={12} />
-              VERIFIED
+              Ready for your team
             </div>
           </div>
 
@@ -22,24 +22,24 @@ export function ProductMockup() {
             <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
               <div className="mb-6 flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                 <MessageSquareText size={14} className="text-slate-950" />
-                AI Assistant
+                Staff assistant
               </div>
 
               <div className="space-y-5">
                 <div className="ml-auto max-w-[92%] rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-slate-950/10 sm:max-w-[85%] sm:px-5">
-                  What are the primary requirements for our new policy?
+                  What does our onboarding policy say new staff should complete in week one?
                 </div>
 
                 <div className="max-w-full rounded-2xl border border-slate-100 bg-slate-50 p-4 sm:max-w-[95%] sm:p-6">
-                  <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Smart Response</p>
+                  <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Answer</p>
                   <div className="space-y-4 text-sm leading-relaxed text-slate-600 font-medium">
-                    <p>Based on your Document Hub:</p>
+                    <p>Here&apos;s what the uploaded handbook says:</p>
                     <div className="rounded-xl border border-slate-200 bg-white p-4">
-                      <p className="font-bold text-slate-950 mb-2">Section 7.2 Requirements</p>
+                      <p className="font-bold text-slate-950 mb-2">Week one checklist</p>
                       <ul className="list-disc space-y-2 pl-4 text-slate-500">
-                        <li>Full data encryption</li>
-                        <li>Private document isolation</li>
-                        <li>Regular security audits</li>
+                        <li>Complete orientation and policy review</li>
+                        <li>Meet the assigned team lead</li>
+                        <li>Finish required compliance training</li>
                       </ul>
                     </div>
                   </div>
@@ -68,16 +68,16 @@ export function ProductMockup() {
               <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <FileText size={14} className="text-slate-950" />
-                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Activity Log</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Recent activity</p>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                    <span>SYNC_COMPLETE</span>
-                    <span className="text-emerald-600">SUCCESS</span>
+                    <span>HANDBOOK UPLOADED</span>
+                    <span className="text-emerald-600">READY</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                    <span>MISSING_INFO_FOUND</span>
-                    <span className="text-red-500">NOTICE</span>
+                    <span>NEW STAFF QUESTION</span>
+                    <span className="text-red-500">REVIEW</span>
                   </div>
                 </div>
               </div>

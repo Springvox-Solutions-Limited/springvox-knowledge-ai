@@ -1,5 +1,5 @@
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { isAdminRole } from '@/src/lib/workspace';
+import { ASSIGNABLE_ROLES, isWorkspaceAdminRole } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req);
 
-    if (!isAdminRole(profile.role)) {
+    if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req);
 
-    if (!isAdminRole(profile.role)) {
+    if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       return Response.json({ error: 'A valid email is required' }, { status: 400 });
     }
 
-    if (!['admin', 'content_manager', 'viewer'].includes(role)) {
+    if (!ASSIGNABLE_ROLES.includes(role as (typeof ASSIGNABLE_ROLES)[number])) {
       return Response.json({ error: 'Invalid role selected' }, { status: 400 });
     }
 

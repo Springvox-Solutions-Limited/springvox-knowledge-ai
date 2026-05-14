@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import {
-  isAdminRole,
+  isWorkspaceAdminRole,
   type UserProfile,
   type WorkspaceSettings,
 } from "@/src/lib/workspace";
@@ -43,7 +43,7 @@ export default function SettingsPage() {
       const currentProfile = await getCurrentUserProfile();
       setProfile(currentProfile);
 
-      if (!currentProfile || !isAdminRole(currentProfile.role)) {
+      if (!currentProfile || !isWorkspaceAdminRole(currentProfile.role)) {
         router.replace("/dashboard");
         return;
       }
@@ -120,7 +120,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (profile && !isAdminRole(profile.role)) {
+  if (profile && !isWorkspaceAdminRole(profile.role)) {
     return null;
   }
 

@@ -2,7 +2,7 @@ import { streamStrictAnswer, getEmbedding, STRICT_NO_ANSWER } from '@/src/lib/ge
 import { upsertKnowledgeGap } from '@/src/lib/knowledge-gaps';
 import { COLLECTION_NAME, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { ALL_ROLES, isManagerRole, type AppRole } from '@/src/lib/workspace';
+import { ALL_ROLES, isWorkspaceAdminRole, type AnyAppRole } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,8 +40,8 @@ function getRagScoreThreshold() {
   return Number.isFinite(value) && value >= 0 ? value : 0.55;
 }
 
-function buildStatusMessages(role: AppRole) {
-  if (isManagerRole(role)) {
+function buildStatusMessages(role: AnyAppRole) {
+  if (isWorkspaceAdminRole(role)) {
     return {
       searching: 'Searching workspace documents...',
       matching: 'Reviewing matching sections...',

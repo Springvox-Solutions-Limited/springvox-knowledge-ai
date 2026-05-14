@@ -1,5 +1,9 @@
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { ALL_ROLES, isAdminRole } from '@/src/lib/workspace';
+import {
+  ASSIGNABLE_ROLES,
+  isPlatformAdminRole,
+  isWorkspaceAdminRole,
+} from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +11,7 @@ export async function PATCH(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req);
 
-    if (!isAdminRole(profile.role)) {
+    if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -16,11 +20,11 @@ export async function PATCH(req: Request) {
     const nextRole = typeof body.role === 'string' ? body.role : '';
     const confirmSelfDemotion = body.confirmSelfDemotion === true;
 
-    if (!userId || !ALL_ROLES.includes(nextRole as (typeof ALL_ROLES)[number])) {
+    if (!userId || !ASSIGNABLE_ROLES.includes(nextRole as (typeof ASSIGNABLE_ROLES)[number])) {
       return Response.json({ error: 'Invalid role change request' }, { status: 400 });
     }
 
-    if (userId === user.id && nextRole !== 'admin' && !confirmSelfDemotion) {
+    if (userId === user.id && nextRole !== 'tenant_admin' && !confirmSelfDemotion) {
       return Response.json({ error: 'Self-demotion requires confirmation' }, { status: 409 });
     }
 
@@ -34,6 +38,10 @@ export async function PATCH(req: Request) {
 
     if (targetLookupError || !targetUser) {
       return Response.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (!isPlatformAdminRole(profile.role) && nextRole === 'platform_admin') {
+      return Response.json({ error: 'Only the platform owner can assign platform admin' }, { status: 403 });
     }
 
     const { error: updateError } = await supabase

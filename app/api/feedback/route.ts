@@ -1,5 +1,5 @@
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { FEEDBACK_RATINGS, MANAGER_ROLES } from '@/src/lib/workspace';
+import { FEEDBACK_RATINGS, WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const { profile } = await getAuthenticatedUserWithProfile(req, MANAGER_ROLES);
+    const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
     const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase

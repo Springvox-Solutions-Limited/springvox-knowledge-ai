@@ -6,6 +6,7 @@ import { Loader2, Mail, ShieldCheck } from 'lucide-react';
 
 import { getAccessToken } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
+import { getRoleLabel, type AnyAppRole } from '@/src/lib/workspace';
 
 type InviteDetails = {
   id: string;
@@ -114,7 +115,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
               </div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Role</p>
-                <p className="mt-2 text-sm text-slate-900">{details.role.replace('_', ' ')}</p>
+                <p className="mt-2 text-sm text-slate-900">{getRoleLabel(details.role as AnyAppRole)}</p>
               </div>
             </div>
 
@@ -132,7 +133,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
                   <Link href="/login" className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
                     Login
                   </Link>
-                  <Link href="/register" className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950">
+                  <Link href={`/register?invite=${encodeURIComponent(token)}`} className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950">
                     Create account
                   </Link>
                 </div>

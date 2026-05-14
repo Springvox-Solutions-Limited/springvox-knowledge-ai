@@ -11,7 +11,7 @@ import {
 import { getEmbedding } from '@/src/lib/gemini';
 import { COLLECTION_NAME, deleteDocumentVectors, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { MANAGER_ROLES } from '@/src/lib/workspace';
+import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 import { v4 as uuidv4 } from 'uuid';
 
 export const maxDuration = 60;
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   let uploadedFilePath: string | null = null;
 
   try {
-    const { user, profile } = await getAuthenticatedUserWithProfile(req, MANAGER_ROLES);
+    const { user, profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
     authenticatedUserId = user.id;
     authenticatedWorkspaceId = profile.workspace_id;
     const supabase = getSupabaseAdmin();

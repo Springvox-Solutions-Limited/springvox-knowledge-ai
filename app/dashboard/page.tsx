@@ -7,10 +7,8 @@ import {
   ArrowUpRight,
   CheckCircle2,
   FileText,
-  FolderOpen,
   Layers3,
   MessageSquare,
-  Upload,
   CircleAlert,
 } from "lucide-react";
 
@@ -28,8 +26,8 @@ type AnalyticsSummary = {
   openKnowledgeGaps: number;
   totalUsers: number;
   viewers: number;
-  contentManagers: number;
-  admins: number;
+  tenantAdmins: number;
+  platformAdmins: number;
   pendingInvitations: number;
   totalFeedback: number;
   helpfulFeedback: number;
@@ -65,8 +63,8 @@ const EMPTY_SUMMARY: AnalyticsSummary = {
   openKnowledgeGaps: 0,
   totalUsers: 0,
   viewers: 0,
-  contentManagers: 0,
-  admins: 0,
+  tenantAdmins: 0,
+  platformAdmins: 0,
   pendingInvitations: 0,
   totalFeedback: 0,
   helpfulFeedback: 0,
@@ -129,26 +127,26 @@ export default function DashboardOverview() {
 
   const cards = [
     {
-      title: "Knowledge Base",
+      title: "Documents uploaded",
       value: summary.totalDocuments,
       icon: FileText,
       accent: "text-slate-950",
     },
     {
-      title: "Indexed Assets",
-      value: summary.completedDocuments,
+      title: "Questions asked",
+      value: summary.totalQuestions,
       icon: CheckCircle2,
       accent: "text-emerald-600",
     },
     {
-      title: "Sync Failures",
-      value: summary.failedDocuments,
+      title: "Users invited",
+      value: summary.pendingInvitations,
       icon: AlertTriangle,
       accent: "text-red-600",
     },
     {
-      title: "Neural Sections",
-      value: summary.totalChunks,
+      title: "Unanswered questions",
+      value: summary.openKnowledgeGaps,
       icon: Layers3,
       accent: "text-slate-950",
     },
@@ -171,15 +169,14 @@ export default function DashboardOverview() {
       <div className="admin-hero-card bg-gradient-to-br from-white via-white to-slate-50">
         <div className="space-y-3">
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
-            Intelligence Hub
+            Overview
           </p>
           <h1 className="admin-hero-title">
             Welcome to {workspaceName}.
           </h1>
           <p className="max-w-2xl text-sm leading-relaxed text-slate-600 font-medium sm:text-base lg:text-lg">
-            Your enterprise knowledge graph is active. Monitor question
-            patterns, identify documentation gaps, and optimize assistant
-            performance.
+            Track how your workspace is being used, what documents are available,
+            and where your team still needs better answers.
           </p>
         </div>
       </div>
@@ -217,13 +214,13 @@ export default function DashboardOverview() {
           <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-2">
-                Live Intelligence
+                Recent activity
               </p>
               <h2 className="text-2xl font-bold tracking-tight text-slate-950">
-                Real-time Activity
+                Recent questions
               </h2>
               <p className="text-xs text-slate-500 mt-1 font-medium">
-                Questions from your organization in the last 24 hours.
+                Questions from your organisation in the last 24 hours.
               </p>
             </div>
             <Link
@@ -242,8 +239,7 @@ export default function DashboardOverview() {
                 No recent activity
               </p>
               <p className="mt-1 text-xs text-slate-500 max-w-xs mx-auto">
-                Live question activity will appear here once your assistant goes
-                live.
+                Question activity will appear here once your team starts using the workspace.
               </p>
             </div>
           ) : (
@@ -277,7 +273,7 @@ export default function DashboardOverview() {
                               : "bg-slate-100 text-slate-600 border border-slate-200",
                           )}
                         >
-                          {question.had_sources ? "✓ Grounded" : "Fallback"}
+                          {question.had_sources ? "Has sources" : "No answer found"}
                         </span>
                         {question.knowledge_gap && (
                           <span className="ml-auto px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 font-black text-[9px]">
@@ -302,7 +298,7 @@ export default function DashboardOverview() {
               {
                 href: "/dashboard/knowledge-gaps",
                 icon: CircleAlert,
-                title: "Coverage Audit",
+                title: "Unanswered questions",
                 stat: summary.openKnowledgeGaps,
                 color: "text-red-600",
                 bg: "bg-red-50",
@@ -362,7 +358,7 @@ export default function DashboardOverview() {
         >
           <div className="flex items-center justify-between mb-6">
             <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-red-600">
-              Coverage Status
+              Workspace status
             </p>
             <AlertTriangle size={20} className="text-red-500" />
           </div>

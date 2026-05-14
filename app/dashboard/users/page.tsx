@@ -16,7 +16,9 @@ import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import {
-  isAdminRole,
+  type AnyAppRole,
+  getRoleLabel,
+  isWorkspaceAdminRole,
   type AppRole,
   type UserProfile,
 } from "@/src/lib/workspace";
@@ -25,7 +27,7 @@ type ManagedUser = {
   id: string;
   email: string | null;
   full_name: string | null;
-  role: AppRole;
+  role: AnyAppRole;
   workspace_id: string | null;
   workspace_name: string;
   created_at: string;
@@ -42,7 +44,7 @@ type Invitation = {
   invite_url: string;
 };
 
-const ROLE_OPTIONS: AppRole[] = ["viewer", "content_manager", "admin"];
+const ROLE_OPTIONS: AppRole[] = ["viewer", "tenant_admin"];
 
 export default function UsersPage() {
   const router = useRouter();
@@ -52,7 +54,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | AppRole>("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | AnyAppRole>("all");
   const [error, setError] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<{
     user: ManagedUser;
@@ -69,7 +71,7 @@ export default function UsersPage() {
       const currentProfile = await getCurrentUserProfile();
       setProfile(currentProfile);
 
-      if (!currentProfile || !isAdminRole(currentProfile.role)) {
+      if (!currentProfile || !isWorkspaceAdminRole(currentProfile.role)) {
         router.replace("/dashboard");
         return;
       }
@@ -245,7 +247,7 @@ export default function UsersPage() {
     }
   };
 
-  if (profile && !isAdminRole(profile.role)) {
+  if (profile && !isWorkspaceAdminRole(profile.role)) {
     return null;
   }
 
@@ -289,14 +291,14 @@ export default function UsersPage() {
         <select
           value={roleFilter}
           onChange={(event) =>
-            setRoleFilter(event.target.value as "all" | AppRole)
+            setRoleFilter(event.target.value as "all" | AnyAppRole)
           }
           className="admin-input shrink-0 px-4 py-3 text-sm font-medium transition-colors hover:border-slate-300 lg:min-w-[11rem] lg:w-auto"
         >
           <option value="all">All roles</option>
+          <option value="platform_admin">Platform Admin</option>
           <option value="viewer">Viewers</option>
-          <option value="content_manager">Managers</option>
-          <option value="admin">Admins</option>
+          <option value="tenant_admin">Company Admins</option>
         </select>
       </div>
 
@@ -317,7 +319,7 @@ export default function UsersPage() {
               <Loader2 size={24} className="animate-spin text-slate-400" />
             </div>
             <p className="text-sm font-medium text-slate-600">
-              Synchronizing user directory...
+              Loading users...
             </p>
           </div>
         ) : filteredUsers.length === 0 ? (
@@ -372,16 +374,16 @@ export default function UsersPage() {
                       <span
                         className={cn(
                           "rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border inline-block",
-                          user.role === "admin"
+                          user.role === "platform_admin"
                             ? "bg-slate-950 text-white border-slate-950"
-                            : user.role === "content_manager"
+                            : user.role === "tenant_admin"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : user.role === "admin"
                               ? "bg-blue-50 text-blue-700 border-blue-200"
                               : "bg-slate-100 text-slate-600 border-slate-200",
                         )}
                       >
-                        {user.role === "content_manager"
-                          ? "Manager"
-                          : user.role}
+                        {getRoleLabel(user.role)}
                       </span>
                     </td>
                     <td className="px-6 py-5">
@@ -416,11 +418,11 @@ export default function UsersPage() {
                                 : "bg-white text-slate-600 border-slate-200 hover:border-slate-950 hover:text-slate-950 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed",
                             )}
                           >
-                            {roleOption === "content_manager"
-                              ? "Mgr"
+                            {roleOption === "tenant_admin"
+                              ? "Adm"
                               : roleOption === "viewer"
                                 ? "View"
-                                : "Adm"}
+                                : roleOption}
                           </button>
                         ))}
                       </div>
@@ -489,9 +491,7 @@ export default function UsersPage() {
                           )}
                         />
                         <span className="capitalize">
-                          {invitation.role === "content_manager"
-                            ? "Manager"
-                            : invitation.role}
+                          {getRoleLabel(invitation.role)}
                         </span>{" "}
                         • {invitation.status}
                       </p>
@@ -619,10 +619,9 @@ export default function UsersPage() {
                   className="admin-input"
                 >
                   <option value="viewer">Viewer (Read Only)</option>
-                  <option value="content_manager">
-                    Manager (Upload & Ingest)
+                  <option value="tenant_admin">
+                    Tenant Admin (Workspace Control)
                   </option>
-                  <option value="admin">Admin (Full Control)</option>
                 </select>
               </div>
 

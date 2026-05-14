@@ -1,23 +1,11 @@
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { isAdminRole, type WorkspaceSettings } from '@/src/lib/workspace';
+import { isWorkspaceAdminRole, type WorkspaceSettings } from '@/src/lib/workspace';
+import { isValidEmail, isValidUrl } from '@/src/lib/onboarding';
 
 export const dynamic = 'force-dynamic';
 
 function isValidHexColor(value: string) {
   return /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(value);
-}
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function isValidUrl(value: string) {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
 }
 
 export async function GET(req: Request) {
@@ -53,7 +41,7 @@ export async function PATCH(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req);
 
-    if (!isAdminRole(profile.role)) {
+    if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 

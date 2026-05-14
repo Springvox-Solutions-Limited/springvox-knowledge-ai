@@ -2,11 +2,11 @@ import { KeyRound, Lock, Shield, UserCog } from 'lucide-react';
 
 const controls = [
   'Designed with role-based access',
-  'Workspace-scoped data boundaries',
+  'Each organisation uses its own workspace',
   'Admins control uploaded knowledge',
   'Users only see what their role allows',
   'Sensitive API keys remain server-side',
-  'Source-backed answers reduce blind trust in AI',
+  'Answers come from approved documents when support is available',
 ];
 
 export function SecurityControlSection() {
@@ -14,13 +14,13 @@ export function SecurityControlSection() {
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
       <div className="grid gap-10 lg:grid-cols-[0.92fr,1.08fr] lg:gap-16">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">Security and control</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">Trust and control</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-            Practical controls for a document-grounded assistant.
+            Keep company knowledge useful, controlled, and easy to trust.
           </h2>
           <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
-            SpringVox is built to keep knowledge curation in admin hands while giving everyday users a
-            simpler way to ask questions. The focus is controlled access, server-side secrets, and source-backed answers.
+            SpringVox is built so company admins stay in control of what gets uploaded,
+            while everyday staff get a much simpler way to ask questions and review sources.
           </p>
         </div>
 

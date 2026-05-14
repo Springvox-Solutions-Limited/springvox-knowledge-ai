@@ -8,7 +8,6 @@ import {
   Loader2, 
   CheckCircle2, 
   AlertCircle,
-  ShieldCheck,
   Zap,
   FileSearch,
   Braces,
@@ -85,21 +84,21 @@ export default function UploadPage() {
     <div className="admin-page">
       <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8 md:p-10">
         <div className="space-y-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Knowledge Ingestion</p>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Train your workspace assistant.</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Upload documents</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Upload approved documents.</h1>
           <p className="max-w-2xl text-sm leading-7 text-slate-500">
-            Securely upload PDFs or TXT documents to ground AI responses in your company data.
+            Add PDF or TXT files your team can ask questions from.
           </p>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
          {[
-           { icon: Upload, text: 'Upload', color: 'text-slate-400' },
-           { icon: FileSearch, text: 'Extract', color: 'text-slate-400' },
-           { icon: Braces, text: 'Chunk', color: 'text-slate-400' },
-           { icon: Zap, text: 'Embed', color: 'text-slate-400' },
-           { icon: Database, text: 'Index', color: 'text-slate-400' }
+           { icon: Upload, text: 'Upload file', color: 'text-slate-400' },
+           { icon: FileSearch, text: 'Read document', color: 'text-slate-400' },
+           { icon: Braces, text: 'Prepare sections', color: 'text-slate-400' },
+           { icon: Zap, text: 'Prepare for search', color: 'text-slate-400' },
+           { icon: Database, text: 'Ready for questions', color: 'text-slate-400' }
          ].map((item, i) => (
            <div key={i} className="rounded-2xl border border-slate-100 bg-white p-4 flex items-center gap-3 shadow-sm/5">
               <item.icon size={16} className={item.color} />
@@ -128,11 +127,11 @@ export default function UploadPage() {
           </div>
 
           <div className="text-center space-y-2">
-              <p className="text-base font-semibold text-slate-900">
+            <p className="text-base font-semibold text-slate-900">
               {isDragActive ? 'Release to begin upload' : 'Click or drag a document here'}
             </p>
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
-              We'll automatically extract text, generate embeddings, and index the content for retrieval.
+              We&apos;ll prepare the document so your team can ask questions from it.
             </p>
           </div>
         </div>
@@ -165,12 +164,12 @@ export default function UploadPage() {
           {uploading ? (
             <>
               <Loader2 className="animate-spin !text-white" size={18} />
-              Processing Pipeline...
+              Preparing document...
             </>
           ) : (
             <>
               <Zap size={18} className="!text-white" />
-              Start Ingestion
+              Upload document
             </>
           )}
         </button>
@@ -179,11 +178,11 @@ export default function UploadPage() {
           <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-4">
             <CheckCircle2 className="text-emerald-600 mt-0.5" size={18} />
             <div className="space-y-1">
-              <p className="text-sm font-bold text-emerald-900">Successfully indexed.</p>
-              <p className="text-xs text-emerald-700/80 leading-relaxed">The document is now available for retrieval in the chat interface.</p>
+              <p className="text-sm font-bold text-emerald-900">Document uploaded successfully.</p>
+              <p className="text-xs text-emerald-700/80 leading-relaxed">Your team can now ask questions from this document in chat.</p>
               <div className="pt-3 flex gap-5">
-                <Link href="/dashboard/chat" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">Open Chat</Link>
-                <Link href="/dashboard/documents" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">View All</Link>
+                <Link href="/dashboard/chat" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">Open chat</Link>
+                <Link href="/dashboard/documents" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">View documents</Link>
               </div>
             </div>
           </div>
@@ -193,7 +192,7 @@ export default function UploadPage() {
           <div className="p-6 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-4">
             <AlertCircle className="text-red-600 mt-0.5" size={18} />
             <div className="space-y-1">
-              <p className="text-sm font-bold text-red-900">Ingestion failed.</p>
+              <p className="text-sm font-bold text-red-900">Upload failed.</p>
               <p className="text-xs text-red-700/80 leading-relaxed">{error}</p>
             </div>
           </div>
@@ -202,20 +201,20 @@ export default function UploadPage() {
 
         <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8">
           <div className="space-y-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Processing Flow</p>
-            <h2 className="text-xl font-bold tracking-tight text-slate-950">Secure Pipeline</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Document preparation steps</p>
+            <h2 className="text-xl font-bold tracking-tight text-slate-950">What happens after upload</h2>
             <p className="text-xs leading-6 text-slate-500">
-              Each document undergoes a multi-stage process to ensure accurate grounding and data security.
+              Each file is prepared so answers can be based on the uploaded document.
             </p>
           </div>
 
           <div className="mt-8 space-y-6">
             {[
-              { icon: Upload, title: 'Secure Upload', copy: 'Documents are transmitted via encrypted channels to private storage.' },
-              { icon: FileSearch, title: 'Text Extraction', copy: 'Content is parsed and cleaned for high-quality AI ingestion.' },
-              { icon: Braces, title: 'Semantic Chunking', copy: 'Text is split into logical segments optimized for context window.' },
-              { icon: Zap, title: 'Vector Embedding', copy: 'Generate high-dimensional vectors for semantic similarity search.' },
-              { icon: Database, title: 'Cloud Indexing', copy: 'Vectors are indexed in our secure database for real-time retrieval.' },
+              { icon: Upload, title: 'Upload file', copy: 'Your document is stored securely for your workspace.' },
+              { icon: FileSearch, title: 'Read document', copy: 'The system reads the text so it can be used in answers.' },
+              { icon: Braces, title: 'Prepare sections', copy: 'The document is split into smaller readable sections.' },
+              { icon: Zap, title: 'Prepare for search', copy: 'The system prepares the document so matching answers can be found quickly.' },
+              { icon: Database, title: 'Ready for questions', copy: 'The document becomes available in your company chat experience.' },
             ].map((step, index) => (
               <div key={step.title} className="flex gap-4">
                 <div className="flex flex-col items-center">

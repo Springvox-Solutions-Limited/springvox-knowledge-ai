@@ -1,12 +1,12 @@
 import { STRICT_NO_ANSWER } from '@/src/lib/gemini';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { MANAGER_ROLES } from '@/src/lib/workspace';
+import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
-    const { profile } = await getAuthenticatedUserWithProfile(req, MANAGER_ROLES);
+    const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
     const supabase = getSupabaseAdmin();
     const workspaceId = profile.workspace_id!;
     const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString();
@@ -79,8 +79,10 @@ export async function GET(req: Request) {
     const openKnowledgeGaps = knowledgeGaps.filter((gap) => gap.status === 'open').length;
     const totalUsers = profiles.length;
     const viewers = profiles.filter((item) => item.role === 'viewer').length;
-    const contentManagers = profiles.filter((item) => item.role === 'content_manager').length;
-    const admins = profiles.filter((item) => item.role === 'admin').length;
+    const tenantAdmins = profiles.filter((item) =>
+      ['tenant_admin', 'admin', 'content_manager'].includes(item.role),
+    ).length;
+    const platformAdmins = profiles.filter((item) => item.role === 'platform_admin').length;
 
     const dailyQuestionCounts = Array.from({ length: 7 }).map((_, index) => {
       const date = new Date();
@@ -108,8 +110,8 @@ export async function GET(req: Request) {
         openKnowledgeGaps,
         totalUsers,
         viewers,
-        contentManagers,
-        admins,
+        tenantAdmins,
+        platformAdmins,
         pendingInvitations: invitations.filter((item) => item.status === 'pending').length,
         totalFeedback: feedback.length,
         helpfulFeedback: feedback.filter((item) => item.rating === 'helpful').length,

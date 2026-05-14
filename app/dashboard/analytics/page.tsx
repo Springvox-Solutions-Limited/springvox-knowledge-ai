@@ -33,7 +33,7 @@ import {
 
 import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
 import { cn } from '@/src/lib/utils';
-import { isManagerRole, type UserProfile } from '@/src/lib/workspace';
+import { isWorkspaceAdminRole, type UserProfile } from '@/src/lib/workspace';
 
 type AnalyticsData = {
   workspace: { name: string; assistant_name: string | null } | null;
@@ -71,7 +71,7 @@ export default function AnalyticsPage() {
       const currentProfile = await getCurrentUserProfile();
       setProfile(currentProfile);
 
-      if (!currentProfile || !isManagerRole(currentProfile.role)) {
+      if (!currentProfile || !isWorkspaceAdminRole(currentProfile.role)) {
         router.replace('/dashboard/chat');
         return;
       }
@@ -101,7 +101,7 @@ export default function AnalyticsPage() {
     loadAnalytics();
   }, []);
 
-  if (profile && !isManagerRole(profile.role)) {
+  if (profile && !isWorkspaceAdminRole(profile.role)) {
     return null;
   }
 
@@ -109,7 +109,7 @@ export default function AnalyticsPage() {
     return (
       <div className="flex h-[400px] flex-col items-center justify-center gap-4 rounded-[40px] border border-slate-200 bg-white shadow-sm">
         <Loader2 size={32} className="animate-spin text-slate-900" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Synchronizing Data Store...</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Loading analytics...</p>
       </div>
     );
   }
@@ -129,8 +129,8 @@ export default function AnalyticsPage() {
   const healthScore = 100 - gapRate;
 
   const pieData = [
-    { name: 'Grounded', value: sourceBacked, color: '#0f172a' },
-    { name: 'Fallback', value: fallback, color: '#cbd5e1' },
+    { name: 'Answers with sources', value: sourceBacked, color: '#0f172a' },
+    { name: 'No answer found', value: fallback, color: '#cbd5e1' },
   ];
 
   return (
@@ -140,18 +140,18 @@ export default function AnalyticsPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">
             <Activity size={12} />
-            Workspace Intelligence
+            Workspace analytics
           </div>
           <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
             {data.workspace?.name || 'Workspace'} Dashboard
           </h1>
           <p className="text-sm font-medium text-slate-500 sm:text-base">
-            Real-time insights into knowledge coverage and AI accuracy.
+            See how people are using your workspace and where they still need better answers.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 shadow-sm">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Health Score</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Answer coverage</p>
             <div className="flex items-center gap-2">
               <span className="text-xl font-black text-slate-950">{healthScore}%</span>
               <TrendingUp size={14} className="text-emerald-500" />
@@ -163,10 +163,10 @@ export default function AnalyticsPage() {
       {/* KPI Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Total Ingested', value: data.summary.totalDocuments, icon: FileText, sub: `${data.summary.totalChunks} Chunks` },
-          { label: 'Active Queries', value: data.summary.totalQuestions, icon: MessageSquare, sub: `${data.summary.questionsLast7Days} this week` },
-          { label: 'Knowledge Gaps', value: data.summary.openKnowledgeGaps, icon: Search, sub: 'Needs Ingestion', trend: 'down' },
-          { label: 'Grounded Rate', value: `${gapRate ? 100 - gapRate : 0}%`, icon: ShieldCheck, sub: 'Source-backed', trend: 'up' },
+          { label: 'Documents uploaded', value: data.summary.totalDocuments, icon: FileText, sub: `${data.summary.totalChunks} sections` },
+          { label: 'Questions asked', value: data.summary.totalQuestions, icon: MessageSquare, sub: `${data.summary.questionsLast7Days} in the last 7 days` },
+          { label: 'Unanswered questions', value: data.summary.openKnowledgeGaps, icon: Search, sub: 'Needs more document coverage', trend: 'down' },
+          { label: 'Answers with sources', value: `${gapRate ? 100 - gapRate : 0}%`, icon: ShieldCheck, sub: 'Supported by documents', trend: 'up' },
         ].map((kpi) => (
           <div key={kpi.label} className="group relative rounded-[32px] border border-slate-200 bg-white p-7 shadow-sm transition-all hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-100">
             <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-all">
@@ -194,7 +194,7 @@ export default function AnalyticsPage() {
                 <BarChart3 size={20} />
               </div>
               <div>
-                <h2 className="text-xl font-black tracking-tight text-slate-950">Query Activity</h2>
+                <h2 className="text-xl font-black tracking-tight text-slate-950">Questions asked</h2>
                 <p className="text-sm font-medium text-slate-500">Daily question volume over the last 14 days.</p>
               </div>
             </div>
@@ -249,8 +249,8 @@ export default function AnalyticsPage() {
         <div className="flex flex-col gap-6">
           <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
             <div className="mb-8">
-              <h2 className="text-xl font-black tracking-tight text-slate-950">Coverage Mix</h2>
-              <p className="text-sm font-medium text-slate-500">Distribution of answer types.</p>
+              <h2 className="text-xl font-black tracking-tight text-slate-950">Answer summary</h2>
+              <p className="text-sm font-medium text-slate-500">How often answers were supported by uploaded documents.</p>
             </div>
             
             <div className="h-[200px] w-full relative">
@@ -274,7 +274,7 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-2xl font-black text-slate-950">{healthScore}%</span>
-                <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Grounded</span>
+                <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Covered</span>
               </div>
             </div>
 
@@ -292,11 +292,11 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8">
-            <h2 className="text-lg font-black tracking-tight text-slate-950">Member Directory</h2>
+            <h2 className="text-lg font-black tracking-tight text-slate-950">Users</h2>
             <div className="mt-6 space-y-3">
               {[
                 { label: 'Total Users', value: data.summary.totalUsers },
-                { label: 'Administrators', value: data.summary.admins },
+                { label: 'Company Admins', value: data.summary.tenantAdmins },
                 { label: 'Pending Invitations', value: data.summary.pendingInvitations },
               ].map((row) => (
                 <div key={row.label} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
@@ -313,7 +313,7 @@ export default function AnalyticsPage() {
       <div className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr] xl:gap-10">
         <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
           <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-2xl font-black tracking-tight text-slate-950">Recent Query Flow</h2>
+            <h2 className="text-2xl font-black tracking-tight text-slate-950">Recent questions</h2>
             <Link href="/dashboard/chat" className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-950 transition-colors flex items-center gap-2">
               View All <ArrowRight size={12} />
             </Link>
@@ -344,19 +344,19 @@ export default function AnalyticsPage() {
                           "rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider",
                           item.had_sources ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-slate-100 text-slate-600 border border-slate-200"
                         )}>
-                          {item.had_sources ? 'Grounded' : 'Fallback'}
+                          {item.had_sources ? 'Has sources' : 'No answer found'}
                         </span>
                       </td>
                       <td className="py-5 pr-4">
                         {item.knowledge_gap ? (
                           <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-red-600">
                             <div className="h-1 w-1 rounded-full bg-red-600" />
-                            Gap Detected
+                            Needs review
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-300">
                             <div className="h-1 w-1 rounded-full bg-slate-300" />
-                            Resolved
+                            Covered
                           </div>
                         )}
                       </td>
@@ -373,15 +373,15 @@ export default function AnalyticsPage() {
 
         <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
           <div className="mb-8">
-            <h2 className="text-2xl font-black tracking-tight text-slate-950">Active Knowledge Gaps</h2>
-            <p className="mt-1 text-sm font-medium text-slate-500">Queries that failed to find source context.</p>
+            <h2 className="text-2xl font-black tracking-tight text-slate-950">Unanswered questions</h2>
+            <p className="mt-1 text-sm font-medium text-slate-500">Questions that still need better document coverage.</p>
           </div>
           
           <div className="space-y-4">
             {data.recentKnowledgeGaps.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-slate-200 p-10 text-center">
                 <ShieldCheck size={32} className="mx-auto text-slate-200 mb-4" />
-                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No Gaps Detected</p>
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No unanswered questions</p>
               </div>
             ) : (
               data.recentKnowledgeGaps.map((item) => (
@@ -407,7 +407,7 @@ export default function AnalyticsPage() {
           
           <div className="mt-8">
             <Link href="/dashboard/knowledge-gaps" className="flex w-full items-center justify-center rounded-2xl bg-slate-950 py-4 text-xs font-bold uppercase tracking-widest !text-white transition-all hover:bg-slate-800">
-              Manage All Gaps
+              View all unanswered questions
             </Link>
           </div>
         </div>

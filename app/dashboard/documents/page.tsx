@@ -110,14 +110,13 @@ export default function DocumentsPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
-              Asset Management
+              Documents
             </p>
             <h1 className="admin-hero-title">
-              Knowledge Base
+              Company documents
             </h1>
             <p className="admin-hero-copy">
-              Manage your source documents, monitor ingestion status, and track
-              indexed assets.
+              Manage uploaded documents and track which files are ready for questions.
             </p>
           </div>
         </div>
@@ -160,7 +159,7 @@ export default function DocumentsPage() {
                 Status
               </th>
               <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                Chunks
+                Sections
               </th>
               <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
                 Uploaded
@@ -181,7 +180,7 @@ export default function DocumentsPage() {
                         className="animate-spin text-slate-400"
                       />
                       <span className="text-sm font-medium text-slate-600">
-                        Synchronizing knowledge base...
+                        Loading documents...
                       </span>
                     </div>
                   </td>
@@ -202,7 +201,7 @@ export default function DocumentsPage() {
                       </p>
                       <p className="text-xs text-slate-500">
                         {documents.length === 0
-                          ? "Start by uploading your first data source to build your knowledge base."
+                          ? "Start by uploading your first approved document."
                           : "Try a different search term or clear filters."}
                       </p>
                     </div>
@@ -324,7 +323,7 @@ export default function DocumentsPage() {
                     </p>
                     <p className="mt-2 text-xs font-medium text-slate-500">
                       {new Date(doc.created_at).toLocaleDateString()} •{" "}
-                      {doc.total_chunks || 0} chunks
+                      {doc.total_chunks || 0} sections
                     </p>
                   </div>
                   <button

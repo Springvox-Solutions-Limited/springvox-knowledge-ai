@@ -19,7 +19,12 @@ import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 import { getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
-import { isAdminRole, isManagerRole, type UserProfile, type WorkspaceSettings } from '@/src/lib/workspace';
+import {
+  getRoleLabel,
+  isWorkspaceAdminRole,
+  type UserProfile,
+  type WorkspaceSettings,
+} from '@/src/lib/workspace';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -108,7 +113,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <nav className="space-y-1.5 flex-1">
-            <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-600 ml-6">Workspace Admin</p>
+            <p className="mb-4 ml-6 text-[10px] font-bold uppercase tracking-widest text-slate-600">
+              {isWorkspaceAdminRole(profile.role) ? 'Workspace Admin' : 'Workspace User'}
+            </p>
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -141,7 +148,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       {user.email?.split('@')[0]}
                     </p>
                     <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-500">
-                      {profile.role.replace('_', ' ')}
+                      {getRoleLabel(profile.role)}
                     </p>
                  </div>
               </div>
@@ -222,40 +229,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 }
 
 function getDefaultPathForRole(role: UserProfile['role']) {
-  return isManagerRole(role) ? '/dashboard' : '/dashboard/chat';
+  return isWorkspaceAdminRole(role) ? '/dashboard' : '/dashboard/chat';
 }
 
 function isAllowedPath(role: UserProfile['role'], pathname: string) {
-  if (!isManagerRole(role)) {
+  if (!isWorkspaceAdminRole(role)) {
     return pathname === '/dashboard/chat';
-  }
-
-  if (!isAdminRole(role) && (pathname === '/dashboard/users' || pathname === '/dashboard/settings')) {
-    return false;
   }
 
   return true;
 }
 
 function getNavItems(role: UserProfile['role']) {
-  if (!isManagerRole(role)) {
-    return [{ name: 'Chat', href: '/dashboard/chat', icon: MessageSquare }];
+  if (!isWorkspaceAdminRole(role)) {
+    return [{ name: 'Ask Questions', href: '/dashboard/chat', icon: MessageSquare }];
   }
 
   const items = [
     { name: 'Overview', href: '/dashboard', icon: BarChart3 },
     { name: 'Documents', href: '/dashboard/documents', icon: FileText },
-    { name: 'Ingestion', href: '/dashboard/upload', icon: Upload },
-    { name: 'Workspace Chat', href: '/dashboard/chat', icon: MessageSquare },
-    { name: 'Intelligence', href: '/dashboard/analytics', icon: ChartColumnBig },
+    { name: 'Upload Documents', href: '/dashboard/upload', icon: Upload },
+    { name: 'Ask Questions', href: '/dashboard/chat', icon: MessageSquare },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: ChartColumnBig },
+    { name: 'Users', href: '/dashboard/users', icon: Users },
+    { name: 'Company Settings', href: '/dashboard/settings', icon: Settings },
+    { name: 'Unanswered Questions', href: '/dashboard/knowledge-gaps', icon: CircleAlert },
   ];
-
-  if (isAdminRole(role)) {
-    items.push({ name: 'User Directory', href: '/dashboard/users', icon: Users });
-    items.push({ name: 'System Settings', href: '/dashboard/settings', icon: Settings });
-  }
-
-  items.push({ name: 'Coverage Gaps', href: '/dashboard/knowledge-gaps', icon: CircleAlert });
 
   return items;
 }

@@ -1,5 +1,5 @@
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { isAdminRole } from '@/src/lib/workspace';
+import { isWorkspaceAdminRole } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +7,7 @@ export async function PATCH(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req);
 
-    if (!isAdminRole(profile.role)) {
+    if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 

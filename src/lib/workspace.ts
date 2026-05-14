@@ -1,10 +1,12 @@
-export type AppRole = 'admin' | 'content_manager' | 'viewer';
+export type AppRole = 'platform_admin' | 'tenant_admin' | 'viewer';
+export type LegacyAppRole = 'admin' | 'content_manager';
+export type AnyAppRole = AppRole | LegacyAppRole;
 
 export type UserProfile = {
   id: string;
   email: string | null;
   full_name: string | null;
-  role: AppRole;
+  role: AnyAppRole;
   workspace_id: string | null;
 };
 
@@ -32,13 +34,53 @@ export const FEEDBACK_RATINGS = [
 
 export type FeedbackRating = (typeof FEEDBACK_RATINGS)[number];
 
-export const ALL_ROLES: AppRole[] = ['admin', 'content_manager', 'viewer'];
-export const MANAGER_ROLES: AppRole[] = ['admin', 'content_manager'];
+export const ASSIGNABLE_ROLES: AppRole[] = ['tenant_admin', 'viewer'];
+export const ALL_ROLES: AnyAppRole[] = [
+  'platform_admin',
+  'tenant_admin',
+  'viewer',
+  'admin',
+  'content_manager',
+];
+export const WORKSPACE_ADMIN_ROLES: AnyAppRole[] = [
+  'platform_admin',
+  'tenant_admin',
+  'admin',
+  'content_manager',
+];
 
-export function isAdminRole(role: AppRole) {
-  return role === 'admin';
+export function isPlatformAdminRole(role: AnyAppRole) {
+  return role === 'platform_admin';
 }
 
-export function isManagerRole(role: AppRole) {
-  return MANAGER_ROLES.includes(role);
+export function isTenantAdminRole(role: AnyAppRole) {
+  return role === 'tenant_admin' || role === 'admin' || role === 'content_manager';
+}
+
+export function isWorkspaceAdminRole(role: AnyAppRole) {
+  return isPlatformAdminRole(role) || isTenantAdminRole(role);
+}
+
+export function normalizeRole(role: AnyAppRole): AppRole {
+  if (role === 'platform_admin') {
+    return 'platform_admin';
+  }
+
+  if (role === 'tenant_admin' || role === 'admin' || role === 'content_manager') {
+    return 'tenant_admin';
+  }
+
+  return 'viewer';
+}
+
+export function getRoleLabel(role: AnyAppRole) {
+  if (role === 'platform_admin') {
+    return 'Platform Admin';
+  }
+
+  if (role === 'tenant_admin' || role === 'admin' || role === 'content_manager') {
+    return 'Tenant Admin';
+  }
+
+  return 'Viewer';
 }

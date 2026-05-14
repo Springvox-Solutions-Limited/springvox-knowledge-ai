@@ -1,9 +1,9 @@
 export function HowItWorksSection() {
   const steps = [
-    { title: 'Upload Documents', detail: 'Securely upload your PDFs and text files into your private workspace.' },
-    { title: 'Smart Analysis', detail: 'Our AI reads and organizes your documents to understand their full context.' },
-    { title: 'Instant Search', detail: 'Information is mapped out so your team can find any answer in seconds.' },
-    { title: 'Ask & Receive', detail: 'Ask any question and get a reliable answer backed by your actual documents.' }
+    { title: 'Upload documents', detail: 'Add approved PDF or TXT files to your company workspace.' },
+    { title: 'Invite your team', detail: 'Give staff access so they can ask questions from the shared document library.' },
+    { title: 'Ask questions', detail: 'Team members ask in plain English and get clear answers based on uploaded documents.' },
+    { title: 'Improve over time', detail: 'Review unanswered questions and add missing documents when your team needs more coverage.' }
   ];
 
   return (
@@ -11,14 +11,14 @@ export function HowItWorksSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-[0.8fr,1.2fr] lg:gap-20">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">Our Process</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">How it works</p>
             <h2 className="text-3xl font-black tracking-tighter text-slate-950 sm:text-5xl lg:text-6xl lg:leading-[1.1]">
-              How SpringVox <br />
-              <span className="text-slate-400">Works.</span>
+              A simple way to turn <br />
+              <span className="text-slate-400">documents into answers.</span>
             </h2>
             <p className="mt-5 text-base font-medium leading-relaxed text-slate-500 sm:mt-8 sm:text-xl">
-              A simple, secure process to transform your company data 
-              into a trustworthy knowledge base.
+              SpringVox keeps the process straightforward for non-technical teams:
+              upload documents, invite staff, ask questions, and improve where answers are missing.
             </p>
           </div>
 

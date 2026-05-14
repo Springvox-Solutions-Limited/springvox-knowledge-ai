@@ -2,25 +2,25 @@ import { LayoutDashboard, LibraryBig, MessageCircleMore, UploadCloud, UserRound 
 
 const roles = [
   {
-    title: 'Admin / Content Manager',
+    title: 'Company Admin',
     icon: LibraryBig,
-    badge: 'Manage the knowledge workspace',
+    badge: 'Runs the workspace',
     items: [
       { icon: UploadCloud, label: 'Upload approved documents' },
-      { icon: UserRound, label: 'Invite users manually' },
-      { icon: LibraryBig, label: 'Manage users and roles' },
-      { icon: LayoutDashboard, label: 'Review analytics and knowledge gaps' },
-      { icon: MessageCircleMore, label: 'Review feedback and test answers' },
+      { icon: UserRound, label: 'Invite users' },
+      { icon: LibraryBig, label: 'Manage users' },
+      { icon: LayoutDashboard, label: 'Review analytics and unanswered questions' },
+      { icon: MessageCircleMore, label: 'Test answers and review feedback' },
     ],
   },
   {
-    title: 'Viewer / End User',
+    title: 'Staff User',
     icon: MessageCircleMore,
-    badge: 'Simple chat experience',
+    badge: 'Simple question-and-answer experience',
     items: [
       { icon: MessageCircleMore, label: 'Ask questions' },
       { icon: LayoutDashboard, label: 'Get simple answers' },
-      { icon: LibraryBig, label: 'See sources' },
+      { icon: LibraryBig, label: 'Open supporting sources' },
       { icon: UserRound, label: 'No admin complexity' },
     ],
   },
@@ -30,9 +30,9 @@ export function RoleSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
       <div className="max-w-3xl">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">Role-based experience</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">Roles</p>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-          One shared knowledge workspace, tailored to the people using it.
+          One workspace, with a simple experience for every type of user.
         </h2>
       </div>
 

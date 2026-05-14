@@ -9,12 +9,12 @@ export function LandingFooter() {
           <div className="space-y-6 sm:space-y-10">
             <SpringVoxLogo variant="full" theme="light" imageClassName="h-9 sm:h-11" />
             <p className="max-w-md text-sm font-medium leading-relaxed text-slate-500 sm:text-base">
-              SpringVox Knowledge AI provides secure, institutional-grade intelligence layers 
-              for organizations that prioritize certainty and source-backed documentation.
+              SpringVox Knowledge AI helps organisations turn approved documents
+              into a simple question-and-answer assistant for their teams.
             </p>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-10">
               <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">© 2026 SpringVox</span>
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Intelligence Core v3.0</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">AI assistant for company knowledge</span>
             </div>
           </div>
 
@@ -23,13 +23,13 @@ export function LandingFooter() {
               <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-950 sm:mb-8">Organization</p>
               <nav className="grid gap-5">
                 <Link href="/login" className="text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-950">
-                  Client Portal
+                  Login
                 </Link>
                 <Link href="/register" className="text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-950">
-                  Get Started
+                  Create Workspace
                 </Link>
                 <Link href="/dashboard" className="text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-950">
-                  Solutions
+                  Dashboard
                 </Link>
               </nav>
             </div>
@@ -37,13 +37,13 @@ export function LandingFooter() {
               <p className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-950 sm:mb-8">Resources</p>
               <nav className="grid gap-5">
                 <a href="#how-it-works" className="text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-950">
-                  Our Process
+                  How It Works
                 </a>
                 <a href="#features" className="text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-950">
-                  Product Roadmap
+                  Features
                 </a>
                 <a href="https://springvox.com" target="_blank" className="text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-950">
-                  Global Network
+                  SpringVox
                 </a>
               </nav>
             </div>

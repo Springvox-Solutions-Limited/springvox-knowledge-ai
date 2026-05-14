@@ -27,7 +27,7 @@ import {
 import { supabase } from '@/src/lib/supabase';
 import { cn, truncate } from '@/src/lib/utils';
 import {
-  isManagerRole,
+  isWorkspaceAdminRole,
   type FeedbackRating,
   type UserProfile,
   type WorkspaceSettings,
@@ -56,10 +56,10 @@ type Message = {
 };
 
 const EMPTY_PROMPTS = [
-  'Summarize the uploaded documents',
+  'Summarise the uploaded documents',
   'What services are mentioned?',
-  'What are the main policies?',
-  'What should I know from these documents?',
+  'What policies should I know?',
+  'What are the key points?',
 ];
 
 const EXTRA_FEEDBACK_OPTIONS: FeedbackRating[] = ['wrong', 'outdated', 'needs_more_detail'];
@@ -516,7 +516,7 @@ export default function ChatPage() {
   const companyName = workspace?.name || 'your company';
   const welcomeMessage =
     workspace?.welcome_message ||
-    `Ask questions from ${companyName}'s approved knowledge base.`;
+    `Ask questions from ${companyName}'s approved documents.`;
 
   return (
     <>
@@ -538,13 +538,13 @@ export default function ChatPage() {
               <div className="space-y-3">
                 <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                   {isViewer
-                    ? `Ask questions from ${companyName}'s approved knowledge base.`
-                    : `Test how users will experience ${companyName}.`}
+                    ? 'How can I help?'
+                    : `Ask questions from ${companyName}'s approved documents.`}
                 </h2>
                 <p className="max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
                   {isViewer
-                    ? welcomeMessage
-                    : `${welcomeMessage} This is the same experience end users will rely on when they ask questions.`}
+                    ? "Ask questions from your organisation's approved documents."
+                    : `${welcomeMessage} This is the same chat experience your team will use every day.`}
                 </p>
               </div>
               <div className="grid w-full max-w-3xl gap-3 md:grid-cols-2">
@@ -681,7 +681,7 @@ export default function ChatPage() {
                 ref={textareaRef}
                 rows={1}
                 className="max-h-48 min-h-[56px] w-full resize-none bg-transparent px-5 py-4 pr-24 text-sm leading-7 text-slate-900 outline-none placeholder:text-slate-400"
-                placeholder="Ask anything from your approved documents..."
+                placeholder="Ask a question about your company documents..."
                 value={input}
                 onChange={(event) => {
                   setInput(event.target.value);
@@ -722,7 +722,7 @@ export default function ChatPage() {
           <p className="mt-3 text-center text-xs text-slate-400">
             {isViewer
               ? 'Answers come from approved documents when support is available.'
-              : 'Streaming answers stay grounded in approved workspace documents.'}
+              : 'Answers are based on uploaded company documents and may include sources.'}
           </p>
         </div>
       </div>
@@ -733,7 +733,7 @@ export default function ChatPage() {
         citation={sourceDetails}
         loading={sourceLoading}
         error={sourceError}
-        managerView={!!profile && isManagerRole(profile.role)}
+        managerView={!!profile && isWorkspaceAdminRole(profile.role)}
       />
     </>
   );
@@ -746,10 +746,10 @@ function getVisibleStatus(statusMessage: string, isViewer: boolean, isActive: bo
 
   if (isViewer && !isActive) {
     if (statusMessage.toLowerCase().includes('no supported answer')) {
-      return 'Answer not found in approved documents.';
+      return "I couldn't find an answer in the uploaded documents.";
     }
 
-    return 'Answer prepared from approved documents.';
+    return 'Answer prepared from uploaded documents.';
   }
 
   return statusMessage || 'Thinking...';
@@ -804,9 +804,9 @@ function CitationList({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-900">{citation.filename}</p>
-                      <p className="mt-1 text-[11px] text-slate-500">Chunk {citation.chunk_index}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">Section {citation.chunk_index}</p>
                     </div>
-                    <span className="text-[11px] text-teal-600">View source</span>
+                    <span className="text-[11px] text-teal-600">Open source</span>
                   </div>
                   <p className="mt-2 text-xs leading-6 text-slate-500">
                     {truncate(citation.preview, 120)}
@@ -976,7 +976,7 @@ function SourceDrawer({
             <div className="space-y-5">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Section</p>
-                <p className="mt-2 text-sm text-slate-800">Chunk {citation?.chunk_index || 0}</p>
+                <p className="mt-2 text-sm text-slate-800">Section {citation?.chunk_index || 0}</p>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -1016,7 +1016,7 @@ function SourceDrawer({
                   <div className="mt-3 space-y-2 text-sm text-slate-600">
                     <p>Document ID: {citation?.document_id || 'Unknown'}</p>
                     <p>Uploaded by: {citation?.uploaded_by || 'Unknown'}</p>
-                    <p>Chunk index: {citation?.chunk_index || 0}</p>
+                    <p>Section number: {citation?.chunk_index || 0}</p>
                   </div>
                 </div>
               )}

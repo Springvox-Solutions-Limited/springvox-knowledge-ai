@@ -1,13 +1,6 @@
 import Link from 'next/link';
 import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 
-const navItems = [
-  { href: '#how-it-works', label: 'How it works' },
-  { href: '#features', label: 'Features' },
-  { href: '#use-cases', label: 'Use cases' },
-  { href: '#roadmap', label: 'Roadmap' },
-];
-
 export function LandingNavbar() {
   return (
     <nav className="fixed inset-x-0 top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100">
@@ -19,9 +12,9 @@ export function LandingNavbar() {
           
           <div className="hidden lg:flex items-center gap-10">
             {[
-              { label: 'Solutions', href: '#capabilities' },
-              { label: 'Process', href: '#pipeline' },
-              { label: 'Industries', href: '#sectors' }
+              { label: 'How It Works', href: '#how-it-works' },
+              { label: 'Features', href: '#features' },
+              { label: 'Who It Is For', href: '#use-cases' }
             ].map((item) => (
               <Link 
                 key={item.label}
@@ -39,13 +32,13 @@ export function LandingNavbar() {
             href="/login" 
             className="hidden md:block text-xs font-bold uppercase tracking-[0.15em] text-slate-950 hover:text-slate-600 transition-colors"
           >
-            Sign In
+            Login
           </Link>
           <Link
             href="/register"
             className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] !text-white shadow-2xl shadow-slate-950/20 transition-all hover:bg-slate-800 hover:scale-[1.05] active:scale-95 sm:px-6 sm:py-3 sm:text-xs sm:tracking-[0.15em] md:px-8 md:py-3.5"
           >
-            Get Started
+            Create Workspace
           </Link>
         </div>
       </div>

@@ -1,12 +1,12 @@
 import { deleteDocumentVectors } from '@/src/lib/qdrant';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { MANAGER_ROLES } from '@/src/lib/workspace';
+import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
 export async function DELETE(req: Request) {
   try {
-    const { profile } = await getAuthenticatedUserWithProfile(req, MANAGER_ROLES);
+    const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
     const { searchParams } = new URL(req.url);
     const documentId = searchParams.get('id');
 
