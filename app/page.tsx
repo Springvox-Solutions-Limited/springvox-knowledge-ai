@@ -11,7 +11,7 @@ import { UseCasesSection } from '@/src/components/landing/UseCasesSection';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-slate-900 selection:bg-slate-900 selection:text-white">
+    <div className="public-shell selection:bg-slate-900 selection:text-white">
       <LandingNavbar />
       <main>
         <HeroSection />

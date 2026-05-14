@@ -1,7 +1,9 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { streamStrictAnswer, getEmbedding, STRICT_NO_ANSWER } from '@/src/lib/gemini';
 import { upsertKnowledgeGap } from '@/src/lib/knowledge-gaps';
 import { COLLECTION_NAME, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { ALL_ROLES, isWorkspaceAdminRole, type AnyAppRole } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -102,6 +104,7 @@ export async function POST(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req, ALL_ROLES);
     const { question } = await req.json();
+    await assertWorkspaceOperational(profile.workspace_id!);
 
     if (typeof question !== 'string' || !question.trim()) {
       return Response.json({ error: 'Question is required' }, { status: 400 });
@@ -317,12 +320,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected chat error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     console.error('Chat error:', error);
     return Response.json({ error: message }, { status });

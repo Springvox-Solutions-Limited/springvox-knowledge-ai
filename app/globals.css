@@ -10,7 +10,7 @@
 }
 
 :root {
-  --background: #f3f7fb;
+  --background: #f4f7fb;
   --foreground: #0f172a;
   --brand-navy: #0f172a;
   --brand-sidebar: #10233b;
@@ -21,6 +21,10 @@
   --brand-surface: #ffffff;
   --brand-surface-soft: #f8fbfd;
   --brand-text-soft: #64748b;
+  --brand-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  --brand-shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.05);
+  --brand-radius-lg: 1.5rem;
+  --brand-radius-xl: 1.75rem;
 }
 
 body {
@@ -139,23 +143,75 @@ a {
 }
 
 .admin-hero-card {
-  @apply overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] sm:p-8 lg:p-10;
+  @apply border-b border-slate-200 pb-5;
 }
 
 .admin-hero-title {
-  @apply text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl;
+  @apply text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl;
 }
 
 .admin-hero-copy {
-  @apply max-w-2xl text-sm font-medium text-slate-600 sm:text-base;
+  @apply max-w-2xl text-sm text-slate-600;
 }
 
 .admin-chip {
   @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500;
 }
 
+.app-button-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)] transition hover:bg-[#132744] disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+.app-button-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50;
+}
+
+.app-button-subtle {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-800 transition hover:border-cyan-300 hover:bg-cyan-100;
+}
+
+.app-table-wrap {
+  @apply max-w-full overflow-x-auto;
+}
+
+.app-table {
+  @apply min-w-full text-left;
+}
+
+.app-table thead tr {
+  @apply border-b border-slate-200 bg-slate-50/70;
+}
+
+.app-table th {
+  @apply px-5 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500;
+}
+
+.app-table td {
+  @apply px-5 py-4 align-middle;
+}
+
+.app-section-label {
+  @apply text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400;
+}
+
+.public-shell {
+  @apply min-h-screen bg-[#f4f7fb] text-slate-900;
+}
+
+.public-page-wrap {
+  @apply flex min-h-screen items-center justify-center bg-[#f4f7fb] px-4 py-8;
+}
+
+.public-card {
+  @apply rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)];
+}
+
+.public-panel {
+  @apply rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)];
+}
+
 .landing-panel {
-  @apply rounded-[28px] border border-white/10 bg-white/5 shadow-[0_20px_50px_rgba(15,23,42,0.2)] backdrop-blur-sm;
+  @apply rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)];
 }
 
 .lab-bg::before {

@@ -34,6 +34,7 @@ import {
 import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
 import { cn } from '@/src/lib/utils';
 import { isWorkspaceAdminRole, type UserProfile } from '@/src/lib/workspace';
+import { AppPageHeader } from '@/src/components/shared/AppPageHeader';
 
 type AnalyticsData = {
   workspace: { name: string; assistant_name: string | null } | null;
@@ -134,31 +135,21 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 lg:space-y-10">
-      {/* Header Section */}
-      <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">
-            <Activity size={12} />
-            Workspace analytics
-          </div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-            {data.workspace?.name || 'Workspace'} Dashboard
-          </h1>
-          <p className="text-sm font-medium text-slate-500 sm:text-base">
-            See how people are using your workspace and where they still need better answers.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+    <div className="admin-page">
+      <AppPageHeader
+        eyebrow="Analytics"
+        title={`${data.workspace?.name || 'Workspace'} analytics`}
+        subtitle="Track usage, answer coverage, and the questions that still need better document support."
+        aside={
           <div className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 shadow-sm">
             <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Answer coverage</p>
             <div className="flex items-center gap-2">
-              <span className="text-xl font-black text-slate-950">{healthScore}%</span>
+              <span className="text-xl font-bold text-slate-950">{healthScore}%</span>
               <TrendingUp size={14} className="text-emerald-500" />
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* KPI Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -168,13 +159,13 @@ export default function AnalyticsPage() {
           { label: 'Unanswered questions', value: data.summary.openKnowledgeGaps, icon: Search, sub: 'Needs more document coverage', trend: 'down' },
           { label: 'Answers with sources', value: `${gapRate ? 100 - gapRate : 0}%`, icon: ShieldCheck, sub: 'Supported by documents', trend: 'up' },
         ].map((kpi) => (
-          <div key={kpi.label} className="group relative rounded-[32px] border border-slate-200 bg-white p-7 shadow-sm transition-all hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-100">
-            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-all">
+          <div key={kpi.label} className="admin-kpi-card group relative transition-all hover:border-cyan-200 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-cyan-50 text-cyan-800 transition-all">
               <kpi.icon size={20} />
             </div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{kpi.label}</p>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black tracking-tight text-slate-950">{kpi.value}</span>
+              <span className="text-3xl font-bold tracking-tight text-slate-950">{kpi.value}</span>
               {kpi.trend && (
                 kpi.trend === 'up' ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />
               )}
@@ -187,7 +178,7 @@ export default function AnalyticsPage() {
       {/* Main Analytics Content */}
       <div className="grid gap-6 lg:grid-cols-[1fr,400px] lg:gap-10">
         {/* Line Chart Section */}
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
+        <div className="admin-shell-card p-6 sm:p-8 lg:p-10">
           <div className="mb-6 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100">
@@ -247,7 +238,7 @@ export default function AnalyticsPage() {
 
         {/* Pie Chart / Distribution Section */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
+          <div className="admin-shell-card p-6 sm:p-8 lg:p-10">
             <div className="mb-8">
               <h2 className="text-xl font-black tracking-tight text-slate-950">Answer summary</h2>
               <p className="text-sm font-medium text-slate-500">How often answers were supported by uploaded documents.</p>
@@ -291,7 +282,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8">
+          <div className="admin-shell-card p-6 sm:p-8">
             <h2 className="text-lg font-black tracking-tight text-slate-950">Users</h2>
             <div className="mt-6 space-y-3">
               {[
@@ -311,7 +302,7 @@ export default function AnalyticsPage() {
 
       {/* Bottom Activity Section */}
       <div className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr] xl:gap-10">
-        <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
+        <div className="admin-shell-card overflow-hidden p-6 sm:p-8 lg:p-10">
           <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-2xl font-black tracking-tight text-slate-950">Recent questions</h2>
             <Link href="/dashboard/chat" className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-950 transition-colors flex items-center gap-2">
@@ -323,7 +314,7 @@ export default function AnalyticsPage() {
             {data.recentQuestions.length === 0 ? (
               <p className="text-sm text-slate-500 italic">No activity recorded yet.</p>
             ) : (
-              <table className="w-full min-w-[680px] border-collapse text-left">
+              <table className="app-table w-full min-w-[680px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-slate-100 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                     <th className="pb-4 pr-4">Question</th>
@@ -371,7 +362,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[40px] sm:p-8 lg:p-10">
+        <div className="admin-shell-card p-6 sm:p-8 lg:p-10">
           <div className="mb-8">
             <h2 className="text-2xl font-black tracking-tight text-slate-950">Unanswered questions</h2>
             <p className="mt-1 text-sm font-medium text-slate-500">Questions that still need better document coverage.</p>
@@ -406,7 +397,7 @@ export default function AnalyticsPage() {
           </div>
           
           <div className="mt-8">
-            <Link href="/dashboard/knowledge-gaps" className="flex w-full items-center justify-center rounded-2xl bg-slate-950 py-4 text-xs font-bold uppercase tracking-widest !text-white transition-all hover:bg-slate-800">
+            <Link href="/dashboard/knowledge-gaps" className="app-button-primary flex w-full py-4 text-xs uppercase tracking-widest">
               View all unanswered questions
             </Link>
           </div>

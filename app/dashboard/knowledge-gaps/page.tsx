@@ -8,6 +8,7 @@ import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import { cn, truncate } from "@/src/lib/utils";
 import { isWorkspaceAdminRole, type UserProfile } from "@/src/lib/workspace";
+import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 
 type KnowledgeGap = {
   id: string;
@@ -133,22 +134,11 @@ export default function KnowledgeGapsPage() {
 
   return (
     <div className="admin-page">
-      <div className="admin-hero-card">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
-              Question review
-            </p>
-            <h1 className="admin-hero-title">
-              Unanswered questions
-            </h1>
-            <p className="admin-hero-copy">
-              Review questions that still need better document coverage and use them
-              to improve your workspace over time.
-            </p>
-          </div>
-        </div>
-      </div>
+      <AppPageHeader
+        eyebrow="Question Review"
+        title="Unanswered questions"
+        subtitle="Review the questions that still need better document coverage and use them to improve your workspace."
+      />
 
       <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
         <AdminSearchInput

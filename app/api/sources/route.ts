@@ -1,4 +1,6 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { ALL_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -6,6 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req, ALL_ROLES);
+    await assertWorkspaceOperational(profile.workspace_id!);
     const { searchParams } = new URL(req.url);
     const documentId = searchParams.get('documentId');
     const chunkIndex = Number(searchParams.get('chunkIndex'));
@@ -51,12 +54,7 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected source error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     console.error('Sources GET error:', error);
     return Response.json({ error: message }, { status });

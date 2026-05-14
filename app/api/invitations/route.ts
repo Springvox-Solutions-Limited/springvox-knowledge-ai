@@ -1,4 +1,6 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { ASSIGNABLE_ROLES, isWorkspaceAdminRole } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +13,7 @@ function buildInviteUrl(token: string) {
 export async function GET(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req);
+    await assertWorkspaceOperational(profile.workspace_id!);
 
     if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
@@ -35,12 +38,7 @@ export async function GET(req: Request) {
     return Response.json({ invitations });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected invitations error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     return Response.json({ error: message }, { status });
   }
@@ -49,6 +47,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req);
+    await assertWorkspaceOperational(profile.workspace_id!);
 
     if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
@@ -96,12 +95,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected invitation creation error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     return Response.json({ error: message }, { status });
   }

@@ -17,6 +17,7 @@ import { getAccessToken } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
 import Link from 'next/link';
+import { AppPageHeader } from '@/src/components/shared/AppPageHeader';
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -82,15 +83,11 @@ export default function UploadPage() {
 
   return (
     <div className="admin-page">
-      <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8 md:p-10">
-        <div className="space-y-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Upload documents</p>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Upload approved documents.</h1>
-          <p className="max-w-2xl text-sm leading-7 text-slate-500">
-            Add PDF or TXT files your team can ask questions from.
-          </p>
-        </div>
-      </div>
+      <AppPageHeader
+        eyebrow="Upload Documents"
+        title="Upload approved documents"
+        subtitle="Add PDF or TXT files your team can ask questions from."
+      />
 
       <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
          {[
@@ -159,16 +156,16 @@ export default function UploadPage() {
         <button
           onClick={handleUpload}
           disabled={!file || uploading}
-          className="flex w-full items-center justify-center gap-3 rounded-xl bg-slate-950 py-4 font-bold !text-white shadow-xl shadow-slate-950/10 transition-all hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-slate-950"
+          className="app-button-primary flex w-full py-4 disabled:hover:bg-slate-950"
         >
           {uploading ? (
             <>
-              <Loader2 className="animate-spin !text-white" size={18} />
+              <Loader2 className="animate-spin" size={18} />
               Preparing document...
             </>
           ) : (
             <>
-              <Zap size={18} className="!text-white" />
+              <Zap size={18} />
               Upload document
             </>
           )}

@@ -20,7 +20,10 @@ import { getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/au
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
 import {
+  getWorkspaceStatusMessage,
   getRoleLabel,
+  isPlatformAdminRole,
+  isWorkspaceRestrictedStatus,
   isWorkspaceAdminRole,
   type UserProfile,
   type WorkspaceSettings,
@@ -80,11 +83,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <div className="h-screen w-screen flex items-center justify-center font-mono text-[10px] tracking-widest text-slate-400 bg-white">INITIALIZING ENCRYPTION...</div>;
   }
 
+  const workspaceStatusMessage = workspace ? getWorkspaceStatusMessage(workspace.status) : null;
+  const workspaceBlocked =
+    Boolean(workspace && isWorkspaceRestrictedStatus(workspace.status)) &&
+    !isPlatformAdminRole(profile.role);
+
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-30 flex w-72 flex-col bg-slate-950 text-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:w-64 lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-30 flex w-72 flex-col bg-[#0d1f35] text-white shadow-2xl transition-transform duration-300 lg:static lg:z-auto lg:w-64 lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex-1 flex flex-col p-6">
@@ -97,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 imageClassName="h-10 w-auto max-w-[190px] object-contain object-left"
               />
               <div className="mt-5 flex items-center gap-2 px-1">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.45)]" />
                 <span className="block truncate text-[9px] font-bold uppercase tracking-[0.25em] text-slate-500">
                   {workspace?.name || 'Workspace'}
                 </span>
@@ -116,6 +124,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <p className="mb-4 ml-6 text-[10px] font-bold uppercase tracking-widest text-slate-600">
               {isWorkspaceAdminRole(profile.role) ? 'Workspace Admin' : 'Workspace User'}
             </p>
+            {isPlatformAdminRole(profile.role) && (
+              <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3">
+                <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-200/80">
+                  Quick Switch
+                </p>
+                <Link
+                  href="/platform"
+                  onClick={() => setSidebarOpen(false)}
+                  className="mt-3 flex items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/15"
+                >
+                  <span>Platform Console</span>
+                  <span>→</span>
+                </Link>
+              </div>
+            )}
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -124,14 +147,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center space-x-3 rounded-xl px-4 py-3.5 text-sm font-bold transition-all group",
+                    "flex items-center space-x-3 rounded-xl border px-4 py-3.5 text-sm font-bold transition-all group",
                     isActive 
-                      ? "bg-white text-slate-950 shadow-lg" 
-                      : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                      ? "border-cyan-400/30 bg-cyan-400/12 text-white shadow-[inset_0_0_0_1px_rgba(34,211,238,0.08)]" 
+                      : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
                   )}
                 >
-                  <item.icon size={18} className={cn("transition-all duration-300", isActive ? "text-slate-950" : "text-slate-500 group-hover:text-slate-300")} />
-                  <span className={cn("transition-colors", isActive ? "text-slate-950" : "text-slate-400 group-hover:text-slate-200")}>{item.name}</span>
+                  <item.icon size={18} className={cn("transition-all duration-300", isActive ? "text-cyan-200" : "text-slate-500 group-hover:text-slate-300")} />
+                  <span className={cn("transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{item.name}</span>
                 </Link>
               );
             })}
@@ -140,7 +163,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="mt-auto pt-6 border-t border-white/5">
              <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3 rounded-2xl bg-slate-900 px-4 py-3 border border-white/5 transition-all">
-                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-[11px] font-bold text-white shadow-sm border border-white/5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#132744] text-[11px] font-bold text-white shadow-sm border border-white/5">
                    {(workspace?.name || user.email || 'S').slice(0, 1).toUpperCase()}
                  </div>
                  <div className="min-w-0 flex-1">
@@ -188,6 +211,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
             <div className="flex items-center gap-4">
+                {isPlatformAdminRole(profile.role) && (
+                  <Link
+                    href="/platform"
+                    className="hidden rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 sm:inline-flex"
+                  >
+                    Platform Console
+                  </Link>
+                )}
                 <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/50 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     System Online
@@ -205,9 +236,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "whitespace-nowrap rounded-xl px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all",
+                    "whitespace-nowrap rounded-xl border px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all",
                     isActive
-                      ? "bg-slate-950 text-white shadow-md"
+                      ? "border-cyan-300 bg-cyan-50 text-cyan-800 shadow-sm"
                       : "bg-slate-50 text-slate-500 border border-slate-100"
                   )}
                 >
@@ -220,7 +251,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
           <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 md:p-10">
-              {children}
+              {workspaceBlocked ? (
+                <div className="admin-page">
+                  <div className="admin-hero-card border border-amber-200 bg-gradient-to-br from-white via-amber-50/70 to-slate-50">
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-700/70">
+                        Workspace Access Restricted
+                      </p>
+                      <h1 className="admin-hero-title text-slate-950">
+                        {workspace?.name} is currently {workspace?.status}.
+                      </h1>
+                      <p className="max-w-2xl text-sm font-medium leading-7 text-slate-600 sm:text-base">
+                        {workspaceStatusMessage}
+                      </p>
+                      <p className="text-xs font-medium text-slate-500">
+                        Tenant uploads, chat, invites, settings updates, and document management are blocked until SpringVox reactivates this workspace.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                children
+              )}
           </div>
         </div>
       </main>

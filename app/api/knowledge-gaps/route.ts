@@ -1,5 +1,7 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { KNOWLEDGE_GAP_STATUSES } from '@/src/lib/knowledge-gaps';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -7,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
+    await assertWorkspaceOperational(profile.workspace_id!);
     const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
@@ -23,12 +26,7 @@ export async function GET(req: Request) {
     return Response.json({ knowledgeGaps: data || [] });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected knowledge gap error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     console.error('Knowledge gaps GET error:', error);
     return Response.json({ error: message }, { status });
@@ -38,6 +36,7 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
+    await assertWorkspaceOperational(profile.workspace_id!);
     const body = await req.json();
     const gapId = typeof body.id === 'string' ? body.id : '';
     const status = typeof body.status === 'string' ? body.status : '';
@@ -77,12 +76,7 @@ export async function PATCH(req: Request) {
     return Response.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected knowledge gap update error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     console.error('Knowledge gaps PATCH error:', error);
     return Response.json({ error: message }, { status });

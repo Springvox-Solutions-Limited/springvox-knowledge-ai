@@ -1,5 +1,7 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { STRICT_NO_ANSWER } from '@/src/lib/gemini';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -7,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
+    await assertWorkspaceOperational(profile.workspace_id!);
     const supabase = getSupabaseAdmin();
     const workspaceId = profile.workspace_id!;
     const since = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString();
@@ -133,12 +136,7 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected analytics error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     return Response.json({ error: message }, { status });
   }

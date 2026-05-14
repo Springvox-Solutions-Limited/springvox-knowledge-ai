@@ -3,16 +3,16 @@ import { CheckCircle2, FileText, MessageSquareText, ShieldCheck } from 'lucide-r
 export function ProductMockup() {
   return (
     <div className="relative mx-auto w-full max-w-[680px]">
-      <div className="absolute inset-x-4 top-4 h-40 rounded-full bg-slate-200/50 blur-[90px] sm:inset-x-10 sm:top-6 sm:h-48 sm:blur-[120px]" />
+      <div className="absolute inset-x-4 top-4 h-40 rounded-full bg-cyan-100/70 blur-[90px] sm:inset-x-10 sm:top-6 sm:h-48 sm:blur-[120px]" />
       
-      <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white p-2 shadow-[0_40px_100px_rgba(0,0,0,0.1)] sm:rounded-[40px]">
+      <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white p-2 shadow-[0_24px_60px_rgba(15,23,42,0.1)] sm:rounded-[40px]">
         <div className="overflow-hidden rounded-[24px] border border-slate-100 bg-slate-50/30 p-3 sm:rounded-[32px] sm:p-6">
           <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">Company workspace</p>
               <p className="mt-1 text-sm font-black text-slate-950">Approved document library</p>
             </div>
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-950 bg-slate-950 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-white">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-cyan-800">
               <CheckCircle2 size={12} />
               Ready for your team
             </div>
@@ -26,7 +26,7 @@ export function ProductMockup() {
               </div>
 
               <div className="space-y-5">
-                <div className="ml-auto max-w-[92%] rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-slate-950/10 sm:max-w-[85%] sm:px-5">
+                <div className="ml-auto max-w-[92%] rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white shadow-lg shadow-slate-950/10 sm:max-w-[85%] sm:px-5">
                   What does our onboarding policy say new staff should complete in week one?
                 </div>
 

@@ -11,11 +11,14 @@ import {
   type WorkspaceSettings,
 } from "@/src/lib/workspace";
 import { cn } from "@/src/lib/utils";
+import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 
 const EMPTY_SETTINGS: WorkspaceSettings = {
   id: "",
   name: "",
   slug: "",
+  status: "active",
+  plan: "pilot",
   logo_url: "",
   primary_color: "#14B8A6",
   welcome_message: "",
@@ -26,8 +29,7 @@ const EMPTY_SETTINGS: WorkspaceSettings = {
   updated_at: null,
 };
 
-const fieldClassName =
-  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-950 focus:ring-4 focus:ring-slate-100";
+const fieldClassName = "admin-input";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -126,20 +128,11 @@ export default function SettingsPage() {
 
   return (
     <div className="admin-page">
-      <div className="admin-hero-card">
-        <div className="space-y-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
-            Configuration
-          </p>
-          <h1 className="admin-hero-title">
-            Workspace Settings
-          </h1>
-          <p className="admin-hero-copy mt-3">
-            Customize your workspace identity, branding, and AI assistant
-            persona.
-          </p>
-        </div>
-      </div>
+      <AppPageHeader
+        eyebrow="Configuration"
+        title="Workspace settings"
+        subtitle="Customize your workspace identity, branding, and assistant persona."
+      />
 
       {loading ? (
         <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-8 text-sm text-slate-600 font-medium">
@@ -326,8 +319,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-100">
-                  <p className="text-[10px] font-bold text-blue-800 leading-relaxed">
+                <div className="mt-6 rounded-xl border border-cyan-100 bg-cyan-50 p-4">
+                  <p className="text-[10px] font-bold leading-relaxed text-cyan-800">
                     Changes made here will propagate across all user sessions
                     immediately upon saving.
                   </p>
@@ -359,12 +352,12 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl bg-slate-950 px-8 py-4 text-sm font-bold !text-white shadow-xl shadow-slate-950/20 transition-all hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-950/30 disabled:opacity-40 active:scale-95 sm:w-auto"
+              className="app-button-primary inline-flex w-full px-8 py-4 sm:w-auto"
             >
               {saving ? (
-                <Loader2 size={16} className="animate-spin !text-white" />
+                <Loader2 size={16} className="animate-spin" />
               ) : (
-                <Save size={16} className="!text-white" />
+                <Save size={16} />
               )}
               {saving ? "Saving..." : "Save Settings"}
             </button>

@@ -15,6 +15,7 @@ import {
 import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
 import { type UserProfile } from "@/src/lib/workspace";
+import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 
 type AnalyticsSummary = {
   totalDocuments: number;
@@ -166,30 +167,21 @@ export default function DashboardOverview() {
 
   return (
     <div className="admin-page">
-      <div className="admin-hero-card bg-gradient-to-br from-white via-white to-slate-50">
-        <div className="space-y-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
-            Overview
-          </p>
-          <h1 className="admin-hero-title">
-            Welcome to {workspaceName}.
-          </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-slate-600 font-medium sm:text-base lg:text-lg">
-            Track how your workspace is being used, what documents are available,
-            and where your team still needs better answers.
-          </p>
-        </div>
-      </div>
+      <AppPageHeader
+        eyebrow="Overview"
+        title={`Welcome to ${workspaceName}.`}
+        subtitle="Track workspace usage, document readiness, and the areas where your team still needs better answers."
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <Link
             key={card.title}
             href="/dashboard/analytics"
-            className="admin-kpi-card border border-slate-200 bg-white group transition-all hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-950/10"
+          className="admin-kpi-card border border-slate-200 bg-white group transition-all hover:border-cyan-200 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
           >
             <div className="mb-6 flex items-center justify-between">
-              <div className="rounded-xl bg-slate-50 p-3.5 text-slate-950 border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-all duration-300">
+              <div className="rounded-xl border border-slate-100 bg-cyan-50 p-3.5 text-cyan-800 transition-all duration-300 group-hover:bg-cyan-100">
                 <card.icon size={20} strokeWidth={1.5} />
               </div>
               <ArrowUpRight
@@ -247,7 +239,7 @@ export default function DashboardOverview() {
               {recentQuestions.slice(0, 5).map((question, idx) => (
                 <div
                   key={question.id}
-                  className="rounded-xl border border-slate-100 bg-gradient-to-r from-slate-50 to-white p-4 hover:border-slate-200 hover:shadow-md transition-all group"
+                  className="rounded-xl border border-slate-100 bg-slate-50/70 p-4 transition-all group hover:border-slate-200 hover:bg-white hover:shadow-sm"
                 >
                   <div className="flex gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 font-bold text-xs">
@@ -354,7 +346,7 @@ export default function DashboardOverview() {
       <div className="grid gap-6 xl:grid-cols-[1fr_1.4fr]">
         <Link
           href="/dashboard/knowledge-gaps"
-          className="admin-shell-card border border-slate-200 bg-gradient-to-br from-red-50 to-white p-6 transition-all group hover:border-red-200 hover:shadow-lg sm:p-8 lg:p-10"
+          className="admin-shell-card border border-slate-200 bg-white p-6 transition-all group hover:border-red-200 hover:shadow-sm sm:p-8 lg:p-10"
         >
           <div className="flex items-center justify-between mb-6">
             <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-red-600">

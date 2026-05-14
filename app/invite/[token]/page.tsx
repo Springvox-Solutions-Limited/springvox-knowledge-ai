@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Loader2, Mail, ShieldCheck } from 'lucide-react';
 
-import { getAccessToken } from '@/src/lib/auth-client';
+import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
-import { getRoleLabel, type AnyAppRole } from '@/src/lib/workspace';
+import { getDefaultRouteForRole, getRoleLabel, type AnyAppRole } from '@/src/lib/workspace';
 
 type InviteDetails = {
   id: string;
@@ -20,6 +21,7 @@ type InviteDetails = {
 };
 
 export default function InvitePage({ params }: { params: Promise<{ token: string }> }) {
+  const router = useRouter();
   const [token, setToken] = useState('');
   const [details, setDetails] = useState<InviteDetails | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -80,7 +82,11 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
         throw new Error(data.error || 'Unable to accept invitation');
       }
 
-      setMessage('Invitation accepted. You can now continue to your dashboard.');
+      const profile = await getCurrentUserProfile();
+      const nextRoute = profile ? getDefaultRouteForRole(profile.role) : '/dashboard/chat';
+      setMessage('Invitation accepted. Redirecting to your workspace.');
+      router.push(nextRoute);
+      router.refresh();
     } catch (acceptError) {
       setError(acceptError instanceof Error ? acceptError.message : 'Unable to accept invitation');
     } finally {
@@ -89,8 +95,8 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_25%),linear-gradient(180deg,#e9f6fb_0%,#f3f7fb_100%)] px-4 py-10 text-slate-900 sm:py-16">
-      <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-900/10 sm:p-8">
+    <div className="public-shell px-4 py-10 text-slate-900 sm:py-16">
+      <div className="public-card mx-auto max-w-2xl p-5 sm:p-8">
         {loading ? (
           <div className="flex items-center gap-3 text-sm text-slate-500">
             <Loader2 size={18} className="animate-spin text-cyan-700" />
@@ -130,10 +136,10 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
                 </p>
               ) : (
                 <div className="mt-4 flex flex-wrap gap-3">
-                  <Link href="/login" className="rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                  <Link href="/login" className="app-button-secondary px-4 py-3">
                     Login
                   </Link>
-                  <Link href={`/register?invite=${encodeURIComponent(token)}`} className="rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950">
+                  <Link href={`/register?invite=${encodeURIComponent(token)}`} className="app-button-primary px-4 py-3">
                     Create account
                   </Link>
                 </div>
@@ -155,13 +161,13 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
                   type="button"
                   onClick={acceptInvitation}
                   disabled={!userEmail || accepting}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 disabled:opacity-40"
+                  className="app-button-primary disabled:opacity-40"
                 >
                   {accepting ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
                   Accept invitation
                 </button>
-                <Link href="/dashboard" className="rounded-xl border border-slate-200 px-5 py-3 text-sm text-slate-700">
-                  Go to dashboard
+                <Link href="/login" className="app-button-secondary px-5 py-3">
+                  Go to login
                 </Link>
               </div>
             </div>

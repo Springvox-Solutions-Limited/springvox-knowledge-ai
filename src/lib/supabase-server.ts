@@ -60,23 +60,41 @@ export async function getAuthenticatedUserWithProfile(
   allowedRoles?: AnyAppRole[],
 ): Promise<{ user: User; profile: UserProfile }> {
   const user = await getAuthenticatedUser(request);
+  const profile = await getUserProfileById(user.id);
+
+  if (!profile.workspace_id) {
+    throw new Error('Workspace not assigned');
+  }
+
+  if (allowedRoles && !allowedRoles.includes(profile.role)) {
+    throw new Error('Forbidden');
+  }
+
+  return { user, profile };
+}
+
+export async function getUserProfileById(userId: string): Promise<UserProfile> {
   const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from('profiles')
     .select('id, email, full_name, role, workspace_id')
-    .eq('id', user.id)
+    .eq('id', userId)
     .single();
 
   if (error || !data) {
     throw new Error('Profile not found');
   }
 
-  const profile = data as UserProfile;
+  return data as UserProfile;
+}
 
-  if (!profile.workspace_id) {
-    throw new Error('Workspace not assigned');
-  }
+export async function getAuthenticatedUserWithAnyProfile(
+  request: Request,
+  allowedRoles?: AnyAppRole[],
+): Promise<{ user: User; profile: UserProfile }> {
+  const user = await getAuthenticatedUser(request);
+  const profile = await getUserProfileById(user.id);
 
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
     throw new Error('Forbidden');

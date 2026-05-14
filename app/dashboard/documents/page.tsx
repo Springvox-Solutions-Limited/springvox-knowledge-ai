@@ -16,6 +16,7 @@ import { cn } from "@/src/lib/utils";
 import { type UserProfile } from "@/src/lib/workspace";
 import Link from "next/link";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
+import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 
 type DocumentRecord = {
   id: string;
@@ -106,21 +107,11 @@ export default function DocumentsPage() {
 
   return (
     <div className="admin-page">
-      <div className="admin-hero-card">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
-              Documents
-            </p>
-            <h1 className="admin-hero-title">
-              Company documents
-            </h1>
-            <p className="admin-hero-copy">
-              Manage uploaded documents and track which files are ready for questions.
-            </p>
-          </div>
-        </div>
-      </div>
+      <AppPageHeader
+        eyebrow="Documents"
+        title="Company documents"
+        subtitle="Manage uploaded documents and track which files are ready for questions."
+      />
 
       <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
         <AdminSearchInput
@@ -131,9 +122,9 @@ export default function DocumentsPage() {
         />
         <Link
           href="/dashboard/upload"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold !text-white shadow-xl shadow-slate-950/20 transition-all hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-950/30 active:scale-95 whitespace-nowrap"
+          className="app-button-primary whitespace-nowrap px-6 py-3"
         >
-          <Upload size={18} className="!text-white" />
+          <Upload size={18} />
           Upload document
         </Link>
       </div>

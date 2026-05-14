@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Building2, Loader2, Mail, ShieldCheck, UserPlus } from "lucide-react";
 
-import { getRoleLabel, type AnyAppRole } from "@/src/lib/workspace";
+import { getDefaultRouteForRole, getRoleLabel, type AnyAppRole } from "@/src/lib/workspace";
 import { supabase } from "@/src/lib/supabase";
 import { slugifyWorkspaceName } from "@/src/lib/onboarding";
+import { getCurrentUserProfile } from "@/src/lib/auth-client";
 
 type InviteDetails = {
   id: string;
@@ -165,7 +166,8 @@ export default function WorkspaceOnboardingForm() {
       }
 
       setSuccess("Workspace created. Redirecting to your dashboard...");
-      router.push("/dashboard");
+      const profile = await getCurrentUserProfile();
+      router.push(profile ? getDefaultRouteForRole(profile.role) : "/dashboard");
       router.refresh();
     } catch (createError) {
       setError(
@@ -236,7 +238,8 @@ export default function WorkspaceOnboardingForm() {
       }
 
       setSuccess("Invitation accepted. Redirecting to workspace chat...");
-      router.push("/dashboard/chat");
+      const profile = await getCurrentUserProfile();
+      router.push(profile ? getDefaultRouteForRole(profile.role) : "/dashboard/chat");
       router.refresh();
     } catch (inviteError) {
       setError(
@@ -273,14 +276,14 @@ export default function WorkspaceOnboardingForm() {
   }
 
   return (
-    <div className="w-full max-w-3xl rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.08)] sm:p-8">
+    <div className="public-card w-full max-w-3xl p-5 sm:p-8">
       <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6">
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
               Secure onboarding
             </p>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
               {mode === "join" ? "Join with invitation" : "Create your company workspace"}
             </h1>
             <p className="text-sm leading-7 text-slate-600">
@@ -290,7 +293,7 @@ export default function WorkspaceOnboardingForm() {
             </p>
           </div>
 
-          <div className="flex gap-2 rounded-2xl bg-slate-100 p-1">
+          <div className="flex gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
             <button
               type="button"
               onClick={() => {
@@ -299,8 +302,8 @@ export default function WorkspaceOnboardingForm() {
               }}
               className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 mode === "create"
-                  ? "bg-white text-slate-950 shadow-sm"
-                  : "text-slate-500"
+                    ? "bg-white text-slate-950 shadow-sm"
+                    : "text-slate-500"
               }`}
             >
               Create workspace
@@ -310,8 +313,8 @@ export default function WorkspaceOnboardingForm() {
               onClick={() => setMode("join")}
               className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 mode === "join"
-                  ? "bg-white text-slate-950 shadow-sm"
-                  : "text-slate-500"
+                    ? "bg-white text-slate-950 shadow-sm"
+                    : "text-slate-500"
               }`}
             >
               Join with invite
@@ -411,7 +414,7 @@ export default function WorkspaceOnboardingForm() {
               <button
                 type="submit"
                 disabled={loading || createDisabled}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-4 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-40"
+                className="app-button-primary flex w-full py-4"
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <Building2 size={18} />}
                 Create company workspace
@@ -445,7 +448,7 @@ export default function WorkspaceOnboardingForm() {
                   <button
                     type="button"
                     onClick={handleInviteLinkSubmit}
-                    className="w-full rounded-xl border border-slate-200 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="app-button-secondary w-full py-3"
                   >
                     Continue with invite
                   </button>
@@ -475,7 +478,7 @@ export default function WorkspaceOnboardingForm() {
                   <button
                     type="submit"
                     disabled={loading || !inviteDetails}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 py-4 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-40"
+                    className="app-button-primary flex w-full py-4"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
                     Join with invitation
@@ -498,7 +501,7 @@ export default function WorkspaceOnboardingForm() {
           )}
         </div>
 
-        <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5 sm:p-6">
+        <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5 sm:p-6">
           <div className="mb-6 flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-sm">
               {mode === "join" ? <Mail size={20} /> : <ShieldCheck size={20} />}

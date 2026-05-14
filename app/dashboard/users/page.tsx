@@ -22,6 +22,7 @@ import {
   type AppRole,
   type UserProfile,
 } from "@/src/lib/workspace";
+import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 
 type ManagedUser = {
   id: string;
@@ -253,22 +254,11 @@ export default function UsersPage() {
 
   return (
     <div className="admin-page">
-      <div className="admin-hero-card">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-400">
-              Access Control
-            </p>
-            <h1 className="admin-hero-title">
-              Workspace Users
-            </h1>
-            <p className="admin-hero-copy">
-              Manage user access levels, permissions, and workspace invitations
-              in a unified view.
-            </p>
-          </div>
-        </div>
-      </div>
+      <AppPageHeader
+        eyebrow="Access Control"
+        title="Workspace users"
+        subtitle="Manage roles, permissions, and workspace invitations in one place."
+      />
 
       <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
         <button
@@ -277,9 +267,9 @@ export default function UsersPage() {
             setInviteOpen(true);
             setCreatedInviteUrl(null);
           }}
-          className="inline-flex shrink-0 items-center justify-center gap-2.5 rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold !text-white shadow-xl shadow-slate-950/20 transition-all hover:bg-slate-800 hover:shadow-2xl hover:shadow-slate-950/30 active:scale-95 whitespace-nowrap"
+          className="app-button-primary whitespace-nowrap px-6 py-3"
         >
-          <MailPlus size={18} className="!text-white" />
+          <MailPlus size={18} />
           Invite user
         </button>
         <AdminSearchInput
@@ -533,7 +523,7 @@ export default function UsersPage() {
 
       {confirmState && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
             <div className="flex flex-col items-center text-center">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
                 <Shield size={28} strokeWidth={1.5} />
@@ -574,7 +564,7 @@ export default function UsersPage() {
 
       {inviteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-xl font-bold tracking-tight text-slate-950">

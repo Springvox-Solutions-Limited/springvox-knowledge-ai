@@ -7,14 +7,14 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="border-y border-slate-100 bg-slate-50/50 py-16 sm:py-24 lg:py-40">
+    <section id="how-it-works" className="border-y border-slate-200 bg-white py-16 sm:py-24 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-center gap-10 lg:grid-cols-[0.8fr,1.2fr] lg:gap-20">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">How it works</p>
-            <h2 className="text-3xl font-black tracking-tighter text-slate-950 sm:text-5xl lg:text-6xl lg:leading-[1.1]">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl lg:leading-[1.1]">
               A simple way to turn <br />
-              <span className="text-slate-400">documents into answers.</span>
+              <span className="text-cyan-700">documents into answers.</span>
             </h2>
             <p className="mt-5 text-base font-medium leading-relaxed text-slate-500 sm:mt-8 sm:text-xl">
               SpringVox keeps the process straightforward for non-technical teams:

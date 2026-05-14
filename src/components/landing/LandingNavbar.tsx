@@ -3,7 +3,7 @@ import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 
 export function LandingNavbar() {
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100">
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/92 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-6 lg:gap-12">
           <Link href="/" className="flex h-10 min-w-0 items-center group sm:h-12">
@@ -36,7 +36,7 @@ export function LandingNavbar() {
           </Link>
           <Link
             href="/register"
-            className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] !text-white shadow-2xl shadow-slate-950/20 transition-all hover:bg-slate-800 hover:scale-[1.05] active:scale-95 sm:px-6 sm:py-3 sm:text-xs sm:tracking-[0.15em] md:px-8 md:py-3.5"
+            className="app-button-primary px-4 py-2.5 text-[11px] uppercase tracking-[0.12em] sm:px-6 sm:py-3 sm:text-xs sm:tracking-[0.15em] md:px-8 md:py-3.5"
           >
             Create Workspace
           </Link>

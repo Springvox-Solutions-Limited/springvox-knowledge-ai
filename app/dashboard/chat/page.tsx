@@ -32,6 +32,7 @@ import {
   type UserProfile,
   type WorkspaceSettings,
 } from '@/src/lib/workspace';
+import { AppPageHeader } from '@/src/components/shared/AppPageHeader';
 
 type Citation = {
   filename: string;
@@ -520,10 +521,18 @@ export default function ChatPage() {
 
   return (
     <>
+      <div className="admin-page">
+        {!isViewer && (
+          <AppPageHeader
+            eyebrow="Ask Questions"
+            title={assistantName}
+            subtitle={`Ask questions from ${companyName}'s approved documents.`}
+          />
+        )}
       <div className="mx-auto flex h-[calc(100vh-205px)] max-w-[920px] flex-col sm:h-[calc(100vh-165px)]">
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto scrollbar-hide rounded-[28px] bg-white px-3 pb-44 pt-6 shadow-[0_2px_12px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/60 sm:px-5"
+          className="flex-1 overflow-y-auto scrollbar-hide rounded-[28px] border border-slate-200 bg-white px-3 pb-44 pt-6 shadow-[0_12px_28px_rgba(15,23,42,0.05)] sm:px-5"
         >
           {historyLoading ? (
             <div className="flex items-center gap-3 pt-10 text-sm text-slate-500">
@@ -552,7 +561,7 @@ export default function ChatPage() {
                   <button
                     key={prompt}
                     onClick={() => setInput(prompt)}
-                    className="rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-left text-sm text-slate-700 transition-all hover:border-teal-300 hover:bg-teal-50/50"
+                    className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5 text-left text-sm text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50"
                   >
                     {prompt}
                   </button>
@@ -674,9 +683,9 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(249,250,251,0)_0%,rgba(249,250,251,0.92)_22%,rgba(249,250,251,1)_100%)] px-3 pb-5 pt-10 sm:px-5">
+        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(244,247,251,0)_0%,rgba(244,247,251,0.92)_22%,rgba(244,247,251,1)_100%)] px-3 pb-5 pt-10 sm:px-5">
           <form onSubmit={handleSend} className="relative mx-auto max-w-[920px] px-1 sm:px-0">
-            <div className={cn('rounded-[28px] border bg-white shadow-[0_4px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all duration-500', inputFocused ? 'border-teal-400/40 ring-4 ring-teal-100' : 'border-slate-200')}>            
+            <div className={cn('rounded-[28px] border bg-white shadow-[0_12px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl transition-all duration-500', inputFocused ? 'border-cyan-400/40 ring-4 ring-cyan-100' : 'border-slate-200')}>            
               <textarea
                 ref={textareaRef}
                 rows={1}
@@ -712,7 +721,7 @@ export default function ChatPage() {
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="rounded-full bg-slate-900 p-2.5 text-white shadow-sm transition-all hover:bg-slate-800 disabled:opacity-30"
+                  className="rounded-full bg-slate-900 p-2.5 text-white shadow-sm transition-all hover:bg-[#132744] disabled:opacity-30"
                 >
                   <Send size={16} />
                 </button>
@@ -725,6 +734,7 @@ export default function ChatPage() {
               : 'Answers are based on uploaded company documents and may include sources.'}
           </p>
         </div>
+      </div>
       </div>
 
       <SourceDrawer

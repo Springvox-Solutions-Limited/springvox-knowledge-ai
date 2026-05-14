@@ -44,7 +44,7 @@ export async function getCurrentWorkspaceSettings() {
 
   const { data, error } = await supabase
     .from('workspaces')
-    .select('id, name, slug, logo_url, primary_color, welcome_message, assistant_name, support_email, industry, website, updated_at')
+    .select('id, name, slug, status, plan, logo_url, primary_color, welcome_message, assistant_name, support_email, industry, website, updated_at')
     .eq('id', profile.workspace_id)
     .single();
 

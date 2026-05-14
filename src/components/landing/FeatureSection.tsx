@@ -34,9 +34,9 @@ export function FeatureSection() {
         <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-24">
           <div className="lg:sticky lg:top-40">
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">Features</p>
-            <h2 className="text-3xl font-black tracking-tighter text-slate-950 sm:text-5xl lg:text-6xl lg:leading-[1.1]">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl lg:leading-[1.1]">
               Built for everyday teams, <br />
-              <span className="text-slate-400">not just technical users.</span>
+              <span className="text-cyan-700">not just technical users.</span>
             </h2>
             <p className="mt-5 text-base font-medium leading-relaxed text-slate-500 sm:mt-8 sm:text-xl">
               SpringVox helps people find company answers faster without digging
@@ -56,7 +56,7 @@ export function FeatureSection() {
             {primaryFeatures.map((feature) => (
               <div
                 key={feature.title}
-                className="group rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm transition-all hover:border-slate-950 hover:shadow-2xl hover:shadow-slate-100 sm:rounded-[32px] sm:p-8 lg:p-10"
+                className="group rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-all hover:border-cyan-200 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-8 lg:p-10"
               >
                 <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-950 transition-colors group-hover:bg-slate-950 group-hover:text-white sm:mb-8 sm:h-14 sm:w-14">
                   <feature.icon size={24} />

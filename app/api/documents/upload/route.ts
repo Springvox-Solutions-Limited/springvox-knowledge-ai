@@ -1,3 +1,4 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { createRequire } from 'module';
 
 import {
@@ -11,6 +12,7 @@ import {
 import { getEmbedding } from '@/src/lib/gemini';
 import { COLLECTION_NAME, deleteDocumentVectors, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -34,6 +36,7 @@ export async function POST(req: Request) {
     const { user, profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
     authenticatedUserId = user.id;
     authenticatedWorkspaceId = profile.workspace_id;
+    await assertWorkspaceOperational(profile.workspace_id!);
     const supabase = getSupabaseAdmin();
     const formData = await req.formData();
     const file = formData.get('file');
@@ -187,15 +190,11 @@ export async function POST(req: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected upload error';
     const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-        : message.startsWith('Unsupported file type') ||
+      message.startsWith('Unsupported file type') ||
             message.startsWith('No text') ||
             message === 'Invalid filename'
           ? 400
-          : 500;
+          : getRequestErrorStatus(message);
 
     if (documentId && authenticatedUserId && authenticatedWorkspaceId) {
       const supabase = getSupabaseAdmin();

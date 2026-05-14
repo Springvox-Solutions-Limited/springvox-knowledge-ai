@@ -4,6 +4,8 @@ SpringVox Knowledge AI helps organisations upload approved documents so staff ca
 
 The product is designed to be easy for non-technical teams to understand. A company admin creates a workspace, uploads approved documents, invites staff, and gives the team a shared assistant that answers from the company’s own information and shows sources when available.
 
+The product now uses one unified SpringVox enterprise design system across public, tenant, and platform areas. The visual language is business-friendly, non-technical, and consistent, while platform operations remain clearly separate from tenant workspace usage.
+
 If an answer is not clearly supported by uploaded documents, the app returns:
 
 `I don't know based on the uploaded documents.`
@@ -32,6 +34,9 @@ Typical flow:
 - View usage and question activity
 - Manage users and roles
 - Customise company workspace name and assistant message
+- Platform Admin Console for platform-wide operations
+- Manual demo plan assignment by workspace
+- Workspace status controls for suspend, reactivate, trial, and inactive states
 
 ## Role Model
 
@@ -42,6 +47,12 @@ Typical flow:
 - manually assigned
 - not created through signup
 - reserved for platform-level access
+- can access the Platform Console at `/platform`
+- can view company and user metadata across the platform
+- can suspend or reactivate workspaces
+- can manually assign demo plans
+- does not read tenant document contents by default
+- does not view full private chat conversations by default
 
 ### Tenant Admin / Workspace Admin
 
@@ -84,7 +95,8 @@ Run these in order:
 3. `sql/tenant_branding_invites_analytics_feedback.sql`
 4. `sql/role_model_platform_tenant.sql`
 5. `sql/organisation_onboarding.sql`
-6. any later slug/security hardening SQL if added
+6. `sql/platform_admin_console.sql`
+7. any later slug/security hardening SQL if added
 
 Migration files:
 
@@ -93,6 +105,7 @@ Migration files:
 - [tenant_branding_invites_analytics_feedback.sql](/home/water/Downloads/springvox-knowledge-ai/sql/tenant_branding_invites_analytics_feedback.sql)
 - [role_model_platform_tenant.sql](/home/water/Downloads/springvox-knowledge-ai/sql/role_model_platform_tenant.sql)
 - [organisation_onboarding.sql](/home/water/Downloads/springvox-knowledge-ai/sql/organisation_onboarding.sql)
+- [platform_admin_console.sql](/home/water/Downloads/springvox-knowledge-ai/sql/platform_admin_console.sql)
 
 ## Manual Platform Admin Promotion
 
@@ -105,6 +118,37 @@ where email = 'MY_EMAIL_HERE';
 ```
 
 `platform_admin` is not created through public signup.
+
+## Platform Admin Console
+
+Platform Admin Console is for platform operations, not normal tenant usage.
+
+Routes:
+
+- `/platform`
+- `/platform/companies`
+- `/platform/companies/[id]`
+- `/platform/users`
+- `/platform/analytics`
+- `/platform/plans`
+
+Platform admin capabilities:
+
+- view all companies and workspaces
+- view platform-wide analytics and company usage summaries
+- review user lists per workspace
+- suspend, reactivate, or mark a workspace as trial or inactive
+- manually assign or change demo plans
+- add platform-only internal notes
+- review document metadata only
+
+Platform admin privacy constraints:
+
+- does not view uploaded document text or chunk contents through the platform console
+- does not view full private chat answers or conversations through the platform console
+- does not upload documents for tenants in this phase
+- does not use payment processing or billing checkout in this phase
+- does not add subdomains or custom domains in this phase
 
 ## Workspace Signup And Invites
 
@@ -218,12 +262,16 @@ npm run build
 - create Qdrant payload indexes for `workspace_id` and `document_id`
 - rotate exposed keys before production
 - test the signup, upload, chat, and invite flow
+- test the platform console and workspace suspension flow
 
 ## Permissions Summary
 
 ### Platform Admin
 
-- can access everything tenant admins can access
+- Platform Console
+- metadata-only company management
+- workspace status and plan controls
+- user role management for tenant_admin and viewer
 - is reserved for the SpringVox owner
 - is assigned manually only
 
@@ -237,6 +285,8 @@ npm run build
 - Users
 - Company Settings
 - Unanswered Questions
+- own workspace only
+- blocked when workspace status is `suspended` or `inactive`
 
 ### Viewer
 
@@ -244,6 +294,50 @@ npm run build
 - own chat history
 - sources for their workspace answers
 - feedback submission
+- own workspace only
+- blocked when workspace status is `suspended` or `inactive`
+
+## Demo Plans
+
+Plans are manual and informational only in this phase:
+
+- `pilot`
+- `starter`
+- `business`
+- `enterprise`
+
+Current plan system notes:
+
+- no Stripe
+- no Paystack
+- no Flutterwave
+- no checkout
+- no invoices
+- no payment enforcement yet
+- no hard plan limits enforced yet
+
+Suggested plan guidance shown in the UI:
+
+- `pilot`: 20 documents, 25 users, 1,000 monthly questions
+- `starter`: 50 documents, 50 users, 3,000 monthly questions
+- `business`: 200 documents, 250 users, 15,000 monthly questions
+- `enterprise`: custom
+
+## Workspace Status
+
+Workspace statuses:
+
+- `active`
+- `trial`
+- `suspended`
+- `inactive`
+
+Behavior:
+
+- `active` and `trial` work normally
+- `suspended` blocks tenant uploads, chat, invites, settings updates, and document management
+- `inactive` blocks tenant usage in the same way
+- suspension is reversible and does not delete tenant data
 
 ## Analytics
 

@@ -1,4 +1,6 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { FEEDBACK_RATINGS, WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -6,6 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req);
+    await assertWorkspaceOperational(profile.workspace_id!);
     const body = await req.json();
     const chatMessageId = typeof body.chatMessageId === 'string' ? body.chatMessageId : '';
     const rating = typeof body.rating === 'string' ? body.rating : '';
@@ -64,12 +67,7 @@ export async function POST(req: Request) {
     return Response.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected feedback error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     return Response.json({ error: message }, { status });
   }
@@ -78,6 +76,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
+    await assertWorkspaceOperational(profile.workspace_id!);
     const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
@@ -94,12 +93,7 @@ export async function GET(req: Request) {
     return Response.json({ feedback: data || [] });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected feedback lookup error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     return Response.json({ error: message }, { status });
   }

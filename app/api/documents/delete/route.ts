@@ -1,5 +1,7 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { deleteDocumentVectors } from '@/src/lib/qdrant';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
@@ -7,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function DELETE(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
+    await assertWorkspaceOperational(profile.workspace_id!);
     const { searchParams } = new URL(req.url);
     const documentId = searchParams.get('id');
 
@@ -58,12 +61,7 @@ export async function DELETE(req: Request) {
     return Response.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected delete error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     console.error('Delete error:', error);
     return Response.json({ error: message }, { status });

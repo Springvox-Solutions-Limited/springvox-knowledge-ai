@@ -1,4 +1,6 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { isWorkspaceAdminRole, type WorkspaceSettings } from '@/src/lib/workspace';
 import { isValidEmail, isValidUrl } from '@/src/lib/onboarding';
 
@@ -11,11 +13,12 @@ function isValidHexColor(value: string) {
 export async function GET(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req);
+    await assertWorkspaceOperational(profile.workspace_id!);
     const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
       .from('workspaces')
-      .select('id, name, slug, logo_url, primary_color, welcome_message, assistant_name, support_email, industry, website, updated_at')
+      .select('id, name, slug, status, plan, logo_url, primary_color, welcome_message, assistant_name, support_email, industry, website, updated_at')
       .eq('id', profile.workspace_id)
       .single();
 
@@ -26,12 +29,7 @@ export async function GET(req: Request) {
     return Response.json({ workspace: data as WorkspaceSettings });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected workspace settings error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     return Response.json({ error: message }, { status });
   }
@@ -40,6 +38,7 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const { profile } = await getAuthenticatedUserWithProfile(req);
+    await assertWorkspaceOperational(profile.workspace_id!);
 
     if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
@@ -90,7 +89,7 @@ export async function PATCH(req: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', profile.workspace_id)
-      .select('id, name, slug, logo_url, primary_color, welcome_message, assistant_name, support_email, industry, website, updated_at')
+      .select('id, name, slug, status, plan, logo_url, primary_color, welcome_message, assistant_name, support_email, industry, website, updated_at')
       .single();
 
     if (error || !data) {
@@ -100,12 +99,7 @@ export async function PATCH(req: Request) {
     return Response.json({ workspace: data as WorkspaceSettings });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected workspace settings update error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     return Response.json({ error: message }, { status });
   }

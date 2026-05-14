@@ -15,8 +15,8 @@ export function UseCasesSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center sm:mb-20">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">Who it is for</p>
-          <h2 className="text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
-            Helpful across many <span className="text-slate-400">types of organisations.</span>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            Helpful across many <span className="text-cyan-700">types of organisations.</span>
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-relaxed text-slate-500 sm:mt-6 sm:text-xl">
             SpringVox is designed for organisations that want staff to find
@@ -26,7 +26,7 @@ export function UseCasesSection() {
 
         <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
           {sectors.map((sector) => (
-            <div key={sector.name} className="group relative rounded-[28px] border border-slate-100 bg-slate-50/30 p-6 transition-all hover:border-slate-950 hover:bg-white hover:shadow-2xl hover:shadow-slate-100 sm:rounded-[32px] sm:p-8">
+            <div key={sector.name} className="group relative rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-all hover:border-cyan-200 sm:rounded-[32px] sm:p-8">
               <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-950 shadow-sm border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-colors">
                 <sector.icon size={20} />
               </div>

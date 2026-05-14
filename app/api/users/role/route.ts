@@ -1,4 +1,6 @@
+import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import {
   ASSIGNABLE_ROLES,
   isPlatformAdminRole,
@@ -10,6 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function PATCH(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req);
+    await assertWorkspaceOperational(profile.workspace_id!);
 
     if (!isWorkspaceAdminRole(profile.role)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
@@ -60,12 +63,7 @@ export async function PATCH(req: Request) {
     return Response.json({ success: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected role update error';
-    const status =
-      message === 'Unauthorized' || message === 'Missing bearer token'
-        ? 401
-        : message === 'Forbidden'
-          ? 403
-          : 500;
+    const status = getRequestErrorStatus(message);
 
     console.error('Users PATCH error:', error);
     return Response.json({ error: message }, { status });
