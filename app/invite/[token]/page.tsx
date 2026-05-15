@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Loader2, Mail, ShieldCheck } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AppButton } from '@/src/components/ui/app-button';
 
 import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
@@ -147,9 +149,9 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
             </div>
 
             {(message || error) && (
-              <div className={`rounded-2xl border p-4 text-sm ${error ? 'border-red-500/20 bg-red-500/5 text-red-300' : 'border-green-500/20 bg-green-500/5 text-green-300'}`}>
-                {error || message}
-              </div>
+              <Alert className={error ? 'rounded-2xl border-red-200 bg-red-50 text-red-700' : 'rounded-2xl border-emerald-200 bg-emerald-50 text-emerald-700'}>
+                <AlertDescription>{error || message}</AlertDescription>
+              </Alert>
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -157,18 +159,17 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
                 Expires {new Date(details.expires_at).toLocaleString()}
               </div>
               <div className="flex gap-3">
-                <button
+                <AppButton
                   type="button"
                   onClick={acceptInvitation}
                   disabled={!userEmail || accepting}
-                  className="app-button-primary disabled:opacity-40"
                 >
                   {accepting ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
                   Accept invitation
-                </button>
-                <Link href="/login" className="app-button-secondary px-5 py-3">
-                  Go to login
-                </Link>
+                </AppButton>
+                <AppButton asChild tone="secondary">
+                  <Link href="/login">Go to login</Link>
+                </AppButton>
               </div>
             </div>
           </div>

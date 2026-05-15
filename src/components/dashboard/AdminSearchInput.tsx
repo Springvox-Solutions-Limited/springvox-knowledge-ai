@@ -3,6 +3,7 @@
 import type { ChangeEvent } from "react";
 import { Search } from "lucide-react";
 
+import { Input } from "@/components/ui/input";
 import { cn } from "@/src/lib/utils";
 
 type AdminSearchInputProps = {
@@ -30,13 +31,13 @@ export function AdminSearchInput({
       <div className="pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center text-slate-400">
         <Search size={18} />
       </div>
-      <input
+      <Input
         type="text"
         value={value}
         onChange={onChange}
         placeholder={placeholder}
         className={cn(
-          "min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 outline-none placeholder:text-slate-400",
+          "min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 shadow-none ring-0 focus-visible:border-0 focus-visible:ring-0",
           inputClassName,
         )}
       />

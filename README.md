@@ -5,6 +5,7 @@ SpringVox Knowledge AI helps organisations upload approved documents so staff ca
 The product is designed to be easy for non-technical teams to understand. A company admin creates a workspace, uploads approved documents, invites staff, and gives the team a shared assistant that answers from the company’s own information and shows sources when available.
 
 The product now uses one unified SpringVox enterprise design system across public, tenant, and platform areas. The visual language is business-friendly, non-technical, and consistent, while platform operations remain clearly separate from tenant workspace usage.
+The frontend now uses `shadcn/ui` as the reusable UI primitive foundation, while SpringVox keeps its own branded layouts, spacing, and navy/teal/cyan enterprise styling.
 
 If an answer is not clearly supported by uploaded documents, the app returns:
 

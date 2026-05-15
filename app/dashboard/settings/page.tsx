@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { Loader2, Save, Settings2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import {
   isWorkspaceAdminRole,
@@ -12,6 +15,7 @@ import {
 } from "@/src/lib/workspace";
 import { cn } from "@/src/lib/utils";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
+import { AppButton } from "@/src/components/ui/app-button";
 
 const EMPTY_SETTINGS: WorkspaceSettings = {
   id: "",
@@ -29,7 +33,8 @@ const EMPTY_SETTINGS: WorkspaceSettings = {
   updated_at: null,
 };
 
-const fieldClassName = "admin-input";
+const fieldClassName =
+  "h-12 rounded-xl border-slate-200 bg-white text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -159,7 +164,7 @@ export default function SettingsPage() {
 
               <div className="grid gap-6 md:grid-cols-2">
                 <Field label="Organization Name">
-                  <input
+                  <Input
                     value={settings.name || ""}
                     onChange={(e) => handleChange("name", e.target.value)}
                     className={fieldClassName}
@@ -167,14 +172,14 @@ export default function SettingsPage() {
                   />
                 </Field>
                 <Field label="System Identifier">
-                  <input
+                  <Input
                     value={settings.slug || ""}
                     disabled
                     className={`${fieldClassName} bg-slate-50 text-slate-400 border-dashed`}
                   />
                 </Field>
                 <Field label="Assistant Persona">
-                  <input
+                  <Input
                     value={settings.assistant_name || ""}
                     onChange={(e) =>
                       handleChange("assistant_name", e.target.value)
@@ -185,7 +190,7 @@ export default function SettingsPage() {
                 </Field>
                 <Field label="Primary Brand Color">
                   <div className="relative">
-                    <input
+                    <Input
                       value={settings.primary_color || ""}
                       onChange={(e) =>
                         handleChange("primary_color", e.target.value)
@@ -202,7 +207,7 @@ export default function SettingsPage() {
                   </div>
                 </Field>
                 <Field label="Operational Email">
-                  <input
+                  <Input
                     value={settings.support_email || ""}
                     onChange={(e) =>
                       handleChange("support_email", e.target.value)
@@ -212,7 +217,7 @@ export default function SettingsPage() {
                   />
                 </Field>
                 <Field label="Official Website">
-                  <input
+                  <Input
                     value={settings.website || ""}
                     onChange={(e) => handleChange("website", e.target.value)}
                     className={fieldClassName}
@@ -220,7 +225,7 @@ export default function SettingsPage() {
                   />
                 </Field>
                 <Field label="Industry Sector">
-                  <input
+                  <Input
                     value={settings.industry || ""}
                     onChange={(e) => handleChange("industry", e.target.value)}
                     className={fieldClassName}
@@ -228,7 +233,7 @@ export default function SettingsPage() {
                   />
                 </Field>
                 <Field label="Global Logo Assets">
-                  <input
+                  <Input
                     value={settings.logo_url || ""}
                     onChange={(e) => handleChange("logo_url", e.target.value)}
                     className={fieldClassName}
@@ -239,13 +244,13 @@ export default function SettingsPage() {
 
               <div className="mt-6 pt-6 border-t border-slate-50">
                 <Field label="Default System Welcome">
-                  <textarea
+                  <Textarea
                     rows={4}
                     value={settings.welcome_message || ""}
                     onChange={(e) =>
                       handleChange("welcome_message", e.target.value)
                     }
-                    className={`${fieldClassName} resize-none leading-relaxed`}
+                    className={`${fieldClassName} min-h-28 resize-none leading-relaxed`}
                     placeholder="Describe how the assistant should greet users..."
                   />
                 </Field>
@@ -330,29 +335,23 @@ export default function SettingsPage() {
           </div>
 
           {(message || error) && (
-            <div
+            <Alert
               className={cn(
-                "rounded-2xl border p-5 text-sm font-bold tracking-tight flex items-start gap-3",
+                "rounded-2xl",
                 error
                   ? "border-red-200 bg-red-50 text-red-700"
                   : "border-emerald-200 bg-emerald-50 text-emerald-700",
               )}
             >
-              <div className="mt-0.5 shrink-0">{error ? "✕" : "✓"}</div>
-              <div>
-                <p className="font-bold">{error ? "Error" : "Success"}</p>
-                <p className="text-xs font-medium opacity-90 mt-1">
-                  {error || message}
-                </p>
-              </div>
-            </div>
+              <AlertDescription>{error || message}</AlertDescription>
+            </Alert>
           )}
 
           <div className="flex justify-end pt-6">
-            <button
+            <AppButton
               type="submit"
               disabled={saving}
-              className="app-button-primary inline-flex w-full px-8 py-4 sm:w-auto"
+              className="inline-flex w-full px-8 sm:w-auto"
             >
               {saving ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -360,7 +359,7 @@ export default function SettingsPage() {
                 <Save size={16} />
               )}
               {saving ? "Saving..." : "Save Settings"}
-            </button>
+            </AppButton>
           </div>
         </form>
       )}

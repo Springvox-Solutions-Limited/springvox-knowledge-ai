@@ -4,7 +4,26 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { fetchPlatformJson } from '@/src/lib/platform-client';
+import { AppButton } from '@/src/components/ui/app-button';
+import { AppCard } from '@/src/components/ui/app-card';
+import {
+  AppTable,
+  AppTableBody,
+  AppTableCell,
+  AppTableHead,
+  AppTableHeader,
+  AppTableRow,
+} from '@/src/components/ui/app-table';
 import { PlanBadge, StatusBadge } from '@/src/components/platform/PlatformBadges';
 import { WORKSPACE_PLANS, WORKSPACE_STATUSES } from '@/src/lib/workspace';
 import { PlatformPageHeader } from '@/src/components/platform/PlatformPageHeader';
@@ -25,12 +44,14 @@ type CompanyRecord = {
 };
 
 export default function PlatformCompaniesPage() {
+  const PAGE_SIZE = 8;
   const [companies, setCompanies] = useState<CompanyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [planFilter, setPlanFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function load() {
@@ -53,100 +74,178 @@ export default function PlatformCompaniesPage() {
   }, [search, statusFilter, planFilter]);
 
   const rows = useMemo(() => companies, [companies]);
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pagedRows = rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const hasFilters = Boolean(search) || statusFilter !== 'all' || planFilter !== 'all';
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, planFilter]);
 
   return (
     <div className="admin-page">
       <PlatformPageHeader
         title="Companies"
-        subtitle="View and manage organisation workspaces."
+        subtitle="Manage company workspaces, plans, and status."
       />
 
       <div className="grid gap-3 lg:grid-cols-[1.3fr_0.35fr_0.35fr]">
         <label className="relative block">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
+          <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search by company, slug, or tenant admin email"
-            className="admin-input pl-11"
+            className="h-12 rounded-xl border-slate-200 bg-white pl-11 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100"
           />
         </label>
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="admin-input">
-          <option value="all">All statuses</option>
-          {WORKSPACE_STATUSES.map((status) => (
-            <option key={status} value={status}>{status}</option>
-          ))}
-        </select>
-        <select value={planFilter} onChange={(event) => setPlanFilter(event.target.value)} className="admin-input">
-          <option value="all">All plans</option>
-          {WORKSPACE_PLANS.map((plan) => (
-            <option key={plan} value={plan}>{plan}</option>
-          ))}
-        </select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-slate-200">
+            <SelectItem value="all">All statuses</SelectItem>
+            {WORKSPACE_STATUSES.map((status) => (
+              <SelectItem key={status} value={status}>{status}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={planFilter} onValueChange={setPlanFilter}>
+          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+            <SelectValue placeholder="All plans" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-slate-200">
+            <SelectItem value="all">All plans</SelectItem>
+            {WORKSPACE_PLANS.map((plan) => (
+              <SelectItem key={plan} value={plan}>{plan}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+      {hasFilters ? (
+        <div className="flex justify-stretch sm:justify-end">
+          <AppButton
+            tone="secondary"
+            className="h-10 w-full px-4 text-xs sm:w-auto"
+            onClick={() => {
+              setSearch('');
+              setStatusFilter('all');
+              setPlanFilter('all');
+            }}
+          >
+            Clear filters
+          </AppButton>
+        </div>
+      ) : null}
 
-      {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">{error}</div>}
+      {error && (
+        <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-      <div className="admin-shell-card overflow-hidden">
-        <div className="max-w-full overflow-x-auto">
-          <table className="min-w-[920px] w-full table-fixed text-left">
+      <AppCard className="hidden overflow-hidden md:block">
+        <AppTable className="min-w-[960px] table-fixed">
             <colgroup>
               <col className="w-[24%]" />
               <col className="w-[10%]" />
               <col className="w-[10%]" />
-              <col className="w-[21%]" />
+              <col className="w-[20%]" />
               <col className="w-[8%]" />
               <col className="w-[9%]" />
               <col className="w-[9%]" />
-              <col className="w-[12%]" />
+              <col className="w-[11%]" />
               <col className="w-[9%]" />
             </colgroup>
-            <thead className="border-b border-slate-200 bg-slate-50/70">
-              <tr>
+            <AppTableHeader>
+              <AppTableRow>
                 {['Company', 'Status', 'Plan', 'Tenant Admin', 'Users', 'Documents', 'Questions', 'Created', 'Actions'].map((column) => (
-                  <th key={column} className="px-5 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">{column}</th>
+                  <AppTableHead key={column}>{column}</AppTableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+              </AppTableRow>
+            </AppTableHeader>
+            <AppTableBody>
               {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-5 py-12 text-center text-sm text-slate-500">Loading companies...</td>
-                </tr>
+                <AppTableRow>
+                  <AppTableCell colSpan={9} className="py-12 text-center text-sm text-slate-500">Loading companies...</AppTableCell>
+                </AppTableRow>
               ) : rows.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-5 py-12 text-center text-sm text-slate-500">No workspaces matched your filters.</td>
-                </tr>
+                <AppTableRow>
+                  <AppTableCell colSpan={9} className="py-12 text-center text-sm text-slate-500">No workspaces matched your filters.</AppTableCell>
+                </AppTableRow>
               ) : (
-                rows.map((company) => (
-                  <tr key={company.id} className="hover:bg-slate-50/50">
-                    <td className="px-5 py-4">
-                      <Link href={`/platform/companies/${company.id}`} className="font-semibold text-slate-950 hover:text-cyan-700">
+                pagedRows.map((company) => (
+                  <AppTableRow key={company.id}>
+                    <AppTableCell className="max-w-[16rem]">
+                      <Link href={`/platform/companies/${company.id}`} className="block truncate font-semibold text-slate-950 hover:text-cyan-700" title={company.name}>
                         {company.name}
                       </Link>
-                      <p className="mt-1 text-xs text-slate-500">{company.slug}</p>
-                    </td>
-                    <td className="px-5 py-4"><StatusBadge status={company.status} /></td>
-                    <td className="px-5 py-4"><PlanBadge plan={company.plan} /></td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{company.tenant_admin_email || 'Not assigned'}</td>
-                    <td className="px-5 py-4 text-sm font-semibold text-slate-800">{company.total_users}</td>
-                    <td className="px-5 py-4 text-sm font-semibold text-slate-800">{company.total_documents}</td>
-                    <td className="px-5 py-4 text-sm font-semibold text-slate-800">{company.total_questions}</td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{formatDate(company.created_at)}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <Link href={`/platform/companies/${company.id}`} className="inline-flex rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-700 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-900">
-                          View
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
+                      <p className="mt-1 truncate text-xs text-slate-500" title={company.slug}>{company.slug}</p>
+                    </AppTableCell>
+                    <AppTableCell><StatusBadge status={company.status} /></AppTableCell>
+                    <AppTableCell><PlanBadge plan={company.plan} /></AppTableCell>
+                    <AppTableCell className="max-w-[16rem] text-sm text-slate-600">
+                      <span className="block truncate" title={company.tenant_admin_email || ''}>{company.tenant_admin_email || 'Not assigned'}</span>
+                    </AppTableCell>
+                    <AppTableCell className="text-sm font-semibold text-slate-800">{company.total_users}</AppTableCell>
+                    <AppTableCell className="text-sm font-semibold text-slate-800">{company.total_documents}</AppTableCell>
+                    <AppTableCell className="text-sm font-semibold text-slate-800">{company.total_questions}</AppTableCell>
+                    <AppTableCell className="text-sm text-slate-600">{formatDate(company.created_at)}</AppTableCell>
+                    <AppTableCell>
+                      <AppButton asChild tone="secondary" className="h-9 rounded-lg px-3 text-xs text-cyan-700 hover:text-cyan-900">
+                        <Link href={`/platform/companies/${company.id}`}>View</Link>
+                      </AppButton>
+                    </AppTableCell>
+                  </AppTableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </AppTableBody>
+        </AppTable>
+      </AppCard>
+
+      {!loading && rows.length > 0 ? (
+        <div className="grid gap-4 md:hidden">
+          {pagedRows.map((company) => (
+            <AppCard key={`${company.id}-mobile`} className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-slate-950" title={company.name}>{company.name}</p>
+                    <p className="mt-1 truncate text-xs text-slate-500" title={company.slug}>{company.slug}</p>
+                  </div>
+                  <StatusBadge status={company.status} />
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <PlanBadge plan={company.plan} />
+                  <span>{company.total_users} users</span>
+                  <span>{company.total_documents} documents</span>
+                  <span>{company.total_questions} questions</span>
+                </div>
+                <p className="truncate text-sm text-slate-600" title={company.tenant_admin_email || ''}>
+                  {company.tenant_admin_email || 'No workspace admin assigned'}
+                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-slate-500">Created {formatDate(company.created_at)}</span>
+                  <AppButton asChild tone="secondary" className="h-9 px-3 text-xs">
+                    <Link href={`/platform/companies/${company.id}`}>View</Link>
+                  </AppButton>
+                </div>
+              </div>
+            </AppCard>
+          ))}
         </div>
-      </div>
+      ) : null}
+      {rows.length > PAGE_SIZE ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-slate-500">
+            Showing {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, rows.length)} of {rows.length}
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <AppButton tone="secondary" disabled={currentPage === 1} className="h-10 px-3 text-xs" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>Previous</AppButton>
+            <AppButton tone="secondary" disabled={currentPage === totalPages} className="h-10 px-3 text-xs" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>Next</AppButton>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

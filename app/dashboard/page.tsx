@@ -16,6 +16,8 @@ import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
 import { type UserProfile } from "@/src/lib/workspace";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { StatCard } from "@/src/components/ui/stat-card";
 
 type AnalyticsSummary = {
   totalDocuments: number;
@@ -158,7 +160,7 @@ export default function DashboardOverview() {
       <div className="animate-pulse space-y-8">
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-40 rounded-3xl bg-slate-100" />
+            <div key={item} className="h-36 rounded-[24px] border border-slate-200 bg-white" />
           ))}
         </div>
       </div>
@@ -178,25 +180,15 @@ export default function DashboardOverview() {
           <Link
             key={card.title}
             href="/dashboard/analytics"
-          className="admin-kpi-card border border-slate-200 bg-white group transition-all hover:border-cyan-200 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+            className="block"
           >
-            <div className="mb-6 flex items-center justify-between">
-              <div className="rounded-xl border border-slate-100 bg-cyan-50 p-3.5 text-cyan-800 transition-all duration-300 group-hover:bg-cyan-100">
-                <card.icon size={20} strokeWidth={1.5} />
-              </div>
-              <ArrowUpRight
-                size={18}
-                className="text-slate-300 group-hover:text-slate-950 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-slate-400 group-hover:text-slate-500 transition-colors">
-                {card.title}
-              </p>
-              <h3 className="font-mono text-3xl font-bold tracking-tight text-slate-950 tabular-nums sm:text-4xl">
-                {card.value}
-              </h3>
-            </div>
+            <StatCard
+              label={card.title}
+              value={card.value}
+              icon={card.icon}
+              meta={<ArrowUpRight size={16} className="text-slate-300" />}
+              className="transition-all hover:border-cyan-200 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)]"
+            />
           </Link>
         ))}
       </div>
@@ -224,15 +216,12 @@ export default function DashboardOverview() {
           </div>
           {recentQuestions.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 py-16 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200 mx-auto text-slate-400 mb-4">
-                <MessageSquare size={24} />
-              </div>
-              <p className="mt-2 text-sm font-bold text-slate-950">
-                No recent activity
-              </p>
-              <p className="mt-1 text-xs text-slate-500 max-w-xs mx-auto">
-                Question activity will appear here once your team starts using the workspace.
-              </p>
+              <EmptyState
+                icon={MessageSquare}
+                title="No recent activity"
+                description="Question activity will appear here once your team starts using the workspace."
+                className="mx-6 border-0 bg-transparent py-0"
+              />
             </div>
           ) : (
             <div className="space-y-3">

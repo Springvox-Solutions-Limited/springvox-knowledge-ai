@@ -12,8 +12,19 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
+import { AppButton } from "@/src/components/ui/app-button";
+import { EmptyState } from "@/src/components/ui/empty-state";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import {
   type AnyAppRole,
@@ -23,6 +34,15 @@ import {
   type UserProfile,
 } from "@/src/lib/workspace";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
+import {
+  AppTable,
+  AppTableBody,
+  AppTableCell,
+  AppTableHead,
+  AppTableHeader,
+  AppTableRow,
+} from "@/src/components/ui/app-table";
+import { ConfirmDialog } from "@/src/components/ui/confirm-dialog";
 
 type ManagedUser = {
   id: string;
@@ -46,6 +66,19 @@ type Invitation = {
 };
 
 const ROLE_OPTIONS: AppRole[] = ["viewer", "tenant_admin"];
+const PAGE_SIZE = 8;
+
+function getRoleTone(role: AnyAppRole) {
+  switch (role) {
+    case "tenant_admin":
+    case "admin":
+      return "border-cyan-200 bg-cyan-50 text-cyan-800";
+    case "platform_admin":
+      return "border-violet-200 bg-violet-50 text-violet-700";
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-600";
+  }
+}
 
 export default function UsersPage() {
   const router = useRouter();
@@ -65,6 +98,7 @@ export default function UsersPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("viewer");
   const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const loadUsers = async () => {
     try {
@@ -127,6 +161,16 @@ export default function UsersPage() {
 
     return matchesSearch && matchesRole;
   });
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const pagedUsers = filteredUsers.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+  const hasFilters = Boolean(searchQuery) || roleFilter !== "all";
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter]);
 
   const updateRole = async (
     user: ManagedUser,
@@ -260,49 +304,95 @@ export default function UsersPage() {
         subtitle="Manage roles, permissions, and workspace invitations in one place."
       />
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Workspace users
+          </p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+            {users.length}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Workspace admins
+          </p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+            {users.filter((user) => user.role === "tenant_admin").length}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Viewers
+          </p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+            {users.filter((user) => user.role === "viewer").length}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            Pending invites
+          </p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+            {invitations.filter((item) => item.status === "pending").length}
+          </p>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
-        <button
+        <AppButton
           type="button"
           onClick={() => {
             setInviteOpen(true);
             setCreatedInviteUrl(null);
           }}
-          className="app-button-primary whitespace-nowrap px-6 py-3"
+          className="w-full whitespace-nowrap px-6 sm:w-auto"
         >
           <MailPlus size={18} />
           Invite user
-        </button>
+        </AppButton>
         <AdminSearchInput
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search by name or email..."
           className="flex-1 lg:min-w-[20rem]"
         />
-        <select
+        <Select
           value={roleFilter}
-          onChange={(event) =>
-            setRoleFilter(event.target.value as "all" | AnyAppRole)
-          }
-          className="admin-input shrink-0 px-4 py-3 text-sm font-medium transition-colors hover:border-slate-300 lg:min-w-[11rem] lg:w-auto"
+          onValueChange={(value) => setRoleFilter(value as "all" | AnyAppRole)}
         >
-          <option value="all">All roles</option>
-          <option value="platform_admin">Platform Admin</option>
-          <option value="viewer">Viewers</option>
-          <option value="tenant_admin">Company Admins</option>
-        </select>
+          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm lg:w-[14rem]">
+            <SelectValue placeholder="All roles" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-slate-200">
+            <SelectItem value="all">All roles</SelectItem>
+            <SelectItem value="platform_admin">Platform Admin</SelectItem>
+            <SelectItem value="viewer">Viewer</SelectItem>
+            <SelectItem value="tenant_admin">Workspace Admin</SelectItem>
+          </SelectContent>
+        </Select>
+        {hasFilters ? (
+          <AppButton
+            tone="secondary"
+            className="h-11 px-4 text-xs"
+            onClick={() => {
+              setSearchQuery("");
+              setRoleFilter("all");
+            }}
+          >
+            Clear filters
+          </AppButton>
+        ) : null}
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-5 text-sm text-red-700 font-medium flex items-start gap-3">
-          <AlertCircle size={18} className="shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold">Error managing users</p>
-            <p className="text-xs mt-1 opacity-90">{error}</p>
-          </div>
-        </div>
+        <Alert className="rounded-2xl border-red-200 bg-red-50/50 text-red-700">
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="admin-shell-card overflow-hidden border border-slate-200 bg-white">
+      <div className="hidden overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:block">
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 px-6 py-24">
             <div className="relative w-12 h-12">
@@ -314,121 +404,159 @@ export default function UsersPage() {
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="px-6 py-24 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 text-slate-400 mx-auto mb-4">
-              <Users size={28} strokeWidth={1.5} />
-            </div>
-            <p className="text-lg font-bold text-slate-950">No users found</p>
-            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
-              Adjust your search filters or invite new users to get started.
-            </p>
+            <EmptyState
+              icon={Users}
+              title="No users found"
+              description="Adjust your search filters or invite new users to get started."
+              className="border-0 bg-transparent py-0"
+            />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] border-collapse text-left">
-              <thead>
-                <tr className="bg-slate-50/60 border-b border-slate-200">
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                    User
-                  </th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                    Role
-                  </th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                    Workspace
-                  </th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                    Activity
-                  </th>
-                  <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 text-right">
-                    Permissions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="hover:bg-slate-50/60 transition-colors"
-                  >
-                    <td className="px-6 py-5">
-                      <p className="text-sm font-bold text-slate-900">
-                        {user.email || "Anonymous"}
+          <AppTable className="min-w-[740px]">
+            <AppTableHeader>
+              <AppTableRow>
+                <AppTableHead className="w-[32%]">User</AppTableHead>
+                <AppTableHead className="w-[16%]">Role</AppTableHead>
+                <AppTableHead className="w-[16%]">Added</AppTableHead>
+                <AppTableHead className="w-[16%]">Updated</AppTableHead>
+                <AppTableHead className="w-[20%] text-right">Actions</AppTableHead>
+              </AppTableRow>
+            </AppTableHeader>
+            <AppTableBody>
+              {pagedUsers.map((user) => (
+                <AppTableRow key={user.id}>
+                  <AppTableCell className="max-w-[18rem]">
+                    <p className="truncate text-sm font-bold text-slate-900" title={user.email || ""}>
+                      {user.email || "Anonymous"}
+                    </p>
+                    {user.full_name && (
+                      <p className="mt-1 truncate text-xs font-medium text-slate-500" title={user.full_name}>
+                        {user.full_name}
                       </p>
-                      {user.full_name && (
-                        <p className="mt-1 text-xs text-slate-500 font-medium">
-                          {user.full_name}
-                        </p>
+                    )}
+                    <p className="mt-2 text-[11px] font-medium text-slate-400">
+                      {user.workspace_name}
+                    </p>
+                  </AppTableCell>
+                  <AppTableCell>
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
+                        getRoleTone(user.role),
                       )}
-                    </td>
-                    <td className="px-6 py-5">
-                      <span
-                        className={cn(
-                          "rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border inline-block",
-                          user.role === "platform_admin"
-                            ? "bg-slate-950 text-white border-slate-950"
-                            : user.role === "tenant_admin"
-                              ? "bg-blue-50 text-blue-700 border-blue-200"
-                              : user.role === "admin"
-                              ? "bg-blue-50 text-blue-700 border-blue-200"
-                              : "bg-slate-100 text-slate-600 border-slate-200",
-                        )}
-                      >
-                        {getRoleLabel(user.role)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg inline-block">
-                        {user.workspace_name}
-                      </span>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="space-y-1">
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Created:{" "}
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </p>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Updated:{" "}
-                          {new Date(user.updated_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <div className="flex justify-end gap-1.5 flex-wrap">
-                        {ROLE_OPTIONS.map((roleOption) => (
-                          <button
-                            key={roleOption}
-                            type="button"
-                            disabled={saving || roleOption === user.role}
-                            onClick={() => updateRole(user, roleOption, false)}
-                            className={cn(
-                              "rounded-lg px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all border",
-                              roleOption === user.role
-                                ? "bg-slate-100 text-slate-400 border-slate-200 cursor-default"
-                                : "bg-white text-slate-600 border-slate-200 hover:border-slate-950 hover:text-slate-950 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed",
-                            )}
-                          >
-                            {roleOption === "tenant_admin"
-                              ? "Adm"
-                              : roleOption === "viewer"
-                                ? "View"
-                                : roleOption}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    >
+                      {getRoleLabel(user.role)}
+                    </span>
+                  </AppTableCell>
+                  <AppTableCell className="text-xs text-slate-500">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </AppTableCell>
+                  <AppTableCell className="text-xs text-slate-500">
+                    {new Date(user.updated_at).toLocaleDateString()}
+                  </AppTableCell>
+                  <AppTableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      {ROLE_OPTIONS.map((roleOption) => (
+                        <AppButton
+                          key={roleOption}
+                          type="button"
+                          disabled={saving || roleOption === user.role}
+                          onClick={() => updateRole(user, roleOption, false)}
+                          tone={roleOption === user.role ? "ghost" : "secondary"}
+                          className={cn(
+                            "h-8 rounded-lg px-2.5 text-[11px]",
+                            roleOption === user.role
+                              ? "cursor-default border-slate-200 bg-slate-100 text-slate-400"
+                              : "",
+                          )}
+                        >
+                          {roleOption === "tenant_admin" ? "Make admin" : "Make viewer"}
+                        </AppButton>
+                      ))}
+                    </div>
+                  </AppTableCell>
+                </AppTableRow>
+              ))}
+            </AppTableBody>
+          </AppTable>
         )}
       </div>
 
-      <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8 lg:p-10">
-        <div className="mb-8 flex items-center justify-between">
+      {!loading && filteredUsers.length > 0 ? (
+        <div className="grid gap-4 md:hidden">
+          {pagedUsers.map((user) => (
+            <div key={`${user.id}-mobile`} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-950" title={user.email || ""}>
+                      {user.email || "Anonymous"}
+                    </p>
+                    {user.full_name ? (
+                      <p className="mt-1 truncate text-xs text-slate-500">{user.full_name}</p>
+                    ) : null}
+                    <p className="mt-2 text-[11px] font-medium text-slate-400">
+                      {user.workspace_name}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]",
+                      getRoleTone(user.role),
+                    )}
+                  >
+                    {getRoleLabel(user.role)}
+                  </span>
+                </div>
+                <div className="grid gap-2 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 text-xs text-slate-500">
+                  <p>Added: {new Date(user.created_at).toLocaleDateString()}</p>
+                  <p>Updated: {new Date(user.updated_at).toLocaleDateString()}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {ROLE_OPTIONS.map((roleOption) => (
+                    <AppButton
+                      key={`${user.id}-${roleOption}`}
+                      type="button"
+                      disabled={saving || roleOption === user.role}
+                      onClick={() => updateRole(user, roleOption, false)}
+                      tone={roleOption === user.role ? "ghost" : "secondary"}
+                      className={cn(
+                        "h-9 px-3 text-xs",
+                        roleOption === user.role
+                          ? "cursor-default border-slate-200 bg-slate-100 text-slate-400"
+                          : "",
+                      )}
+                    >
+                      {roleOption === "tenant_admin" ? "Make Admin" : "Make Viewer"}
+                    </AppButton>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {filteredUsers.length > PAGE_SIZE ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-slate-500">
+            Showing {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, filteredUsers.length)} of {filteredUsers.length}
+          </p>
+          <div className="flex gap-2">
+            <AppButton tone="secondary" className="h-9 px-3 text-xs" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+              Previous
+            </AppButton>
+            <AppButton tone="secondary" className="h-9 px-3 text-xs" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+              Next
+            </AppButton>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="admin-shell-card border border-slate-200 bg-white p-5 sm:p-6 lg:p-7">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+            <h2 className="text-xl font-bold tracking-tight text-slate-950">
               Active Invitations
             </h2>
             <p className="text-sm text-slate-500 mt-2 font-medium">
@@ -458,7 +586,7 @@ export default function UsersPage() {
             invitations.slice(0, 12).map((invitation) => (
               <div
                 key={invitation.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md hover:border-slate-300 transition-all group"
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md group"
               >
                 <div className="flex flex-col gap-4 h-full">
                   <div className="flex items-start justify-between gap-2">
@@ -487,26 +615,28 @@ export default function UsersPage() {
                       </p>
                     </div>
                     {invitation.status === "pending" && (
-                      <button
+                      <AppButton
                         type="button"
                         disabled={saving}
                         onClick={() => revokeInvitation(invitation.id)}
-                        className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors shrink-0"
+                        tone="destructive"
+                        className="h-8 shrink-0 px-3 text-[11px]"
                       >
                         Revoke
-                      </button>
+                      </AppButton>
                     )}
                   </div>
-                  <button
+                  <AppButton
                     type="button"
                     onClick={() =>
                       navigator.clipboard.writeText(invitation.invite_url)
                     }
-                    className="flex items-center justify-center gap-2 rounded-lg bg-slate-50 border border-slate-200 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-all"
+                    tone="secondary"
+                    className="h-10 w-full text-xs"
                   >
                     <Copy size={14} />
                     Copy Link
-                  </button>
+                  </AppButton>
                   <p className="text-[11px] text-slate-400 font-medium">
                     Expires{" "}
                     {new Date(invitation.expires_at).toLocaleDateString(
@@ -521,46 +651,26 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {confirmState && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
-                <Shield size={28} strokeWidth={1.5} />
-              </div>
-              <h2 className="text-xl font-bold tracking-tight text-slate-950">
-                Security Warning
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-slate-500">
-                You are about to downgrade your own administrative privileges to{" "}
-                <span className="font-bold text-slate-900 capitalize">
-                  "{confirmState.nextRole.replace("_", " ")}"
-                </span>
-                . This action is immediate and may restrict your access to this
-                page.
-              </p>
-            </div>
-            <div className="mt-8 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  updateRole(confirmState.user, confirmState.nextRole, true)
-                }
-                className="w-full rounded-xl bg-red-600 py-4 text-sm font-bold text-white shadow-lg shadow-red-600/10 transition-all hover:bg-red-700"
-              >
-                Confirm Demotion
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmState(null)}
-                className="w-full rounded-xl bg-white py-4 text-sm font-bold text-slate-500 transition-all hover:text-slate-950"
-              >
-                Keep Admin Access
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        onOpenChange={(open) => {
+          if (!open) setConfirmState(null);
+        }}
+        title="Confirm role change"
+        description={
+          confirmState
+            ? `You are about to change your own role to ${getRoleLabel(confirmState.nextRole)}. This may limit your access to this page.`
+            : ""
+        }
+        confirmLabel="Confirm role change"
+        cancelLabel="Keep current access"
+        confirmTone="destructive"
+        loading={saving}
+        onConfirm={async () => {
+          if (!confirmState) return;
+          await updateRole(confirmState.user, confirmState.nextRole, true);
+        }}
+      />
 
       {inviteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-sm px-4">
@@ -577,6 +687,7 @@ export default function UsersPage() {
               <button
                 type="button"
                 onClick={() => setInviteOpen(false)}
+                aria-label="Close invite dialog"
                 className="rounded-xl p-2 text-slate-400 hover:bg-slate-50 transition-colors"
               >
                 <X size={20} />
@@ -588,7 +699,7 @@ export default function UsersPage() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
                   Email Address
                 </label>
-                <input
+                <Input
                   value={inviteEmail}
                   onChange={(event) => setInviteEmail(event.target.value)}
                   className="admin-input"
@@ -601,18 +712,18 @@ export default function UsersPage() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
                   Workspace Role
                 </label>
-                <select
+                <Select
                   value={inviteRole}
-                  onChange={(event) =>
-                    setInviteRole(event.target.value as AppRole)
-                  }
-                  className="admin-input"
+                  onValueChange={(value) => setInviteRole(value as AppRole)}
                 >
-                  <option value="viewer">Viewer (Read Only)</option>
-                  <option value="tenant_admin">
-                    Tenant Admin (Workspace Control)
-                  </option>
-                </select>
+                  <SelectTrigger className="admin-input h-12 rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200">
+                    <SelectItem value="viewer">Viewer</SelectItem>
+                    <SelectItem value="tenant_admin">Workspace Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {createdInviteUrl && (
@@ -625,28 +736,29 @@ export default function UsersPage() {
                       {createdInviteUrl}
                     </p>
                   </div>
-                  <button
+                  <AppButton
                     type="button"
                     onClick={() =>
                       navigator.clipboard.writeText(createdInviteUrl)
                     }
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/10 hover:bg-emerald-700 transition-all"
+                    tone="subtle"
+                    className="w-full"
                   >
                     <Copy size={14} />
                     Copy Invite Link
-                  </button>
+                  </AppButton>
                 </div>
               )}
 
               {!createdInviteUrl && (
                 <div className="flex flex-col gap-3 pt-4">
-                  <button
+                  <AppButton
                     type="submit"
                     disabled={saving}
-                    className="w-full rounded-xl bg-slate-950 py-4 text-sm font-bold text-white shadow-lg shadow-slate-950/10 transition-all hover:bg-slate-800 disabled:opacity-30"
+                    className="w-full"
                   >
-                    {saving ? "Generating..." : "Generate Invite Link"}
-                  </button>
+                    {saving ? "Creating invite..." : "Create Invite Link"}
+                  </AppButton>
                 </div>
               )}
             </form>

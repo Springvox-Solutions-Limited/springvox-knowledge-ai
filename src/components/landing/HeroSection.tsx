@@ -16,9 +16,8 @@ export function HeroSection() {
               AI assistant for company knowledge
             </div>
 
-            <h1 className="text-4xl font-bold leading-[1] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Turn your company documents <br />
-              into a helpful <br />
+            <h1 className="text-3xl font-bold leading-[1.02] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+              Turn your company documents into a helpful{' '}
               <span className="text-cyan-700">AI assistant.</span>
             </h1>
 
@@ -28,17 +27,17 @@ export function HeroSection() {
               information and shows sources when available.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <Link
                 href="/register"
-                className="app-button-primary sm:px-8 sm:py-4 sm:text-base"
+                className="app-button-primary w-full justify-center sm:w-auto sm:px-8 sm:py-4 sm:text-base"
               >
                 Create a company workspace
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
                 href="/login"
-                className="app-button-secondary sm:px-8 sm:py-4 sm:text-base"
+                className="app-button-secondary w-full justify-center sm:w-auto sm:px-8 sm:py-4 sm:text-base"
               >
                 Login
               </Link>

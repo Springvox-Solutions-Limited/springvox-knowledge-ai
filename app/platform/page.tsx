@@ -7,6 +7,9 @@ import { Building2, FileText, MessageSquare, Users } from 'lucide-react';
 import { fetchPlatformJson } from '@/src/lib/platform-client';
 import { PlanBadge, StatusBadge } from '@/src/components/platform/PlatformBadges';
 import { PlatformPageHeader } from '@/src/components/platform/PlatformPageHeader';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AppCard, AppCardContent } from '@/src/components/ui/app-card';
+import { StatCard } from '@/src/components/ui/stat-card';
 
 type SummaryResponse = {
   totals: {
@@ -101,25 +104,26 @@ export default function PlatformOverviewPage() {
         subtitle="Monitor companies, users, plans, and workspace status."
       />
 
-      {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">{error}</div>}
+      {error && (
+        <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         {cards.map((card) => (
-          <div key={card.label} className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="rounded-xl bg-cyan-50 p-2.5 text-cyan-800">
-                <card.icon size={20} />
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{loading ? 'Loading' : 'Live'}</span>
-            </div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">{card.label}</p>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{card.value}</h2>
-          </div>
+          <StatCard
+            key={card.label}
+            label={card.label}
+            value={card.value}
+            icon={card.icon}
+            meta={loading ? 'Updating' : undefined}
+          />
         ))}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="admin-shell-card p-6">
+        <AppCard className="p-6">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Recent companies</p>
@@ -129,7 +133,7 @@ export default function PlatformOverviewPage() {
               View all
             </Link>
           </div>
-          <div className="space-y-3">
+          <AppCardContent className="space-y-3 px-0 pb-0">
             {data.recentCompanies.length === 0 ? (
               <p className="text-sm text-slate-500">No companies created yet.</p>
             ) : (
@@ -151,11 +155,11 @@ export default function PlatformOverviewPage() {
                 </div>
               ))
             )}
-          </div>
-        </div>
+          </AppCardContent>
+        </AppCard>
 
         <div className="space-y-6">
-          <div className="admin-shell-card p-6">
+          <AppCard className="p-6">
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Platform activity</p>
             <div className="mt-4 space-y-3">
               <MetricRow label="New companies in last 7 days" value={data.totals.newCompaniesLast7Days} />
@@ -163,9 +167,9 @@ export default function PlatformOverviewPage() {
               <MetricRow label="Open unanswered questions" value={data.totals.totalUnansweredQuestions} />
               <MetricRow label="Feedback submitted" value={data.totals.totalFeedback} />
             </div>
-          </div>
+          </AppCard>
 
-          <div className="admin-shell-card p-6">
+          <AppCard className="p-6">
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Status distribution</p>
             <div className="mt-4 space-y-3">
               {[
@@ -182,7 +186,7 @@ export default function PlatformOverviewPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </AppCard>
         </div>
       </div>
     </div>

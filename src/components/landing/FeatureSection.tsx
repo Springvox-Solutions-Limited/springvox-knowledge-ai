@@ -42,13 +42,18 @@ export function FeatureSection() {
               SpringVox helps people find company answers faster without digging
               through folders, asking around, or relying on inconsistent replies.
             </p>
-            <div className="mt-8 space-y-4 sm:mt-12 sm:space-y-6">
-              {['Admins choose what gets uploaded', 'Users stay inside their own organisation workspace', 'Answers can show document sources when available'].map((trust) => (
-                <div key={trust} className="flex items-center gap-4 text-sm font-bold text-slate-900">
-                  <div className="h-1.5 w-1.5 rounded-full bg-slate-950" />
-                  {trust}
-                </div>
-              ))}
+            <div className="mt-8 rounded-[28px] border border-[#18304b] bg-[#0d1f35] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:mt-12 sm:p-6">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-200/80">
+                Why teams trust SpringVox
+              </p>
+              <div className="mt-4 space-y-3">
+                {['Admins choose what gets uploaded', 'Users stay inside their own organisation workspace', 'Answers can show document sources when available'].map((trust) => (
+                  <div key={trust} className="flex items-start gap-3 text-sm font-medium text-slate-200">
+                    <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />
+                    <span>{trust}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

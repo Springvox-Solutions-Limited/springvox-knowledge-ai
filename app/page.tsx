@@ -7,6 +7,7 @@ import { LandingNavbar } from '@/src/components/landing/LandingNavbar';
 import { ProblemSection } from '@/src/components/landing/ProblemSection';
 import { RoadmapSection } from '@/src/components/landing/RoadmapSection';
 import { RoleSection } from '@/src/components/landing/RoleSection';
+import { SecurityControlSection } from '@/src/components/landing/SecurityControlSection';
 import { UseCasesSection } from '@/src/components/landing/UseCasesSection';
 
 export default function LandingPage() {
@@ -18,6 +19,7 @@ export default function LandingPage() {
         <ProblemSection />
         <HowItWorksSection />
         <FeatureSection />
+        <SecurityControlSection />
         <UseCasesSection />
         <LandingCTA />
       </main>

@@ -2,10 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { BarChart3 } from 'lucide-react';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { fetchPlatformJson } from '@/src/lib/platform-client';
 import { PlanBadge, StatusBadge } from '@/src/components/platform/PlatformBadges';
 import { PlatformPageHeader } from '@/src/components/platform/PlatformPageHeader';
+import { AppCard } from '@/src/components/ui/app-card';
+import { EmptyState } from '@/src/components/ui/empty-state';
+import { StatCard } from '@/src/components/ui/stat-card';
+import { getRoleLabel } from '@/src/lib/workspace';
 
 type AnalyticsResponse = Awaited<ReturnType<typeof buildEmptyAnalytics>>;
 
@@ -82,7 +97,7 @@ export default function PlatformAnalyticsPage() {
         subtitle="Track usage, activity, and workspace health."
       />
 
-      {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      {error && <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700"><AlertDescription>{error}</AlertDescription></Alert>}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {[
@@ -92,34 +107,45 @@ export default function PlatformAnalyticsPage() {
           ['Users', totals.totalUsers],
           ['Questions', totals.totalQuestions],
         ].map(([label, value]) => (
-          <div key={label} className="admin-kpi-card">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-            <h2 className="mt-3 text-3xl font-bold text-slate-950">{value}</h2>
-          </div>
+          <StatCard key={label} label={String(label)} value={value} />
         ))}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <AnalyticsPanel title="Workspaces by plan" loading={loading}>
-          <div className="space-y-3">
-            {(data?.workspacesByPlan || []).map((item) => (
-              <div key={item.plan} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                <PlanBadge plan={item.plan} />
-                <span className="text-lg font-bold text-slate-950">{item.count}</span>
-              </div>
-            ))}
-          </div>
+          {(data?.workspacesByPlan || []).length === 0 ? (
+            <EmptyState icon={BarChart3} title="No plan data yet" description="Workspace plan distribution will appear here." className="border-0 bg-transparent py-8" />
+          ) : (
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data?.workspacesByPlan || []}>
+                  <CartesianGrid vertical={false} stroke="#eef2f7" />
+                  <XAxis dataKey="plan" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#0d1f35" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </AnalyticsPanel>
 
         <AnalyticsPanel title="Workspaces by status" loading={loading}>
-          <div className="space-y-3">
-            {(data?.workspacesByStatus || []).map((item) => (
-              <div key={item.status} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-                <StatusBadge status={item.status} />
-                <span className="text-lg font-bold text-slate-950">{item.count}</span>
-              </div>
-            ))}
-          </div>
+          {(data?.workspacesByStatus || []).length === 0 ? (
+            <EmptyState icon={BarChart3} title="No status data yet" description="Workspace status distribution will appear here." className="border-0 bg-transparent py-8" />
+          ) : (
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data?.workspacesByStatus || []}>
+                  <CartesianGrid vertical={false} stroke="#eef2f7" />
+                  <XAxis dataKey="status" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#14b8a6" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </AnalyticsPanel>
 
         <AnalyticsPanel title="Top active companies" loading={loading}>
@@ -149,7 +175,7 @@ export default function PlatformAnalyticsPage() {
                   <p className="mt-1 text-xs text-slate-500">{item.workspace_name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{item.role}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{getRoleLabel(item.role as any)}</p>
                   <p className="mt-1 text-xs text-slate-500">{formatDate(item.created_at)}</p>
                 </div>
               </div>
@@ -171,12 +197,12 @@ function AnalyticsPanel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="admin-shell-card p-6">
+    <AppCard className="p-6">
       <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">{title}</p>
       <div className="mt-5">
         {loading ? <p className="text-sm text-slate-500">Loading...</p> : children}
       </div>
-    </div>
+    </AppCard>
   );
 }
 

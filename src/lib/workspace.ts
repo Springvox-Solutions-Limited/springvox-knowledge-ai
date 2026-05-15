@@ -117,7 +117,7 @@ export function getRoleLabel(role: AnyAppRole) {
   }
 
   if (role === 'tenant_admin' || role === 'admin' || role === 'content_manager') {
-    return 'Tenant Admin';
+    return 'Workspace Admin';
   }
 
   return 'Viewer';

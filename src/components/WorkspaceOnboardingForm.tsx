@@ -3,12 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Building2, Loader2, Mail, ShieldCheck, UserPlus } from "lucide-react";
+import { Building2, CheckCircle2, Loader2, Mail, ShieldCheck, UserPlus } from "lucide-react";
 
 import { getDefaultRouteForRole, getRoleLabel, type AnyAppRole } from "@/src/lib/workspace";
 import { supabase } from "@/src/lib/supabase";
 import { slugifyWorkspaceName } from "@/src/lib/onboarding";
 import { getCurrentUserProfile } from "@/src/lib/auth-client";
+import { cn } from "@/src/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { AppButton } from "@/src/components/ui/app-button";
 
 type InviteDetails = {
   id: string;
@@ -46,6 +50,10 @@ export default function WorkspaceOnboardingForm() {
   const [industry, setIndustry] = useState("");
   const [website, setWebsite] = useState("");
   const [inviteLink, setInviteLink] = useState("");
+  const stepLabels =
+    mode === "join"
+      ? ["Invitation", "Your details", "Access workspace"]
+      : ["Company setup", "Admin account", "Launch workspace"];
 
   useEffect(() => {
     setMode(inviteToken ? "join" : "create");
@@ -276,8 +284,8 @@ export default function WorkspaceOnboardingForm() {
   }
 
   return (
-    <div className="public-card w-full max-w-3xl p-5 sm:p-8">
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="public-card w-full max-w-5xl p-5 sm:p-8 lg:p-10">
+      <div className="grid gap-8 lg:grid-cols-[1.12fr_0.88fr]">
         <div className="space-y-6">
           <div className="space-y-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
@@ -291,6 +299,32 @@ export default function WorkspaceOnboardingForm() {
                 ? "Create your account for an existing organisation and join the workspace from your invitation."
                 : "Create a secure workspace for your team. Upload approved documents and invite staff to ask questions from your company documents."}
             </p>
+          </div>
+
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {stepLabels.map((label, index) => (
+                <div
+                  key={label}
+                  className={cn(
+                    "relative flex items-center gap-3 rounded-2xl border px-4 py-3",
+                    index === 0
+                      ? "border-cyan-200 bg-white shadow-sm"
+                      : "border-slate-200 bg-white/80",
+                  )}
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-50 text-xs font-bold text-cyan-700">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                      Step {index + 1}
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900">{label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
@@ -322,106 +356,137 @@ export default function WorkspaceOnboardingForm() {
           </div>
 
           {mode === "create" ? (
-            <form onSubmit={handleCreateWorkspace} className="space-y-4">
-              <Field label="Company Name">
-                <input
-                  value={companyName}
-                  onChange={(event) => {
-                    const nextCompany = event.target.value;
-                    setCompanyName(nextCompany);
-                    if (!workspaceSlug) {
-                      setWorkspaceSlug(slugifyWorkspaceName(nextCompany));
-                    }
-                  }}
-                  className="admin-input"
-                  placeholder="Acme Corporation"
-                  required
-                />
-              </Field>
-              <Field label="Workspace Slug">
-                <input
-                  value={workspaceSlug}
-                  onChange={(event) => {
-                    const nextSlug = slugifyWorkspaceName(event.target.value);
-                    setWorkspaceSlug(nextSlug);
-                    void checkSlug(nextSlug);
-                  }}
-                  className="admin-input"
-                  placeholder="acme-corp"
-                  required
-                />
+            <form onSubmit={handleCreateWorkspace} className="space-y-5">
+              <FormSection
+                step="Step 1"
+                title="Company details"
+                description="Set the organisation name your team will recognize inside SpringVox."
+              >
+                <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
+                  <Field label="Company Name">
+                    <Input
+                      value={companyName}
+                      onChange={(event) => {
+                        const nextCompany = event.target.value;
+                        setCompanyName(nextCompany);
+                        if (!workspaceSlug) {
+                          setWorkspaceSlug(slugifyWorkspaceName(nextCompany));
+                        }
+                      }}
+                      className="admin-input"
+                      placeholder="Acme Corporation"
+                      required
+                    />
+                  </Field>
+                  <Field label="Workspace Slug">
+                    <Input
+                      value={workspaceSlug}
+                      onChange={(event) => {
+                        const nextSlug = slugifyWorkspaceName(event.target.value);
+                        setWorkspaceSlug(nextSlug);
+                        void checkSlug(nextSlug);
+                      }}
+                      className="admin-input"
+                      placeholder="acme-corp"
+                      required
+                    />
+                  </Field>
+                </div>
                 {workspaceSlug && (
-                  <p
-                    className={`text-xs ${
+                  <div
+                    className={cn(
+                      "rounded-xl border px-3 py-2 text-xs",
                       slugStatus.available
-                        ? "text-emerald-600"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                         : slugStatus.available === false
-                          ? "text-red-600"
-                          : "text-slate-400"
-                    }`}
+                          ? "border-red-200 bg-red-50 text-red-700"
+                          : "border-slate-200 bg-slate-50 text-slate-500",
+                    )}
                   >
                     {slugStatus.message}
-                  </p>
+                  </div>
                 )}
-              </Field>
-              <Field label="Full Name">
-                <input
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  className="admin-input"
-                  placeholder="Jane Doe"
-                  required
-                />
-              </Field>
-              <Field label="Work Email">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="admin-input"
-                  placeholder="jane@company.com"
-                  required
-                />
-              </Field>
-              <Field label="Password">
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="admin-input"
-                  placeholder="Minimum 8 characters"
-                  required
-                />
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Industry (Optional)">
-                  <input
-                    value={industry}
-                    onChange={(event) => setIndustry(event.target.value)}
+              </FormSection>
+
+              <FormSection
+                step="Step 2"
+                title="Workspace admin"
+                description="Create the first admin account for your company workspace."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Full Name">
+                    <Input
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                      className="admin-input"
+                      placeholder="Jane Doe"
+                      required
+                    />
+                  </Field>
+                  <Field label="Work Email">
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      className="admin-input"
+                      placeholder="jane@company.com"
+                      required
+                    />
+                  </Field>
+                </div>
+                <Field label="Password">
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
                     className="admin-input"
-                    placeholder="Technology"
+                    placeholder="Minimum 8 characters"
+                    required
                   />
                 </Field>
-                <Field label="Website (Optional)">
-                  <input
-                    value={website}
-                    onChange={(event) => setWebsite(event.target.value)}
-                    className="admin-input"
-                    placeholder="https://company.com"
-                  />
-                </Field>
-              </div>
-              <button
+              </FormSection>
+
+              <FormSection
+                step="Step 3"
+                title="Optional company context"
+                description="Add a little extra information now or update it later from settings."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Industry (Optional)">
+                    <Input
+                      value={industry}
+                      onChange={(event) => setIndustry(event.target.value)}
+                      className="admin-input"
+                      placeholder="Technology"
+                    />
+                  </Field>
+                  <Field label="Website (Optional)">
+                    <Input
+                      value={website}
+                      onChange={(event) => setWebsite(event.target.value)}
+                      className="admin-input"
+                      placeholder="https://company.com"
+                    />
+                  </Field>
+                </div>
+              </FormSection>
+
+              <AppButton
                 type="submit"
                 disabled={loading || createDisabled}
-                className="app-button-primary flex w-full py-4"
+                className="flex w-full"
               >
                 {loading ? <Loader2 size={18} className="animate-spin" /> : <Building2 size={18} />}
                 Create company workspace
-              </button>
+              </AppButton>
             </form>
           ) : (
-            <form onSubmit={handleJoinInvite} className="space-y-4">
+            <form onSubmit={handleJoinInvite} className="space-y-5">
+              <FormSection
+                step="Step 1"
+                title="Invitation details"
+                description="Confirm the invited workspace and role before creating your account."
+              >
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
                 {inviteDetails ? (
                   <div className="space-y-2">
@@ -435,69 +500,86 @@ export default function WorkspaceOnboardingForm() {
                   <p>Have an invite link? Paste it below or open your invite URL first.</p>
                 )}
               </div>
+              </FormSection>
               {!inviteToken && (
-                <div className="space-y-3">
-                  <Field label="Invite Link or Token">
-                    <input
-                      value={inviteLink}
-                      onChange={(event) => setInviteLink(event.target.value)}
-                      className="admin-input"
-                      placeholder="https://app.example.com/invite/..."
-                    />
-                  </Field>
-                  <button
-                    type="button"
-                    onClick={handleInviteLinkSubmit}
-                    className="app-button-secondary w-full py-3"
-                  >
-                    Continue with invite
-                  </button>
-                </div>
+                <FormSection
+                  step="Step 2"
+                  title="Open your invitation"
+                  description="Paste the invite link or token you received from your workspace admin."
+                >
+                  <div className="space-y-3">
+                    <Field label="Invite Link or Token">
+                      <Input
+                        value={inviteLink}
+                        onChange={(event) => setInviteLink(event.target.value)}
+                        className="admin-input"
+                        placeholder="https://app.example.com/invite/..."
+                      />
+                    </Field>
+                    <AppButton
+                      type="button"
+                      onClick={handleInviteLinkSubmit}
+                      tone="secondary"
+                      className="w-full"
+                    >
+                      Continue with invite
+                    </AppButton>
+                  </div>
+                </FormSection>
               )}
               {inviteToken && (
-                <>
-                  <Field label="Full Name">
-                    <input
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      className="admin-input"
-                      placeholder="Jane Doe"
-                      required
-                    />
-                  </Field>
-                  <Field label="Password">
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      className="admin-input"
-                      placeholder="Minimum 8 characters"
-                      required
-                    />
-                  </Field>
-                  <button
-                    type="submit"
-                    disabled={loading || !inviteDetails}
-                    className="app-button-primary flex w-full py-4"
-                  >
-                    {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
-                    Join with invitation
-                  </button>
-                </>
+                <FormSection
+                  step="Step 2"
+                  title="Create your account"
+                  description="Set the name and password you will use inside this workspace."
+                >
+                  <div className="space-y-4">
+                    <Field label="Full Name">
+                      <Input
+                        value={fullName}
+                        onChange={(event) => setFullName(event.target.value)}
+                        className="admin-input"
+                        placeholder="Jane Doe"
+                        required
+                      />
+                    </Field>
+                    <Field label="Password">
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        className="admin-input"
+                        placeholder="Minimum 8 characters"
+                        required
+                      />
+                    </Field>
+                  </div>
+                </FormSection>
               )}
+
+              {inviteToken ? (
+                <AppButton
+                  type="submit"
+                  disabled={loading || !inviteDetails}
+                  className="flex w-full"
+                >
+                  {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
+                  Join with invitation
+                </AppButton>
+              ) : null}
             </form>
           )}
 
           {(error || success) && (
-            <div
-              className={`rounded-2xl border p-4 text-sm ${
+            <Alert
+              className={`rounded-2xl ${
                 error
                   ? "border-red-200 bg-red-50 text-red-700"
                   : "border-emerald-200 bg-emerald-50 text-emerald-700"
               }`}
             >
-              {error || success}
-            </div>
+              <AlertDescription>{error || success}</AlertDescription>
+            </Alert>
           )}
         </div>
 
@@ -508,7 +590,7 @@ export default function WorkspaceOnboardingForm() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-950">
-                {mode === "join" ? "Join with invitation" : "What happens next"}
+                {mode === "join" ? "Invitation overview" : "Setup summary"}
               </p>
               <p className="text-xs text-slate-500">
                 {mode === "join"
@@ -520,17 +602,43 @@ export default function WorkspaceOnboardingForm() {
 
           {mode === "join" ? (
             <div className="space-y-3 text-sm text-slate-600">
-              <p>Have an invite link? Join your organisation’s existing workspace.</p>
-              <p>Your invite role controls what you can do after joining.</p>
-              <p>Invited email must match the account that accepts the invitation.</p>
+              <ChecklistItem>
+                Join your organisation's existing workspace with the role assigned in your invite.
+              </ChecklistItem>
+              <ChecklistItem>
+                Your invite email stays linked to the account that accepts the invitation.
+              </ChecklistItem>
+              <ChecklistItem>
+                After setup, you will land directly inside the invited workspace.
+              </ChecklistItem>
             </div>
           ) : (
             <div className="space-y-3 text-sm text-slate-600">
-              <p>After creation you will become the company admin for that workspace.</p>
-              <p>Default setup includes your company name, assistant name, and welcome message.</p>
-              <p>From the dashboard you can upload your first document, invite users, and test Ask Questions.</p>
+              <ChecklistItem>
+                After creation, you become the Workspace Admin for your company workspace.
+              </ChecklistItem>
+              <ChecklistItem>
+                Your team can upload approved documents and ask questions from one shared knowledge base.
+              </ChecklistItem>
+              <ChecklistItem>
+                You can invite more staff, manage access, and review analytics from the dashboard.
+              </ChecklistItem>
             </div>
           )}
+
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+                <CheckCircle2 size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-950">What you will see after setup</p>
+                <p className="mt-1 text-xs leading-6 text-slate-500">
+                  A clean workspace with documents, users, analytics, and chat ready for your team.
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="mt-8 border-t border-slate-200 pt-6 text-sm text-slate-600">
             Already have an account?{" "}
@@ -540,6 +648,33 @@ export default function WorkspaceOnboardingForm() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function FormSection({
+  step,
+  title,
+  description,
+  children,
+}: {
+  step: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-700">
+          {step}
+        </p>
+        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+          {title}
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">{description}</p>
+      </div>
+      <div className="space-y-4">{children}</div>
     </div>
   );
 }
@@ -558,5 +693,14 @@ function Field({
       </span>
       {children}
     </label>
+  );
+}
+
+function ChecklistItem({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-cyan-500" />
+      <p>{children}</p>
+    </div>
   );
 }

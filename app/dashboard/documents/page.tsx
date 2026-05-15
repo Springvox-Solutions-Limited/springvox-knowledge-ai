@@ -15,8 +15,13 @@ import {
 import { cn } from "@/src/lib/utils";
 import { type UserProfile } from "@/src/lib/workspace";
 import Link from "next/link";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
+import { AppButton } from "@/src/components/ui/app-button";
+import { ConfirmDialog } from "@/src/components/ui/confirm-dialog";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { StatusBadge } from "@/src/components/ui/status-badge";
 
 type DocumentRecord = {
   id: string;
@@ -28,12 +33,15 @@ type DocumentRecord = {
 };
 
 export default function DocumentsPage() {
+  const PAGE_SIZE = 8;
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchDocs = async () => {
     setLoading(true);
@@ -88,22 +96,19 @@ export default function DocumentsPage() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle2 size={16} className="text-green-500" />;
-      case "processing":
-        return <Clock size={16} className="text-blue-500 animate-spin" />;
-      case "failed":
-        return <AlertCircle size={16} className="text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
   const filteredDocuments = documents.filter((document) =>
     document.filename.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+  const totalPages = Math.max(1, Math.ceil(filteredDocuments.length / PAGE_SIZE));
+  const pagedDocuments = filteredDocuments.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+  const hasFilters = Boolean(searchQuery);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   return (
     <div className="admin-page">
@@ -120,23 +125,27 @@ export default function DocumentsPage() {
           placeholder="Search documents by filename..."
           className="flex-1"
         />
-        <Link
-          href="/dashboard/upload"
-          className="app-button-primary whitespace-nowrap px-6 py-3"
-        >
-          <Upload size={18} />
-          Upload document
-        </Link>
+        {hasFilters ? (
+          <AppButton
+            tone="secondary"
+            onClick={() => setSearchQuery("")}
+            className="w-full whitespace-nowrap sm:w-auto"
+          >
+            Clear search
+          </AppButton>
+        ) : null}
+        <AppButton asChild className="w-full whitespace-nowrap px-6 sm:w-auto">
+          <Link href="/dashboard/upload">
+            <Upload size={18} />
+            Upload document
+          </Link>
+        </AppButton>
       </div>
 
       {actionError && (
-        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-5 text-sm text-red-700 font-medium flex items-start gap-3">
-          <AlertCircle size={18} className="shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold">Error deleting document</p>
-            <p className="text-xs mt-1 opacity-90">{actionError}</p>
-          </div>
-        </div>
+        <Alert className="rounded-2xl border-red-200 bg-red-50/50 text-red-700">
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
       )}
 
       <div className="admin-shell-card overflow-hidden border border-slate-200 bg-white">
@@ -180,27 +189,16 @@ export default function DocumentsPage() {
             ) : filteredDocuments.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-24 text-center">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50 text-slate-400">
-                      <FileText size={28} strokeWidth={1.5} />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-bold text-slate-950">
-                        {documents.length === 0
-                          ? "No documents yet"
-                          : "No matching documents"}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {documents.length === 0
-                          ? "Start by uploading your first approved document."
-                          : "Try a different search term or clear filters."}
-                      </p>
-                    </div>
-                  </div>
+                  <EmptyState
+                    icon={FileText}
+                    title={documents.length === 0 ? "No documents yet" : "No matching documents"}
+                    description={documents.length === 0 ? "Start by uploading your first approved document." : "Try a different search term or clear filters."}
+                    className="border-0 bg-transparent py-0"
+                  />
                 </td>
               </tr>
             ) : (
-              filteredDocuments.map((doc) => (
+              pagedDocuments.map((doc) => (
                 <tr
                   key={doc.id}
                   className="hover:bg-slate-50/60 transition-colors"
@@ -220,18 +218,7 @@ export default function DocumentsPage() {
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border",
-                          doc.status === "completed"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : doc.status === "failed"
-                              ? "bg-red-50 text-red-700 border-red-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200",
-                        )}
-                      >
-                        {doc.status}
-                      </span>
+                      <StatusBadge status={doc.status} />
                       {doc.status === "processing" && (
                         <Loader2
                           size={14}
@@ -256,7 +243,8 @@ export default function DocumentsPage() {
                   </td>
                   <td className="px-6 py-5 text-right">
                     <button
-                      onClick={() => handleDelete(doc.id)}
+                      aria-label={`Delete ${doc.filename}`}
+                      onClick={() => setConfirmDeleteId(doc.id)}
                       disabled={deletingId === doc.id}
                       className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 transition-all hover:bg-red-50 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
@@ -283,23 +271,13 @@ export default function DocumentsPage() {
               />
             ))
           ) : filteredDocuments.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-400 mx-auto mb-4">
-                <FileText size={28} />
-              </div>
-              <p className="text-sm font-bold text-slate-900">
-                {documents.length === 0
-                  ? "No documents yet"
-                  : "No matches found"}
-              </p>
-              <p className="text-xs text-slate-500 mt-2">
-                {documents.length === 0
-                  ? "Upload your first document to get started."
-                  : "Try adjusting your search filters."}
-              </p>
-            </div>
+            <EmptyState
+              icon={FileText}
+              title={documents.length === 0 ? "No documents yet" : "No matches found"}
+              description={documents.length === 0 ? "Upload your first document to get started." : "Try adjusting your search filters."}
+            />
           ) : (
-            filteredDocuments.map((doc) => (
+            pagedDocuments.map((doc) => (
               <div
                 key={doc.id}
                 className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
@@ -318,7 +296,8 @@ export default function DocumentsPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => handleDelete(doc.id)}
+                    aria-label={`Delete ${doc.filename}`}
+                    onClick={() => setConfirmDeleteId(doc.id)}
                     disabled={deletingId === doc.id}
                     className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
                   >
@@ -329,23 +308,42 @@ export default function DocumentsPage() {
                     )}
                   </button>
                 </div>
-                <span
-                  className={cn(
-                    "rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider inline-block border",
-                    doc.status === "completed"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : doc.status === "failed"
-                        ? "bg-red-50 text-red-700 border-red-200"
-                        : "bg-blue-50 text-blue-700 border-blue-200",
-                  )}
-                >
-                  {doc.status}
-                </span>
+                <StatusBadge status={doc.status} />
               </div>
             ))
           )}
         </div>
+        {filteredDocuments.length > PAGE_SIZE ? (
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-slate-500">
+              Showing {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, filteredDocuments.length)} of {filteredDocuments.length}
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:flex">
+              <AppButton tone="secondary" disabled={currentPage === 1} className="h-10 px-3 text-xs" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                Previous
+              </AppButton>
+              <AppButton tone="secondary" disabled={currentPage === totalPages} className="h-10 px-3 text-xs" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+                Next
+              </AppButton>
+            </div>
+          </div>
+        ) : null}
       </div>
+      <ConfirmDialog
+        open={Boolean(confirmDeleteId)}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDeleteId(null);
+        }}
+        title="Delete document?"
+        description="This removes the document from your workspace. The action is reversible only by uploading the document again."
+        confirmLabel="Delete document"
+        loading={Boolean(deletingId)}
+        onConfirm={async () => {
+          if (!confirmDeleteId) return;
+          await handleDelete(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+      />
     </div>
   );
 }

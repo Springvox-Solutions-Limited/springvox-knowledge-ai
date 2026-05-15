@@ -4,9 +4,27 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { fetchPlatformJson } from '@/src/lib/platform-client';
+import { AppButton } from '@/src/components/ui/app-button';
+import {
+  AppTable,
+  AppTableBody,
+  AppTableCell,
+  AppTableHead,
+  AppTableHeader,
+  AppTableRow,
+} from '@/src/components/ui/app-table';
 import { PlanBadge, StatusBadge } from '@/src/components/platform/PlatformBadges';
-import { PLAN_DETAILS, WORKSPACE_PLANS, WORKSPACE_STATUSES } from '@/src/lib/workspace';
+import { getRoleLabel, PLAN_DETAILS, WORKSPACE_PLANS, WORKSPACE_STATUSES } from '@/src/lib/workspace';
 import { PlatformPageHeader } from '@/src/components/platform/PlatformPageHeader';
 
 type CompanyDetailResponse = {
@@ -192,12 +210,16 @@ export default function PlatformCompanyDetailPage() {
           <PlanBadge plan={data.workspace.plan} />
           <span className="text-sm text-slate-500">{data.workspace.slug}</span>
         </div>
-        <Link href="/platform/companies" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-700 hover:border-slate-300">
-          Back to companies
-        </Link>
+        <AppButton asChild tone="secondary" className="text-xs uppercase tracking-[0.18em]">
+          <Link href="/platform/companies">Back to companies</Link>
+        </AppButton>
       </div>
 
-      {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      {error && (
+        <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <section className="admin-shell-card p-6">
@@ -236,46 +258,40 @@ export default function PlatformCompanyDetailPage() {
               <h2 className="mt-2 text-xl font-bold text-slate-950">Workspace users</h2>
             </div>
           </div>
-          <div className="mt-5 overflow-x-auto">
-            <table className="min-w-full text-left">
-              <thead className="border-b border-slate-200">
-                <tr>
+          <div className="mt-5">
+            <AppTable>
+              <AppTableHeader className="bg-transparent">
+                <AppTableRow>
                   {['Email', 'Role', 'Created', 'Updated', 'Actions'].map((column) => (
-                    <th key={column} className="px-3 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{column}</th>
+                    <AppTableHead key={column} className="px-3 py-3">{column}</AppTableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+                </AppTableRow>
+              </AppTableHeader>
+              <AppTableBody>
                 {data.users.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-3 py-4">
+                  <AppTableRow key={user.id}>
+                    <AppTableCell className="px-3 py-4">
                       <p className="font-semibold text-slate-950">{user.email || 'No email'}</p>
                       <p className="mt-1 text-xs text-slate-500">{user.full_name || 'No name'}</p>
-                    </td>
-                    <td className="px-3 py-4 text-sm font-semibold text-slate-700">{user.role}</td>
-                    <td className="px-3 py-4 text-sm text-slate-600">{formatDate(user.created_at)}</td>
-                    <td className="px-3 py-4 text-sm text-slate-600">{formatDate(user.updated_at)}</td>
-                    <td className="px-3 py-4">
+                    </AppTableCell>
+                    <AppTableCell className="px-3 py-4 text-sm font-semibold text-slate-700">{getRoleLabel(user.role as any)}</AppTableCell>
+                    <AppTableCell className="px-3 py-4 text-sm text-slate-600">{formatDate(user.created_at)}</AppTableCell>
+                    <AppTableCell className="px-3 py-4 text-sm text-slate-600">{formatDate(user.updated_at)}</AppTableCell>
+                    <AppTableCell className="px-3 py-4">
                       <div className="flex flex-wrap gap-2">
                         {user.role !== 'platform_admin' && (
                           <>
-                            <button onClick={() => updateUserRole(user.id, 'tenant_admin')} disabled={saving} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-700">
-                              Make tenant_admin
-                            </button>
-                            <button onClick={() => updateUserRole(user.id, 'viewer')} disabled={saving} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-700">
-                              Make viewer
-                            </button>
-                            <button onClick={() => removeUser(user.id)} disabled={saving} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-red-700">
-                              Remove
-                            </button>
+                            <AppButton onClick={() => updateUserRole(user.id, 'tenant_admin')} disabled={saving} tone="secondary" className="h-9 rounded-lg px-3 text-xs">Make Workspace Admin</AppButton>
+                            <AppButton onClick={() => updateUserRole(user.id, 'viewer')} disabled={saving} tone="secondary" className="h-9 rounded-lg px-3 text-xs">Make Viewer</AppButton>
+                            <AppButton onClick={() => removeUser(user.id)} disabled={saving} tone="destructive" className="h-9 rounded-lg px-3 text-xs uppercase tracking-[0.16em]">Remove</AppButton>
                           </>
                         )}
                       </div>
-                    </td>
-                  </tr>
+                    </AppTableCell>
+                  </AppTableRow>
                 ))}
-              </tbody>
-            </table>
+              </AppTableBody>
+            </AppTable>
           </div>
         </section>
 
@@ -285,42 +301,46 @@ export default function PlatformCompanyDetailPage() {
             <div className="mt-5 space-y-5">
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Status</label>
-                <select value={statusValue} onChange={(event) => setStatusValue(event.target.value)} className="admin-input">
-                  {WORKSPACE_STATUSES.map((status) => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
+                <Select value={statusValue} onValueChange={setStatusValue}>
+                  <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200">
+                    {WORKSPACE_STATUSES.map((status) => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Suspension reason</label>
-                <textarea value={suspensionReason} onChange={(event) => setSuspensionReason(event.target.value)} rows={3} className="admin-input" placeholder="Optional internal suspension reason shown to platform admins" />
+                <Textarea value={suspensionReason} onChange={(event) => setSuspensionReason(event.target.value)} rows={3} className="rounded-xl border-slate-200 bg-white text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100" placeholder="Optional internal suspension reason shown to platform admins" />
               </div>
-              <button onClick={saveStatus} disabled={saving} className="rounded-xl bg-slate-950 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white">
-                Save status
-              </button>
+              <AppButton onClick={saveStatus} disabled={saving} className="text-xs uppercase tracking-[0.18em]">Save status</AppButton>
 
               <div className="border-t border-slate-200 pt-5">
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Plan</label>
-                <select value={planValue} onChange={(event) => setPlanValue(event.target.value)} className="admin-input">
-                  {WORKSPACE_PLANS.map((plan) => (
-                    <option key={plan} value={plan}>{plan}</option>
-                  ))}
-                </select>
+                <Select value={planValue} onValueChange={setPlanValue}>
+                  <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200">
+                    {WORKSPACE_PLANS.map((plan) => (
+                      <SelectItem key={plan} value={plan}>{plan}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50 p-4">
                   <p className="text-sm font-semibold text-slate-950">{planDetail.label}</p>
                   <p className="mt-1 text-sm text-slate-600">{planDetail.description}</p>
                 </div>
-                <button onClick={savePlan} disabled={saving} className="mt-4 rounded-xl bg-cyan-700 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white">
-                  Save plan
-                </button>
+                <AppButton onClick={savePlan} disabled={saving} tone="subtle" className="mt-4 text-xs uppercase tracking-[0.18em]">Save plan</AppButton>
               </div>
 
               <div className="border-t border-slate-200 pt-5">
                 <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Internal notes</label>
-                <textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} rows={5} className="admin-input" placeholder="Platform admin notes only. Not visible to tenants." />
-                <button onClick={saveNotes} disabled={saving} className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-700">
-                  Save notes
-                </button>
+                <Textarea value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} rows={5} className="rounded-xl border-slate-200 bg-white text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100" placeholder="Platform admin notes only. Not visible to tenants." />
+                <AppButton onClick={saveNotes} disabled={saving} tone="secondary" className="mt-4 text-xs uppercase tracking-[0.18em]">Save notes</AppButton>
               </div>
             </div>
           </div>
@@ -344,33 +364,33 @@ export default function PlatformCompanyDetailPage() {
 
       <section className="admin-shell-card p-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Documents metadata only</p>
-        <div className="mt-5 overflow-x-auto">
-          <table className="min-w-full text-left">
-            <thead className="border-b border-slate-200">
-              <tr>
+        <div className="mt-5">
+          <AppTable>
+            <AppTableHeader className="bg-transparent">
+              <AppTableRow>
                 {['Filename', 'Status', 'Created', 'Total sections'].map((column) => (
-                  <th key={column} className="px-3 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{column}</th>
+                  <AppTableHead key={column} className="px-3 py-3">{column}</AppTableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+              </AppTableRow>
+            </AppTableHeader>
+            <AppTableBody>
               {data.documents.length === 0 ? (
-                <tr><td colSpan={4} className="px-3 py-10 text-sm text-slate-500">No documents uploaded yet.</td></tr>
+                <AppTableRow><AppTableCell colSpan={4} className="px-3 py-10 text-sm text-slate-500">No documents uploaded yet.</AppTableCell></AppTableRow>
               ) : (
                 data.documents.map((document) => (
-                  <tr key={document.id}>
-                    <td className="px-3 py-4 text-sm font-semibold text-slate-950">{document.filename}</td>
-                    <td className="px-3 py-4"><StatusBadge status={document.status} /></td>
-                    <td className="px-3 py-4 text-sm text-slate-600">{formatDate(document.created_at)}</td>
-                    <td className="px-3 py-4 text-sm text-slate-600">{document.total_sections}</td>
-                  </tr>
+                  <AppTableRow key={document.id}>
+                    <AppTableCell className="px-3 py-4 text-sm font-semibold text-slate-950">{document.filename}</AppTableCell>
+                    <AppTableCell className="px-3 py-4"><StatusBadge status={document.status} /></AppTableCell>
+                    <AppTableCell className="px-3 py-4 text-sm text-slate-600">{formatDate(document.created_at)}</AppTableCell>
+                    <AppTableCell className="px-3 py-4 text-sm text-slate-600">{document.total_sections}</AppTableCell>
+                  </AppTableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </AppTableBody>
+          </AppTable>
         </div>
         <p className="mt-4 text-xs text-slate-500">
-          This table intentionally excludes extracted text, chunk text, and document contents.
+          This table intentionally excludes document text, section text, and private document contents.
         </p>
       </section>
     </div>

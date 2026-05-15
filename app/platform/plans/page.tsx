@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { fetchPlatformJson } from '@/src/lib/platform-client';
 import { PlanBadge, StatusBadge } from '@/src/components/platform/PlatformBadges';
 import { PlatformPageHeader } from '@/src/components/platform/PlatformPageHeader';
+import { AppCard } from '@/src/components/ui/app-card';
 
 type PlanRecord = {
   plan: string;
@@ -52,14 +54,14 @@ export default function PlatformPlansPage() {
         privacyNote="Plan limits are display-only in this phase. Billing and payment processing are not enabled."
       />
 
-      {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      {error && <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700"><AlertDescription>{error}</AlertDescription></Alert>}
 
       <div className="space-y-6">
         {loading ? (
-          <div className="admin-shell-card p-6 text-sm text-slate-500">Loading plans...</div>
+          <AppCard className="p-6 text-sm text-slate-500">Loading plans...</AppCard>
         ) : (
           plans.map((plan) => (
-            <div key={plan.plan} className="admin-shell-card p-6">
+            <AppCard key={plan.plan} className="p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">
                   <PlanBadge plan={plan.plan} />
@@ -95,7 +97,7 @@ export default function PlatformPlansPage() {
                   ))
                 )}
               </div>
-            </div>
+            </AppCard>
           ))
         )}
       </div>

@@ -9,6 +9,7 @@ import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import { cn, truncate } from "@/src/lib/utils";
 import { isWorkspaceAdminRole, type UserProfile } from "@/src/lib/workspace";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
+import { EmptyState } from "@/src/components/ui/empty-state";
 
 type KnowledgeGap = {
   id: string;
@@ -187,15 +188,12 @@ export default function KnowledgeGapsPage() {
           </div>
         ) : filteredKnowledgeGaps.length === 0 ? (
           <div className="px-6 py-24 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-500 mx-auto mb-4">
-              <AlertTriangle size={28} strokeWidth={1.5} />
-            </div>
-            <p className="text-lg font-bold text-slate-950">
-              No unanswered questions found
-            </p>
-            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
-              Recent questions are being answered from your uploaded documents.
-            </p>
+            <EmptyState
+              icon={AlertTriangle}
+              title="No unanswered questions found"
+              description="Recent questions are being answered from your uploaded documents."
+              className="border-0 bg-transparent py-0"
+            />
           </div>
         ) : (
           <div className="divide-y divide-slate-100">

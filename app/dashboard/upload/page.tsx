@@ -18,6 +18,7 @@ import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
 import Link from 'next/link';
 import { AppPageHeader } from '@/src/components/shared/AppPageHeader';
+import { AppButton } from '@/src/components/ui/app-button';
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -89,15 +90,15 @@ export default function UploadPage() {
         subtitle="Add PDF or TXT files your team can ask questions from."
       />
 
-      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
          {[
            { icon: Upload, text: 'Upload file', color: 'text-slate-400' },
-           { icon: FileSearch, text: 'Read document', color: 'text-slate-400' },
-           { icon: Braces, text: 'Prepare sections', color: 'text-slate-400' },
-           { icon: Zap, text: 'Prepare for search', color: 'text-slate-400' },
+            { icon: FileSearch, text: 'Read document', color: 'text-slate-400' },
+            { icon: Braces, text: 'Prepare sections', color: 'text-slate-400' },
+           { icon: Zap, text: 'Make it searchable', color: 'text-slate-400' },
            { icon: Database, text: 'Ready for questions', color: 'text-slate-400' }
          ].map((item, i) => (
-           <div key={i} className="rounded-2xl border border-slate-100 bg-white p-4 flex items-center gap-3 shadow-sm/5">
+          <div key={i} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm/5">
               <item.icon size={16} className={item.color} />
               <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">{item.text}</span>
            </div>
@@ -134,7 +135,7 @@ export default function UploadPage() {
         </div>
 
         {file && (
-          <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-in zoom-in-95 duration-200">
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-in zoom-in-95 duration-200 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
                 <File size={18} className="text-slate-500" />
@@ -146,6 +147,7 @@ export default function UploadPage() {
             </div>
             <button 
               onClick={() => setFile(null)}
+              aria-label="Remove selected file"
               className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
             >
               <X size={18} />
@@ -153,15 +155,15 @@ export default function UploadPage() {
           </div>
         )}
 
-        <button
+        <AppButton
           onClick={handleUpload}
           disabled={!file || uploading}
-          className="app-button-primary flex w-full py-4 disabled:hover:bg-slate-950"
+          className="flex w-full"
         >
           {uploading ? (
             <>
               <Loader2 className="animate-spin" size={18} />
-              Preparing document...
+              Uploading document...
             </>
           ) : (
             <>
@@ -169,7 +171,7 @@ export default function UploadPage() {
               Upload document
             </>
           )}
-        </button>
+        </AppButton>
 
         {status === 'success' && (
           <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-4">
@@ -177,7 +179,7 @@ export default function UploadPage() {
             <div className="space-y-1">
               <p className="text-sm font-bold text-emerald-900">Document uploaded successfully.</p>
               <p className="text-xs text-emerald-700/80 leading-relaxed">Your team can now ask questions from this document in chat.</p>
-              <div className="pt-3 flex gap-5">
+              <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:gap-5">
                 <Link href="/dashboard/chat" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">Open chat</Link>
                 <Link href="/dashboard/documents" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">View documents</Link>
               </div>
@@ -210,7 +212,7 @@ export default function UploadPage() {
               { icon: Upload, title: 'Upload file', copy: 'Your document is stored securely for your workspace.' },
               { icon: FileSearch, title: 'Read document', copy: 'The system reads the text so it can be used in answers.' },
               { icon: Braces, title: 'Prepare sections', copy: 'The document is split into smaller readable sections.' },
-              { icon: Zap, title: 'Prepare for search', copy: 'The system prepares the document so matching answers can be found quickly.' },
+              { icon: Zap, title: 'Make it searchable', copy: 'The system prepares the document so matching answers can be found quickly.' },
               { icon: Database, title: 'Ready for questions', copy: 'The document becomes available in your company chat experience.' },
             ].map((step, index) => (
               <div key={step.title} className="flex gap-4">

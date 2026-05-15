@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { supabase } from '@/src/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
 import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 import { getDefaultRouteForRole } from '@/src/lib/workspace';
 import { getCurrentUserProfile } from '@/src/lib/auth-client';
+import { AppButton } from '@/src/components/ui/app-button';
 
 export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [email, setEmail] = useState('');
@@ -57,10 +60,10 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           <label className="mb-1 ml-1 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Email Address</label>
           <div className="relative group">
             <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-700" />
-            <input
+            <Input
               type="email"
               required
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 transition-all focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
+              className="h-12 rounded-xl border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 focus-visible:border-cyan-400 focus-visible:bg-white focus-visible:ring-cyan-100"
               placeholder="name@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -72,10 +75,10 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           <label className="mb-1 ml-1 block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Password</label>
           <div className="relative group">
             <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-700" />
-            <input
+            <Input
               type="password"
               required
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 transition-all focus:border-cyan-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-cyan-100"
+              className="h-12 rounded-xl border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 focus-visible:border-cyan-400 focus-visible:bg-white focus-visible:ring-cyan-100"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -84,14 +87,14 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 font-mono text-[10px] italic text-red-500">
-            ERR: {error}
-          </div>
+          <Alert className="rounded-xl border-red-200 bg-red-50 text-red-700">
+            <AlertDescription className="text-sm">{error}</AlertDescription>
+          </Alert>
         )}
 
-        <button
+        <AppButton
           disabled={loading}
-          className="app-button-primary flex w-full py-3.5 sm:py-4"
+          className="flex h-12 w-full"
         >
           {loading ? <Loader2 className="animate-spin" size={18} /> : (
             <>
@@ -99,7 +102,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               <ArrowRight size={18} />
             </>
           )}
-        </button>
+        </AppButton>
       </form>
 
       <div className="text-center text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">

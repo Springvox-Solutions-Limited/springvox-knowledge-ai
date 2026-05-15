@@ -524,15 +524,15 @@ export default function ChatPage() {
       <div className="admin-page">
         {!isViewer && (
           <AppPageHeader
-            eyebrow="Ask Questions"
-            title={assistantName}
+            eyebrow=""
+            title="Ask Questions"
             subtitle={`Ask questions from ${companyName}'s approved documents.`}
           />
         )}
-      <div className="mx-auto flex h-[calc(100vh-205px)] max-w-[920px] flex-col sm:h-[calc(100vh-165px)]">
+      <div className="mx-auto flex h-[calc(100dvh-145px)] max-w-4xl min-w-0 flex-col sm:h-[calc(100dvh-150px)]">
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto scrollbar-hide rounded-[28px] border border-slate-200 bg-white px-3 pb-44 pt-6 shadow-[0_12px_28px_rgba(15,23,42,0.05)] sm:px-5"
+          className="flex-1 overflow-y-auto px-0 pb-48 pt-3 scrollbar-hide sm:px-2 sm:pb-44"
         >
           {historyLoading ? (
             <div className="flex items-center gap-3 pt-10 text-sm text-slate-500">
@@ -540,28 +540,24 @@ export default function ChatPage() {
               Loading your recent conversations...
             </div>
           ) : messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center space-y-7 pt-16 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-teal-200 bg-teal-50 text-teal-600 shadow-sm">
+            <div className="flex h-full flex-col items-center justify-center space-y-6 px-2 pt-12 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-teal-200 bg-teal-50 text-teal-600 shadow-sm">
                 <BrainCircuit size={30} />
               </div>
               <div className="space-y-3">
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                  {isViewer
-                    ? 'How can I help?'
-                    : `Ask questions from ${companyName}'s approved documents.`}
-                </h2>
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">How can I help?</h2>
                 <p className="max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
                   {isViewer
                     ? "Ask questions from your organisation's approved documents."
-                    : `${welcomeMessage} This is the same chat experience your team will use every day.`}
+                    : "Ask questions from your organisation's approved documents."}
                 </p>
               </div>
-              <div className="grid w-full max-w-3xl gap-3 md:grid-cols-2">
+              <div className="flex w-full max-w-3xl flex-wrap justify-start gap-2 sm:justify-center sm:gap-3">
                 {EMPTY_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     onClick={() => setInput(prompt)}
-                    className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3.5 text-left text-sm text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50"
+                    className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50"
                   >
                     {prompt}
                   </button>
@@ -570,15 +566,15 @@ export default function ChatPage() {
             </div>
           ) : (
             messages.map((message) => (
-              <div key={message.id} className="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div key={message.id} className="mb-7 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div
                   className={cn(
                     'space-y-3',
-                    message.role === 'user' ? 'ml-auto max-w-[82%] sm:max-w-[72%]' : 'max-w-full',
+                    message.role === 'user' ? 'ml-auto max-w-[92%] sm:max-w-[72%]' : 'max-w-full',
                   )}
                 >
                   {message.role === 'user' ? (
-                    <div className="rounded-[1.4rem] rounded-br-md bg-slate-100 px-4 py-3 text-sm leading-7 text-slate-900">
+                    <div className="rounded-[1.4rem] rounded-br-md bg-slate-900 px-4 py-3 text-sm leading-7 text-white shadow-sm">
                       <div className="whitespace-pre-wrap">{message.content}</div>
                     </div>
                   ) : (
@@ -591,14 +587,14 @@ export default function ChatPage() {
                       </div>
 
                       {!!message.content && (
-                        <div className="markdown-container pl-10 text-[15px] leading-8 text-slate-800">
+                        <div className="markdown-container overflow-hidden pl-0 text-[15px] leading-7 text-slate-800 sm:pl-10 sm:leading-8">
                           <ReactMarkdown>{message.content}</ReactMarkdown>
                         </div>
                       )}
 
                       {(message.statusMessage || (loading && activeMessageId === message.id)) && (
-                        <div className="pl-10">
-                          <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                        <div className="pl-0 sm:pl-10">
+                          <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
                             {loading && activeMessageId === message.id ? (
                               <Loader2 size={13} className="animate-spin text-teal-600" />
                             ) : (
@@ -615,7 +611,7 @@ export default function ChatPage() {
                         </div>
                       )}
 
-                      <div className="pl-10">
+                      <div className="pl-0 sm:pl-10">
                         <div className="flex flex-wrap items-center gap-1.5">
                           {!!message.content && (
                             <button
@@ -683,14 +679,14 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(244,247,251,0)_0%,rgba(244,247,251,0.92)_22%,rgba(244,247,251,1)_100%)] px-3 pb-5 pt-10 sm:px-5">
-          <form onSubmit={handleSend} className="relative mx-auto max-w-[920px] px-1 sm:px-0">
-            <div className={cn('rounded-[28px] border bg-white shadow-[0_12px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl transition-all duration-500', inputFocused ? 'border-cyan-400/40 ring-4 ring-cyan-100' : 'border-slate-200')}>            
+        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(248,250,252,0)_0%,rgba(248,250,252,0.92)_22%,rgba(248,250,252,1)_100%)] px-0 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8 sm:px-2 sm:pb-5">
+          <form onSubmit={handleSend} className="relative mx-auto max-w-4xl">
+            <div className={cn('rounded-[30px] border bg-white shadow-[0_12px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl transition-all duration-500', inputFocused ? 'border-cyan-400/50 ring-4 ring-cyan-100' : 'border-slate-200')}>            
               <textarea
                 ref={textareaRef}
                 rows={1}
-                className="max-h-48 min-h-[56px] w-full resize-none bg-transparent px-5 py-4 pr-24 text-sm leading-7 text-slate-900 outline-none placeholder:text-slate-400"
-                placeholder="Ask a question about your company documents..."
+                className="max-h-48 min-h-[60px] w-full resize-none bg-transparent px-4 py-4 pr-24 text-sm leading-7 text-slate-900 outline-none placeholder:text-slate-400 sm:px-5 sm:pr-28"
+                placeholder="Ask a question about your documents..."
                 value={input}
                 onChange={(event) => {
                   setInput(event.target.value);
@@ -710,18 +706,20 @@ export default function ChatPage() {
               <div className="absolute bottom-3 right-3 flex items-center gap-2">
                 {loading && (
                   <button
+                    aria-label="Stop generating answer"
                     type="button"
                     onClick={handleStopGenerating}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-[11px] text-slate-500 transition-colors hover:text-slate-800"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-[11px] text-slate-500 transition-colors hover:text-slate-800 sm:px-3"
                   >
                     <Square size={11} className="fill-current" />
                     Stop
                   </button>
                 )}
                 <button
+                  aria-label="Send message"
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="rounded-full bg-slate-900 p-2.5 text-white shadow-sm transition-all hover:bg-[#132744] disabled:opacity-30"
+                  className="rounded-full bg-slate-900 p-2.5 text-white shadow-sm transition-all hover:bg-[#132744] disabled:bg-slate-200 disabled:text-slate-400"
                 >
                   <Send size={16} />
                 </button>
@@ -730,8 +728,8 @@ export default function ChatPage() {
           </form>
           <p className="mt-3 text-center text-xs text-slate-400">
             {isViewer
-              ? 'Answers come from approved documents when support is available.'
-              : 'Answers are based on uploaded company documents and may include sources.'}
+              ? 'Answers use approved documents when support is available.'
+              : 'Answers use approved company documents and may include sources.'}
           </p>
         </div>
       </div>
@@ -762,6 +760,10 @@ function getVisibleStatus(statusMessage: string, isViewer: boolean, isActive: bo
     return 'Answer prepared from uploaded documents.';
   }
 
+  if (isActive) {
+    return 'Thinking...';
+  }
+
   return statusMessage || 'Thinking...';
 }
 
@@ -785,7 +787,7 @@ function CitationList({
     .slice(0, 5);
 
   return (
-    <div className="pl-10">
+    <div className="pl-0 sm:pl-10">
       <button
         type="button"
         onClick={() => setExpanded((currentValue) => !currentValue)}
@@ -816,7 +818,7 @@ function CitationList({
                       <p className="text-sm font-medium text-slate-900">{citation.filename}</p>
                       <p className="mt-1 text-[11px] text-slate-500">Section {citation.chunk_index}</p>
                     </div>
-                    <span className="text-[11px] text-teal-600">Open source</span>
+                    <span className="text-[11px] text-teal-600">Open</span>
                   </div>
                   <p className="mt-2 text-xs leading-6 text-slate-500">
                     {truncate(citation.preview, 120)}
@@ -855,7 +857,7 @@ function FeedbackRow({
   onSelectMore: (rating: FeedbackRating) => void;
 }) {
   return (
-    <div className="pl-10">
+    <div className="pl-0 sm:pl-10">
       {submitted ? (
         <p className="text-xs text-slate-500">
           Thanks for the feedback{rating ? ` · ${rating.replaceAll('_', ' ')}` : ''}.
@@ -949,12 +951,12 @@ function SourceDrawer({
         className="fixed inset-0 z-40 bg-black/30"
         onClick={onClose}
       />
-      <aside className="fixed inset-y-0 right-0 z-50 w-full border-l border-slate-200 bg-white shadow-[0_0_40px_rgba(15,23,42,0.10)] sm:max-w-xl">
+      <aside className="fixed inset-0 z-50 w-full border-l border-slate-200 bg-white shadow-[0_0_40px_rgba(15,23,42,0.10)] sm:inset-y-0 sm:right-0 sm:left-auto sm:max-w-xl">
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-5">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                {managerView ? 'Verified Source' : 'Source'}
+                {managerView ? 'Document Source' : 'Source'}
               </p>
               <h3 className="mt-1 text-lg font-semibold text-slate-900">
                 {citation?.filename || 'Source details'}
@@ -963,13 +965,14 @@ function SourceDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-200 p-2 text-slate-400 transition-colors hover:text-slate-700"
+              aria-label="Close source panel"
+              className="rounded-xl border border-slate-200 p-2.5 text-slate-400 transition-colors hover:text-slate-700"
             >
               <X size={16} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-5 py-5">
+          <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-5">
             {loading && (
               <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
                 <Loader2 size={16} className="animate-spin text-teal-600" />
@@ -1026,7 +1029,7 @@ function SourceDrawer({
                   <div className="mt-3 space-y-2 text-sm text-slate-600">
                     <p>Document ID: {citation?.document_id || 'Unknown'}</p>
                     <p>Uploaded by: {citation?.uploaded_by || 'Unknown'}</p>
-                    <p>Section number: {citation?.chunk_index || 0}</p>
+                    <p>Section: {citation?.chunk_index || 0}</p>
                   </div>
                 </div>
               )}
