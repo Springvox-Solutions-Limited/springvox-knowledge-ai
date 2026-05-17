@@ -15,6 +15,7 @@ import {
   PanelLeftOpen
 } from 'lucide-react';
 import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
+import { ViewerChatSidebarHistory } from '@/src/components/dashboard/ViewerChatSidebarHistory';
 import { getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
@@ -78,6 +79,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [pathname, router]);
 
   const navItems = profile ? getNavItems(profile.role) : [];
+  const visibleNavItems =
+    profile && !isWorkspaceAdminRole(profile.role)
+      ? []
+      : navItems;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -92,6 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const workspaceBlocked =
     Boolean(workspace && isWorkspaceRestrictedStatus(workspace.status)) &&
     !isPlatformAdminRole(profile.role);
+  const isViewerRole = !isWorkspaceAdminRole(profile.role);
   const currentPageTitle =
     navItems.find((item) => item.href === pathname)?.name ||
     pathname.split('/').pop()?.replace('-', ' ') ||
@@ -99,85 +105,101 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navContent = (
     <>
-      <div className="mb-8 flex items-start justify-between gap-4 px-2">
-        <div className="min-w-0 flex-1">
+      <div className={cn("flex h-full flex-col", isViewerRole && "gap-6")}>
+        <div className={cn("px-2", !isViewerRole && "mb-8")}>
           <SpringVoxLogo
             variant="full"
             theme="light"
             className="h-11"
             imageClassName="h-10 w-auto max-w-[190px] object-contain object-left"
           />
-          <div className="mt-5 flex items-center gap-2 px-1">
+          <div className={cn("mt-5 flex items-center gap-2 px-1", isViewerRole && "mt-6")}>
             <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.45)]" />
             <span className="block truncate text-[9px] font-bold uppercase tracking-[0.25em] text-slate-500">
               {workspace?.name || 'Workspace'}
             </span>
           </div>
         </div>
-      </div>
 
-      <nav className="space-y-1.5 flex-1 overflow-y-auto">
-        <p className="mb-4 ml-6 text-[10px] font-bold uppercase tracking-widest text-slate-600">
-          {isWorkspaceAdminRole(profile.role) ? 'Workspace Admin' : 'Workspace User'}
-        </p>
-        {isPlatformAdminRole(profile.role) && (
-          <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3">
-            <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-200/80">
-              Quick Switch
-            </p>
-            <Link
-              href="/platform"
-              onClick={() => setSidebarOpen(false)}
-              className="mt-3 flex items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/15"
-            >
-              <span>Platform Console</span>
-              <span>→</span>
-            </Link>
-          </div>
-        )}
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setSidebarOpen(false)}
-              className={cn(
-                "flex items-center space-x-3 rounded-xl border px-4 py-3.5 text-sm font-bold transition-all group",
-                isActive 
-                  ? "border-cyan-400/30 bg-cyan-400/12 text-white shadow-[inset_0_0_0_1px_rgba(34,211,238,0.08)]" 
-                  : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
-              )}
-            >
-              <item.icon size={18} className={cn("transition-all duration-300", isActive ? "text-cyan-200" : "text-slate-500 group-hover:text-slate-300")} />
-              <span className={cn("transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
+        <nav className={cn("space-y-1.5 overflow-y-auto", isViewerRole ? "flex-1" : "flex-1")}>
+          <p className={cn(
+            "text-[10px] font-bold uppercase tracking-widest text-slate-600",
+            isViewerRole ? "mb-4 ml-3" : "mb-4 ml-6"
+          )}>
+            {isWorkspaceAdminRole(profile.role) ? 'Workspace Admin' : 'Workspace User'}
+          </p>
+          {isPlatformAdminRole(profile.role) && (
+            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-200/80">
+                Quick Switch
+              </p>
+              <Link
+                href="/platform"
+                onClick={() => setSidebarOpen(false)}
+                className="mt-3 flex items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/15"
+              >
+                <span>Platform Console</span>
+                <span>→</span>
+              </Link>
+            </div>
+          )}
+          {visibleNavItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  "group flex items-center gap-3 rounded-xl border transition-all",
+                  isViewerRole
+                    ? isActive
+                      ? "border-cyan-400/35 bg-cyan-400/10 px-4 py-3.5 text-white shadow-[inset_0_0_0_1px_rgba(34,211,238,0.08)]"
+                      : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                    : isActive
+                      ? "border-cyan-400/30 bg-cyan-400/12 px-4 py-3.5 text-white shadow-[inset_0_0_0_1px_rgba(34,211,238,0.08)]"
+                      : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                )}
+              >
+                <item.icon size={18} className={cn("transition-all duration-300", isActive ? "text-cyan-200" : "text-slate-500 group-hover:text-slate-300")} />
+                <span className={cn("text-sm font-bold transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{item.name}</span>
+              </Link>
+            );
+          })}
 
-      <div className="mt-6 border-t border-white/5 pt-6">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-3 rounded-2xl bg-slate-900 px-4 py-3 border border-white/5 transition-all">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#132744] text-[11px] font-bold text-white shadow-sm border border-white/5">
-              {(workspace?.name || user.email || 'S').slice(0, 1).toUpperCase()}
+          {isViewerRole && pathname === '/dashboard/chat' && (
+            <ViewerChatSidebarHistory onNavigate={() => setSidebarOpen(false)} />
+          )}
+        </nav>
+
+        <div className={cn("border-t border-white/5", isViewerRole ? "pt-5" : "mt-6 pt-6")}>
+          <div className="flex flex-col gap-3">
+            <div className={cn(
+              "flex items-center gap-3 border border-white/5 transition-all",
+              isViewerRole
+                ? "rounded-2xl bg-white/[0.03] px-4 py-3"
+                : "rounded-2xl bg-slate-900 px-4 py-3"
+            )}>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#132744] text-[11px] font-bold text-white shadow-sm border border-white/5">
+                {(workspace?.name || user.email || 'S').slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-bold text-white" title={user.email || ''}>
+                  {user.email?.split('@')[0]}
+                </p>
+                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                  {getRoleLabel(profile.role)}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-white" title={user.email || ''}>
-                {user.email?.split('@')[0]}
-              </p>
-              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-500">
-                {getRoleLabel(profile.role)}
-              </p>
-            </div>
+            <button 
+              onClick={handleLogout}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/5 bg-transparent text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-all hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
+            >
+              <LogOut size={14} />
+              <span>Sign Out</span>
+            </button>
           </div>
-          <button 
-            onClick={handleLogout}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/5 bg-transparent text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-all hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
-          >
-            <LogOut size={14} />
-            <span>Sign Out</span>
-          </button>
         </div>
       </div>
     </>
@@ -185,7 +207,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
-      <aside className="hidden min-h-screen w-64 shrink-0 bg-[#0d1f35] text-white shadow-2xl lg:flex">
+      <aside className={cn(
+        "hidden min-h-screen shrink-0 bg-[#0d1f35] text-white shadow-2xl lg:flex",
+        isViewerRole ? "w-[17.5rem]" : "w-64"
+      )}>
         <div className="flex flex-1 flex-col p-6">
           {navContent}
         </div>
@@ -204,7 +229,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </Sheet>
 
       <main className="flex min-h-screen min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-20 flex min-h-16 w-full items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur-xl md:px-8">
+        <header className={cn(
+          "sticky top-0 z-20 flex w-full items-center justify-between gap-3 border-b border-slate-200 bg-white/80 backdrop-blur-xl",
+          isViewerRole ? "min-h-[4.75rem] px-5 py-4 md:px-8" : "min-h-16 px-4 py-3 md:px-8"
+        )}>
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <button
                 type="button"
@@ -225,12 +253,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <p className="truncate text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
                   {workspace?.name || 'Workspace'}
                 </p>
-                <h1 className="truncate text-sm font-semibold capitalize text-slate-950 sm:text-base">
+                <h1 className={cn(
+                  "truncate font-semibold capitalize text-slate-950",
+                  isViewerRole ? "text-base sm:text-[1.05rem]" : "text-sm sm:text-base"
+                )}>
                   {currentPageTitle}
                 </h1>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
                 {isPlatformAdminRole(profile.role) && (
                   <Link
                     href="/platform"
@@ -239,16 +270,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     Platform Console
                   </Link>
                 )}
-                <div className="hidden sm:flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/50 px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 sm:px-4">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     Online
                 </div>
             </div>
         </header>
         
-        <div className="hidden overflow-hidden border-b border-slate-200 bg-white px-4 py-3 sm:block lg:hidden">
+        <div className={cn(
+          "hidden overflow-hidden border-b border-slate-200 bg-white px-4 py-3 sm:block lg:hidden",
+          isViewerRole && "sm:hidden"
+        )}>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link

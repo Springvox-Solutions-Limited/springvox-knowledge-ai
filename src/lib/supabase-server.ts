@@ -80,7 +80,7 @@ export async function getUserProfileById(userId: string): Promise<UserProfile> {
     .from('profiles')
     .select('id, email, full_name, role, workspace_id')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     throw new Error('Profile not found');

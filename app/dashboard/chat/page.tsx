@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 import {
   BrainCircuit,
   Check,
@@ -9,30 +10,43 @@ import {
   ChevronUp,
   Copy,
   FileText,
+  History,
   Loader2,
+  MessageSquarePlus,
   RefreshCw,
+  Search,
   Send,
   ShieldCheck,
   Square,
   ThumbsDown,
   ThumbsUp,
+  Trash2,
   X,
-} from 'lucide-react';
+} from "lucide-react";
 
 import {
   getAccessToken,
   getCurrentUserProfile,
   getCurrentWorkspaceSettings,
-} from '@/src/lib/auth-client';
-import { supabase } from '@/src/lib/supabase';
-import { cn, truncate } from '@/src/lib/utils';
+} from "@/src/lib/auth-client";
+import { cn, truncate } from "@/src/lib/utils";
 import {
   isWorkspaceAdminRole,
   type FeedbackRating,
   type UserProfile,
   type WorkspaceSettings,
-} from '@/src/lib/workspace';
-import { AppPageHeader } from '@/src/components/shared/AppPageHeader';
+} from "@/src/lib/workspace";
+import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
+import { AppButton } from "@/src/components/ui/app-button";
+import { ConfirmDialog } from "@/src/components/ui/confirm-dialog";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 type Citation = {
   filename: string;
@@ -44,9 +58,24 @@ type Citation = {
   uploaded_by?: string | null;
 };
 
+type StoredChatMessage = {
+  id: string;
+  question: string;
+  answer: string;
+  citations: Citation[];
+  created_at: string;
+};
+
+type ChatSessionSummary = {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type Message = {
   id: string;
-  role: 'user' | 'ai';
+  role: "user" | "ai";
   content: string;
   citations?: Citation[];
   statusMessage?: string;
@@ -57,15 +86,25 @@ type Message = {
 };
 
 const EMPTY_PROMPTS = [
-  'Summarise the uploaded documents',
-  'What services are mentioned?',
-  'What policies should I know?',
-  'What are the key points?',
+  "Summarise the uploaded documents",
+  "What services are mentioned?",
+  "What policies should I know?",
+  "What are the key points?",
 ];
 
-const EXTRA_FEEDBACK_OPTIONS: FeedbackRating[] = ['wrong', 'outdated', 'needs_more_detail'];
+const EXTRA_FEEDBACK_OPTIONS: FeedbackRating[] = [
+  "wrong",
+  "outdated",
+  "needs_more_detail",
+];
 
-function useAutoResizeTextarea({ minHeight, maxHeight }: { minHeight: number; maxHeight?: number }) {
+function useAutoResizeTextarea({
+  minHeight,
+  maxHeight,
+}: {
+  minHeight: number;
+  maxHeight?: number;
+}) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const adjustHeight = useCallback(
     (reset?: boolean) => {
@@ -76,22 +115,48 @@ function useAutoResizeTextarea({ minHeight, maxHeight }: { minHeight: number; ma
         return;
       }
       textarea.style.height = `${minHeight}px`;
-      const newHeight = Math.max(minHeight, Math.min(textarea.scrollHeight, maxHeight ?? Infinity));
+      const newHeight = Math.max(
+        minHeight,
+        Math.min(textarea.scrollHeight, maxHeight ?? Infinity),
+      );
       textarea.style.height = `${newHeight}px`;
     },
-    [minHeight, maxHeight],
+    [maxHeight, minHeight],
   );
+
   useEffect(() => {
     if (textareaRef.current) textareaRef.current.style.height = `${minHeight}px`;
   }, [minHeight]);
+
   return { textareaRef, adjustHeight };
 }
 
+function mapStoredMessagesToThread(messages: StoredChatMessage[]): Message[] {
+  return messages.flatMap((item) => [
+    {
+      id: `question-${item.id}`,
+      role: "user" as const,
+      content: item.question,
+    },
+    {
+      id: `answer-${item.id}`,
+      role: "ai" as const,
+      content: item.answer,
+      citations: Array.isArray(item.citations) ? item.citations : [],
+      chatMessageId: item.id,
+    },
+  ]);
+}
+
 export default function ChatPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceSettings | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
@@ -104,14 +169,18 @@ export default function ChatPage() {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [feedbackLoadingMessageId, setFeedbackLoadingMessageId] = useState<string | null>(null);
   const [expandedFeedbackMessageId, setExpandedFeedbackMessageId] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [sessionSearch, setSessionSearch] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [inputFocused, setInputFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const startedAtRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const typingQueueRef = useRef('');
+  const typingQueueRef = useRef("");
   const typingIntervalRef = useRef<number | null>(null);
   const typingMessageIdRef = useRef<string | null>(null);
-  const [inputFocused, setInputFocused] = useState(false);
-  const { textareaRef, adjustHeight } = useAutoResizeTextarea({ minHeight: 56, maxHeight: 192 });
   const pendingCompletionRef = useRef<{
     messageId: string;
     payload: {
@@ -121,6 +190,11 @@ export default function ChatPage() {
       statusMessage?: string;
     };
   } | null>(null);
+  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
+    minHeight: 56,
+    maxHeight: 192,
+  });
+  const sessionParam = searchParams.get("session");
 
   useEffect(() => {
     async function loadChatContext() {
@@ -134,47 +208,40 @@ export default function ChatPage() {
         setWorkspace(currentWorkspace);
 
         if (!currentProfile?.workspace_id) {
-          setHistoryLoading(false);
+          setSessions([]);
           return;
         }
 
-        const { data: history, error } = await supabase
-          .from('chat_messages')
-          .select('id, question, answer, citations, created_at')
-          .eq('workspace_id', currentProfile.workspace_id)
-          .order('created_at', { ascending: true })
-          .limit(30);
-
-        if (error) {
-          throw error;
-        }
-
-        const loadedMessages: Message[] = [];
-        for (const item of history || []) {
-          loadedMessages.push({
-            id: `question-${item.id}`,
-            role: 'user',
-            content: item.question,
-          });
-          loadedMessages.push({
-            id: `answer-${item.id}`,
-            role: 'ai',
-            content: item.answer,
-            citations: Array.isArray(item.citations) ? (item.citations as Citation[]) : [],
-            chatMessageId: item.id,
-          });
-        }
-
-        setMessages(loadedMessages);
-      } catch {
-        setMessages([]);
+        await loadSessions();
+      } catch (error) {
+        setHistoryError(
+          error instanceof Error ? error.message : "Unable to load chats right now.",
+        );
       } finally {
         setHistoryLoading(false);
+        setSessionsLoading(false);
       }
     }
 
-    loadChatContext();
+    void loadChatContext();
   }, []);
+
+  useEffect(() => {
+    if (sessionsLoading) {
+      return;
+    }
+
+    if (!sessionParam) {
+      setActiveSessionId(null);
+      setMessages([]);
+      setRetryQuestion(null);
+      return;
+    }
+
+    if (sessionParam !== activeSessionId) {
+      void loadSession(sessionParam, false);
+    }
+  }, [activeSessionId, sessionParam, sessionsLoading]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -205,15 +272,158 @@ export default function ChatPage() {
     };
   }, []);
 
+  const loadSessions = async () => {
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      throw new Error("Authentication session expired");
+    }
+
+    const response = await fetch("/api/chat/sessions", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to load chats");
+    }
+
+    setSessions(data.sessions || []);
+  };
+
+  const notifySessionSidebar = () => {
+    window.dispatchEvent(new Event("springvox-chat-sessions-changed"));
+  };
+
+  const loadSession = async (sessionId: string, closeHistory = true) => {
+    try {
+      setHistoryLoading(true);
+      setHistoryError(null);
+
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication session expired");
+      }
+
+      const response = await fetch(`/api/chat/sessions/${sessionId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load chat");
+      }
+
+      setActiveSessionId(sessionId);
+      setMessages(mapStoredMessagesToThread(data.messages || []));
+      setRetryQuestion(null);
+      if (sessionParam !== sessionId) {
+        router.replace(`/dashboard/chat?session=${sessionId}`);
+      }
+      if (closeHistory) {
+        setHistoryOpen(false);
+      }
+    } catch (error) {
+      setHistoryError(
+        error instanceof Error ? error.message : "Unable to load that chat.",
+      );
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const createNewChat = async () => {
+    try {
+      setHistoryError(null);
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication session expired");
+      }
+
+      const response = await fetch("/api/chat/sessions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create chat");
+      }
+
+      setActiveSessionId(data.session.id);
+      setMessages([]);
+      setRetryQuestion(null);
+      setInput("");
+      adjustHeight(true);
+      setHistoryOpen(false);
+      await loadSessions();
+      notifySessionSidebar();
+      router.replace(`/dashboard/chat?session=${data.session.id}`);
+    } catch (error) {
+      setHistoryError(
+        error instanceof Error ? error.message : "Unable to create a new chat.",
+      );
+    }
+  };
+
+  const deleteSession = async (sessionId: string) => {
+    try {
+      setHistoryError(null);
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication session expired");
+      }
+
+      const response = await fetch(`/api/chat/sessions/${sessionId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete chat");
+      }
+
+      if (activeSessionId === sessionId) {
+        setActiveSessionId(null);
+        setMessages([]);
+        setRetryQuestion(null);
+        router.replace("/dashboard/chat");
+      }
+
+      setDeleteSessionId(null);
+      await loadSessions();
+      notifySessionSidebar();
+    } catch (error) {
+      setHistoryError(
+        error instanceof Error ? error.message : "Unable to delete that chat.",
+      );
+    }
+  };
+
   const handleCopyAnswer = async (content: string, id: string) => {
     await navigator.clipboard.writeText(content);
     setCopiedIndex(id);
-    window.setTimeout(() => setCopiedIndex((current) => (current === id ? null : current)), 1800);
+    window.setTimeout(
+      () => setCopiedIndex((current) => (current === id ? null : current)),
+      1800,
+    );
   };
 
   const updateMessage = (messageId: string, updater: (message: Message) => Message) => {
     setMessages((currentMessages) =>
-      currentMessages.map((message) => (message.id === messageId ? updater(message) : message)),
+      currentMessages.map((message) =>
+        message.id === messageId ? updater(message) : message,
+      ),
     );
   };
 
@@ -222,7 +432,7 @@ export default function ChatPage() {
       window.clearInterval(typingIntervalRef.current);
       typingIntervalRef.current = null;
     }
-    typingQueueRef.current = '';
+    typingQueueRef.current = "";
     typingMessageIdRef.current = null;
     pendingCompletionRef.current = null;
   };
@@ -280,7 +490,10 @@ export default function ChatPage() {
     }, 20);
   };
 
-  const handleSend = async (event?: React.FormEvent, explicitQuestion?: string) => {
+  const handleSend = async (
+    event?: React.FormEvent,
+    explicitQuestion?: string,
+  ) => {
     event?.preventDefault();
 
     const question = (explicitQuestion ?? input).trim();
@@ -295,42 +508,46 @@ export default function ChatPage() {
 
     setMessages((currentMessages) => [
       ...currentMessages,
-      { id: userMessageId, role: 'user', content: question },
-      { id: assistantMessageId, role: 'ai', content: '', statusMessage: 'Thinking...' },
+      { id: userMessageId, role: "user", content: question },
+      { id: assistantMessageId, role: "ai", content: "", statusMessage: "Thinking..." },
     ]);
     setActiveMessageId(assistantMessageId);
     setRetryQuestion(question);
     setLoading(true);
-    setInput('');
+    setHistoryError(null);
+    setInput("");
     adjustHeight(true);
     startedAtRef.current = Date.now();
 
     try {
       const accessToken = await getAccessToken();
       if (!accessToken) {
-        throw new Error('Authentication session expired');
+        throw new Error("Authentication session expired");
       }
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const response = await fetch('/api/chat', {
-        method: 'POST',
+      const response = await fetch("/api/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({
+          question,
+          session_id: activeSessionId,
+        }),
         signal: controller.signal,
       });
 
       if (!response.ok || !response.body) {
-        throw new Error('Query failed');
+        throw new Error("Query failed");
       }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = '';
+      let buffer = "";
 
       while (true) {
         const { value, done } = await reader.read();
@@ -339,8 +556,8 @@ export default function ChatPage() {
         }
 
         buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split('\n\n');
-        buffer = parts.pop() || '';
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() || "";
 
         for (const part of parts) {
           const eventMatch = part.match(/^event:\s*(.+)$/m);
@@ -350,27 +567,41 @@ export default function ChatPage() {
             continue;
           }
 
-          const eventName = eventMatch?.[1]?.trim() || 'message';
+          const eventName = eventMatch?.[1]?.trim() || "message";
           const payload = JSON.parse(dataMatch[1]);
 
-          if (eventName === 'status') {
+          if (eventName === "status") {
             updateMessage(assistantMessageId, (message) => ({
               ...message,
-              statusMessage: String(payload.message || ''),
+              statusMessage: String(payload.message || ""),
             }));
           }
 
-          if (eventName === 'chunk') {
-            typingQueueRef.current += String(payload.delta || '');
+          if (eventName === "chunk") {
+            typingQueueRef.current += String(payload.delta || "");
             startTypingBuffer(assistantMessageId);
           }
 
-          if (eventName === 'complete') {
+          if (eventName === "complete") {
+            const sessionId =
+              typeof payload.sessionId === "string" ? payload.sessionId : null;
+            if (sessionId) {
+              setActiveSessionId(sessionId);
+              void loadSessions();
+              notifySessionSidebar();
+              router.replace(`/dashboard/chat?session=${sessionId}`);
+            }
+
             const completionPayload = {
-              answer: String(payload.answer || ''),
-              citations: Array.isArray(payload.citations) ? (payload.citations as Citation[]) : [],
-              chatMessageId: typeof payload.chatMessageId === 'string' ? payload.chatMessageId : undefined,
-              statusMessage: String(payload.statusMessage || ''),
+              answer: String(payload.answer || ""),
+              citations: Array.isArray(payload.citations)
+                ? (payload.citations as Citation[])
+                : [],
+              chatMessageId:
+                typeof payload.chatMessageId === "string"
+                  ? payload.chatMessageId
+                  : undefined,
+              statusMessage: String(payload.statusMessage || ""),
             };
 
             if (typingQueueRef.current) {
@@ -387,23 +618,25 @@ export default function ChatPage() {
             }
           }
 
-          if (eventName === 'error') {
-            throw new Error(String(payload.message || 'Query failed'));
+          if (eventName === "error") {
+            throw new Error(String(payload.message || "Query failed"));
           }
         }
       }
     } catch (error) {
       stopTypingBuffer();
-      if ((error as Error).name === 'AbortError') {
+      if ((error as Error).name === "AbortError") {
         updateMessage(assistantMessageId, (message) => ({
           ...message,
-          statusMessage: 'Generation stopped.',
+          statusMessage: "Generation stopped.",
         }));
       } else {
         updateMessage(assistantMessageId, (message) => ({
           ...message,
-          content: message.content || 'Sorry, I encountered an error while preparing your answer.',
-          statusMessage: 'Could not finish the answer. Please try again.',
+          content:
+            message.content ||
+            "Sorry, I encountered an error while preparing your answer.",
+          statusMessage: "Could not finish the answer. Please try again.",
           error: true,
         }));
       }
@@ -433,7 +666,7 @@ export default function ChatPage() {
       setSourceLoading(true);
       const accessToken = await getAccessToken();
       if (!accessToken) {
-        throw new Error('Authentication session expired');
+        throw new Error("Authentication session expired");
       }
 
       const response = await fetch(
@@ -446,13 +679,15 @@ export default function ChatPage() {
       );
 
       if (!response.ok) {
-        throw new Error('Unable to load source details');
+        throw new Error("Unable to load source details");
       }
 
       const data = await response.json();
       setSourceDetails(data.source as Citation);
     } catch (error) {
-      setSourceError(error instanceof Error ? error.message : 'Unable to load source details');
+      setSourceError(
+        error instanceof Error ? error.message : "Unable to load source details",
+      );
     } finally {
       setSourceLoading(false);
     }
@@ -475,13 +710,13 @@ export default function ChatPage() {
       setFeedbackLoadingMessageId(messageId);
       const accessToken = await getAccessToken();
       if (!accessToken) {
-        throw new Error('Authentication session expired');
+        throw new Error("Authentication session expired");
       }
 
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
+      const response = await fetch("/api/feedback", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
@@ -491,7 +726,7 @@ export default function ChatPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save feedback');
+        throw new Error("Failed to save feedback");
       }
 
       updateMessage(messageId, (message) => ({
@@ -510,18 +745,33 @@ export default function ChatPage() {
     }
   };
 
-  const isViewer = profile?.role === 'viewer';
+  const isViewer = profile?.role === "viewer";
   const assistantName =
     workspace?.assistant_name ||
-    (isViewer ? 'SpringVox Assistant' : 'SpringVox Knowledge AI');
-  const companyName = workspace?.name || 'your company';
-  const welcomeMessage =
-    workspace?.welcome_message ||
-    `Ask questions from ${companyName}'s approved documents.`;
+    (isViewer ? "SpringVox Assistant" : "SpringVox Knowledge AI");
+  const companyName = workspace?.name || "your company";
+  const activeSession = sessions.find((session) => session.id === activeSessionId) || null;
+  const filteredSessions = sessions.filter((session) =>
+    session.title.toLowerCase().includes(sessionSearch.toLowerCase()),
+  );
+
+  const historyPanel = (
+    <ChatHistoryPanel
+      sessions={filteredSessions}
+      loading={sessionsLoading}
+      search={sessionSearch}
+      onSearchChange={setSessionSearch}
+      activeSessionId={activeSessionId}
+      onNewChat={createNewChat}
+      onOpenSession={(sessionId) => void loadSession(sessionId)}
+      onDeleteSession={(sessionId) => setDeleteSessionId(sessionId)}
+      disabled={loading}
+    />
+  );
 
   return (
     <>
-      <div className="admin-page">
+      <div className={cn("admin-page", isViewer && "px-0")}>
         {!isViewer && (
           <AppPageHeader
             eyebrow=""
@@ -529,211 +779,384 @@ export default function ChatPage() {
             subtitle={`Ask questions from ${companyName}'s approved documents.`}
           />
         )}
-      <div className="mx-auto flex h-[calc(100dvh-145px)] max-w-4xl min-w-0 flex-col sm:h-[calc(100dvh-150px)]">
+
         <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto px-0 pb-48 pt-3 scrollbar-hide sm:px-2 sm:pb-44"
+          className={cn(
+            isViewer
+              ? "grid grid-cols-1 gap-4"
+              : "flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6",
+          )}
         >
-          {historyLoading ? (
-            <div className="flex items-center gap-3 pt-10 text-sm text-slate-500">
-              <Loader2 size={18} className="animate-spin text-teal-600" />
-              Loading your recent conversations...
+          {!isViewer && (
+            <aside className="hidden lg:sticky lg:top-6 lg:block lg:w-[18.5rem] lg:shrink-0">
+              {historyPanel}
+            </aside>
+          )}
+
+          <div className="min-w-0">
+            {!isViewer && (
+            <div className="mb-3 flex items-center justify-between gap-3 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                <History size={16} />
+                Recent Chats
+              </button>
+              <AppButton
+                type="button"
+                tone="secondary"
+                onClick={createNewChat}
+                disabled={loading}
+                className="shrink-0"
+              >
+                <MessageSquarePlus size={16} />
+                New Chat
+              </AppButton>
             </div>
-          ) : messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center space-y-6 px-2 pt-12 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-teal-200 bg-teal-50 text-teal-600 shadow-sm">
-                <BrainCircuit size={30} />
+            )}
+
+            {historyError ? (
+              <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {historyError}
               </div>
-              <div className="space-y-3">
-                <h2 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">How can I help?</h2>
-                <p className="max-w-xl text-sm leading-7 text-slate-500 sm:text-base">
-                  {isViewer
-                    ? "Ask questions from your organisation's approved documents."
-                    : "Ask questions from your organisation's approved documents."}
-                </p>
-              </div>
-              <div className="flex w-full max-w-3xl flex-wrap justify-start gap-2 sm:justify-center sm:gap-3">
-                {EMPTY_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    onClick={() => setInput(prompt)}
-                    className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            messages.map((message) => (
-              <div key={message.id} className="mb-7 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div
-                  className={cn(
-                    'space-y-3',
-                    message.role === 'user' ? 'ml-auto max-w-[92%] sm:max-w-[72%]' : 'max-w-full',
-                  )}
-                >
-                  {message.role === 'user' ? (
-                    <div className="rounded-[1.4rem] rounded-br-md bg-slate-900 px-4 py-3 text-sm leading-7 text-white shadow-sm">
-                      <div className="whitespace-pre-wrap">{message.content}</div>
+            ) : null}
+
+            <div className={cn(
+              "flex min-w-0 flex-col",
+              isViewer
+                ? "mx-auto h-[calc(100dvh-170px)] max-w-5xl"
+                : "mx-auto h-[calc(100dvh-165px)] max-w-5xl lg:mx-0 lg:max-w-none sm:h-[calc(100dvh-170px)]"
+            )}>
+              <div
+                ref={scrollRef}
+                className={cn(
+                  "flex-1 overflow-y-auto scrollbar-hide",
+                  isViewer
+                    ? "px-1 pb-32 pt-6 sm:px-4 sm:pb-36"
+                    : "px-0 pb-36 pt-6 sm:px-2 sm:pb-40"
+                )}
+              >
+                {historyLoading ? (
+                  <div className="flex items-center gap-3 pt-10 text-sm text-slate-500">
+                    <Loader2 size={18} className="animate-spin text-teal-600" />
+                    Loading your chat...
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className={cn(
+                    "flex h-full flex-col items-center justify-center text-center",
+                    isViewer ? "space-y-7 px-4 pt-8" : "space-y-7 px-4 pt-8"
+                  )}>
+                    <div className={cn(
+                      "flex items-center justify-center border border-teal-200 bg-teal-50 text-teal-600 shadow-sm",
+                      isViewer ? "h-16 w-16 rounded-[1.75rem]" : "h-16 w-16 rounded-[1.75rem]"
+                    )}>
+                      <BrainCircuit size={30} />
                     </div>
-                  ) : (
                     <div className="space-y-3">
-                      <div className="flex items-center gap-3 text-xs text-slate-500">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-teal-200 bg-teal-50">
-                          <BrainCircuit size={13} className="text-teal-600" />
-                        </div>
-                        <span className="font-medium text-slate-600">{assistantName}</span>
-                      </div>
-
-                      {!!message.content && (
-                        <div className="markdown-container overflow-hidden pl-0 text-[15px] leading-7 text-slate-800 sm:pl-10 sm:leading-8">
-                          <ReactMarkdown>{message.content}</ReactMarkdown>
-                        </div>
-                      )}
-
-                      {(message.statusMessage || (loading && activeMessageId === message.id)) && (
-                        <div className="pl-0 sm:pl-10">
-                          <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
-                            {loading && activeMessageId === message.id ? (
-                              <Loader2 size={13} className="animate-spin text-teal-600" />
-                            ) : (
-                              <ShieldCheck size={13} className="text-teal-600" />
-                            )}
-                            <span>{getVisibleStatus(message.statusMessage || '', isViewer, loading && activeMessageId === message.id)}</span>
-                            {loading && activeMessageId === message.id && (
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                                <ThinkingDots />
-                                {elapsedSeconds.toFixed(1)}s
+                      <h2 className={cn(
+                        "font-semibold tracking-tight text-slate-900",
+                        isViewer ? "text-3xl sm:text-4xl" : "text-3xl sm:text-4xl"
+                      )}>
+                        {messages.length === 0 && !activeSessionId ? "How can I help?" : "Ask your first question"}
+                      </h2>
+                      <p className={cn(
+                        "max-w-xl leading-7 text-slate-500",
+                        isViewer ? "text-base sm:text-[1.05rem]" : "text-base sm:text-[1.05rem]"
+                      )}>
+                        Ask questions from your organisation&apos;s approved documents.
+                      </p>
+                    </div>
+                    <div className={cn(
+                      "flex w-full max-w-3xl flex-wrap gap-2 sm:gap-3",
+                      isViewer ? "justify-center" : "justify-center"
+                    )}>
+                      {EMPTY_PROMPTS.map((prompt) => (
+                        <button
+                          key={prompt}
+                          onClick={() => setInput(prompt)}
+                          className={cn(
+                            "rounded-full border border-slate-200 bg-white text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50",
+                            isViewer ? "px-5 py-3 text-sm shadow-sm" : "px-5 py-3 text-sm shadow-sm"
+                          )}
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className="mb-7 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                    >
+                      <div
+                        className={cn(
+                          "space-y-3",
+                          message.role === "user"
+                            ? "ml-auto max-w-[92%] sm:max-w-[72%]"
+                            : "max-w-full",
+                        )}
+                      >
+                        {message.role === "user" ? (
+                          <div className={cn(
+                            "rounded-[1.4rem] rounded-br-md bg-slate-900 text-white shadow-sm",
+                            isViewer ? "px-5 py-3.5 text-[15px] leading-7" : "px-5 py-3.5 text-[15px] leading-7"
+                          )}>
+                            <div className="whitespace-pre-wrap">{message.content}</div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-3 text-xs text-slate-500">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-teal-200 bg-teal-50">
+                                <BrainCircuit size={13} className="text-teal-600" />
+                              </div>
+                              <span className="font-medium text-slate-600">
+                                {assistantName}
                               </span>
+                            </div>
+
+                            {!!message.content && (
+                              <div className={cn(
+                                "markdown-container overflow-hidden pl-0 text-slate-800",
+                                isViewer ? "text-[15px] leading-8 sm:pl-10" : "text-[15px] leading-8 sm:pl-10"
+                              )}>
+                                <ReactMarkdown>{message.content}</ReactMarkdown>
+                              </div>
+                            )}
+
+                            {(message.statusMessage ||
+                              (loading && activeMessageId === message.id)) && (
+                              <div className="pl-0 sm:pl-10">
+                                <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
+                                  {loading && activeMessageId === message.id ? (
+                                    <Loader2
+                                      size={13}
+                                      className="animate-spin text-teal-600"
+                                    />
+                                  ) : (
+                                    <ShieldCheck
+                                      size={13}
+                                      className="text-teal-600"
+                                    />
+                                  )}
+                                  <span>
+                                    {getVisibleStatus(
+                                      message.statusMessage || "",
+                                      isViewer,
+                                      loading && activeMessageId === message.id,
+                                    )}
+                                  </span>
+                                  {loading && activeMessageId === message.id && (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                                      <ThinkingDots />
+                                      {elapsedSeconds.toFixed(1)}s
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="pl-0 sm:pl-10">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {!!message.content && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleCopyAnswer(message.content, message.id)
+                                    }
+                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                  >
+                                    {copiedIndex === message.id ? (
+                                      <Check size={12} className="text-green-600" />
+                                    ) : (
+                                      <Copy size={12} />
+                                    )}
+                                    {copiedIndex === message.id ? "Copied" : "Copy"}
+                                  </button>
+                                )}
+                                {message.error && retryQuestion && (
+                                  <button
+                                    type="button"
+                                    onClick={(event) => handleSend(event, retryQuestion)}
+                                    disabled={loading}
+                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                  >
+                                    <RefreshCw size={12} />
+                                    Retry
+                                  </button>
+                                )}
+                                {loading && activeMessageId === message.id && (
+                                  <button
+                                    type="button"
+                                    onClick={handleStopGenerating}
+                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                  >
+                                    <Square size={11} className="fill-current" />
+                                    Stop
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {message.citations && message.citations.length > 0 && (
+                              <CitationList
+                                citations={message.citations}
+                                onOpenSource={openSource}
+                              />
+                            )}
+
+                            {message.chatMessageId && (
+                              <FeedbackRow
+                                loading={feedbackLoadingMessageId === message.id}
+                                submitted={message.feedbackSubmitted === true}
+                                rating={message.feedbackRating || null}
+                                expanded={expandedFeedbackMessageId === message.id}
+                                onHelpful={() =>
+                                  submitFeedback(message.id, "helpful")
+                                }
+                                onNotHelpful={() =>
+                                  submitFeedback(message.id, "not_helpful")
+                                }
+                                onToggleMore={() =>
+                                  setExpandedFeedbackMessageId((current) =>
+                                    current === message.id ? null : message.id,
+                                  )
+                                }
+                                onSelectMore={(rating) =>
+                                  submitFeedback(message.id, rating)
+                                }
+                              />
                             )}
                           </div>
-                        </div>
-                      )}
-
-                      <div className="pl-0 sm:pl-10">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {!!message.content && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopyAnswer(message.content, message.id)}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                            >
-                              {copiedIndex === message.id ? (
-                                <Check size={12} className="text-green-600" />
-                              ) : (
-                                <Copy size={12} />
-                              )}
-                              {copiedIndex === message.id ? 'Copied' : 'Copy'}
-                            </button>
-                          )}
-                          {message.error && retryQuestion && (
-                            <button
-                              type="button"
-                              onClick={(event) => handleSend(event, retryQuestion)}
-                              disabled={loading}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                            >
-                              <RefreshCw size={12} />
-                              Retry
-                            </button>
-                          )}
-                          {loading && activeMessageId === message.id && (
-                            <button
-                              type="button"
-                              onClick={handleStopGenerating}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                            >
-                              <Square size={11} className="fill-current" />
-                              Stop
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
-
-                      {message.citations && message.citations.length > 0 && (
-                        <CitationList citations={message.citations} onOpenSource={openSource} />
-                      )}
-
-                      {message.chatMessageId && (
-                        <FeedbackRow
-                          loading={feedbackLoadingMessageId === message.id}
-                          submitted={message.feedbackSubmitted === true}
-                          rating={message.feedbackRating || null}
-                          expanded={expandedFeedbackMessageId === message.id}
-                          onHelpful={() => submitFeedback(message.id, 'helpful')}
-                          onNotHelpful={() => submitFeedback(message.id, 'not_helpful')}
-                          onToggleMore={() =>
-                            setExpandedFeedbackMessageId((current) =>
-                              current === message.id ? null : message.id,
-                            )
-                          }
-                          onSelectMore={(rating) => submitFeedback(message.id, rating)}
-                        />
-                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(248,250,252,0)_0%,rgba(248,250,252,0.92)_22%,rgba(248,250,252,1)_100%)] px-0 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8 sm:px-2 sm:pb-5">
-          <form onSubmit={handleSend} className="relative mx-auto max-w-4xl">
-            <div className={cn('rounded-[30px] border bg-white shadow-[0_12px_28px_rgba(15,23,42,0.05)] backdrop-blur-xl transition-all duration-500', inputFocused ? 'border-cyan-400/50 ring-4 ring-cyan-100' : 'border-slate-200')}>            
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                className="max-h-48 min-h-[60px] w-full resize-none bg-transparent px-4 py-4 pr-24 text-sm leading-7 text-slate-900 outline-none placeholder:text-slate-400 sm:px-5 sm:pr-28"
-                placeholder="Ask a question about your documents..."
-                value={input}
-                onChange={(event) => {
-                  setInput(event.target.value);
-                  adjustHeight();
-                }}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    void handleSend();
-                  }
-                }}
-                disabled={loading}
-                style={{ overflow: 'hidden' }}
-              />
-              <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                {loading && (
-                  <button
-                    aria-label="Stop generating answer"
-                    type="button"
-                    onClick={handleStopGenerating}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-[11px] text-slate-500 transition-colors hover:text-slate-800 sm:px-3"
-                  >
-                    <Square size={11} className="fill-current" />
-                    Stop
-                  </button>
+                  ))
                 )}
-                <button
-                  aria-label="Send message"
-                  type="submit"
-                  disabled={loading || !input.trim()}
-                  className="rounded-full bg-slate-900 p-2.5 text-white shadow-sm transition-all hover:bg-[#132744] disabled:bg-slate-200 disabled:text-slate-400"
-                >
-                  <Send size={16} />
-                </button>
+              </div>
+
+              <div className={cn(
+                "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(248,250,252,0)_0%,rgba(248,250,252,0.92)_22%,rgba(248,250,252,1)_100%)] pb-[max(1rem,env(safe-area-inset-bottom))] pt-8",
+                isViewer ? "px-1 pt-4 sm:px-4 sm:pb-6 sm:pt-5" : "px-0 pt-4 sm:px-2 sm:pb-5 sm:pt-5"
+              )}>
+                <form onSubmit={handleSend} className={cn(
+                  "relative",
+                  isViewer ? "mx-auto max-w-4xl" : "mx-auto max-w-4xl"
+                )}>
+                  <div
+                    className={cn(
+                      "rounded-[30px] border bg-white backdrop-blur-xl transition-all duration-500",
+                      isViewer ? "shadow-[0_20px_45px_rgba(15,23,42,0.08)]" : "shadow-[0_12px_28px_rgba(15,23,42,0.05)]",
+                      inputFocused
+                        ? "border-cyan-400/50 ring-4 ring-cyan-100"
+                        : "border-slate-200",
+                    )}
+                  >
+                    <textarea
+                      ref={textareaRef}
+                      rows={1}
+                      className={cn(
+                        "max-h-48 w-full resize-none bg-transparent text-slate-900 outline-none placeholder:text-slate-400",
+                        isViewer
+                          ? "min-h-[64px] px-5 py-4 pr-24 text-[15px] leading-7 sm:pr-28"
+                          : "min-h-[60px] px-4 py-4 pr-24 text-sm leading-7 sm:px-5 sm:pr-28"
+                      )}
+                      placeholder="Ask anything from your approved documents..."
+                      value={input}
+                      onChange={(event) => {
+                        setInput(event.target.value);
+                        adjustHeight();
+                      }}
+                      onFocus={() => setInputFocused(true)}
+                      onBlur={() => setInputFocused(false)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" && !event.shiftKey) {
+                          event.preventDefault();
+                          void handleSend();
+                        }
+                      }}
+                      disabled={loading}
+                      style={{ overflow: "hidden" }}
+                    />
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                      {loading && (
+                        <button
+                          aria-label="Stop generating answer"
+                          type="button"
+                          onClick={handleStopGenerating}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-[11px] text-slate-500 transition-colors hover:text-slate-800 sm:px-3"
+                        >
+                          <Square size={11} className="fill-current" />
+                          Stop
+                        </button>
+                      )}
+                      <button
+                        aria-label="Send message"
+                        type="submit"
+                        disabled={loading || !input.trim()}
+                        className="rounded-full bg-slate-900 p-2.5 text-white shadow-sm transition-all hover:bg-[#132744] disabled:bg-slate-200 disabled:text-slate-400"
+                      >
+                        <Send size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </form>
+                <p className="mt-3 text-center text-xs text-slate-400">
+                  {isViewer
+                    ? "Answers use approved documents when support is available."
+                    : "Answers use approved company documents and may include sources."}
+                </p>
               </div>
             </div>
-          </form>
-          <p className="mt-3 text-center text-xs text-slate-400">
-            {isViewer
-              ? 'Answers use approved documents when support is available.'
-              : 'Answers use approved company documents and may include sources.'}
-          </p>
+          </div>
         </div>
       </div>
-      </div>
+
+      {!isViewer && (
+      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+        <SheetContent
+          side="left"
+          className="w-[88vw] max-w-[22rem] border-r border-slate-200 bg-white p-0"
+        >
+          <SheetHeader className="border-b border-slate-200 px-5 py-4">
+            <SheetTitle>Recent Chats</SheetTitle>
+          </SheetHeader>
+          <div className="p-4">
+            <ChatHistoryPanel
+              sessions={filteredSessions}
+              loading={sessionsLoading}
+              search={sessionSearch}
+              onSearchChange={setSessionSearch}
+              activeSessionId={activeSessionId}
+              onNewChat={createNewChat}
+              onOpenSession={(sessionId) => void loadSession(sessionId, true)}
+              onDeleteSession={(sessionId) => setDeleteSessionId(sessionId)}
+              disabled={loading}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+      )}
+
+      <ConfirmDialog
+        open={Boolean(deleteSessionId)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteSessionId(null);
+        }}
+        title="Delete chat"
+        description="This conversation will be removed from your chat history."
+        confirmLabel="Delete chat"
+        cancelLabel="Keep chat"
+        confirmTone="destructive"
+        loading={false}
+        onConfirm={async () => {
+          if (!deleteSessionId) return;
+          await deleteSession(deleteSessionId);
+        }}
+      />
 
       <SourceDrawer
         open={!!selectedSource}
@@ -747,24 +1170,149 @@ export default function ChatPage() {
   );
 }
 
-function getVisibleStatus(statusMessage: string, isViewer: boolean, isActive: boolean) {
+function ChatHistoryPanel({
+  sessions,
+  loading,
+  search,
+  onSearchChange,
+  activeSessionId,
+  onNewChat,
+  onOpenSession,
+  onDeleteSession,
+  disabled,
+}: {
+  sessions: ChatSessionSummary[];
+  loading: boolean;
+  search: string;
+  onSearchChange: (value: string) => void;
+  activeSessionId: string | null;
+  onNewChat: () => void;
+  onOpenSession: (sessionId: string) => void;
+  onDeleteSession: (sessionId: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex h-full min-h-[24rem] flex-col rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
+      <div className="border-b border-slate-200 p-4">
+        <AppButton
+          type="button"
+          onClick={onNewChat}
+          disabled={disabled}
+          className="w-full justify-center"
+        >
+          <MessageSquarePlus size={16} />
+          New Chat
+        </AppButton>
+        <div className="relative mt-3">
+          <Search
+            size={15}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <Input
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search chats..."
+            className="h-11 rounded-xl border-slate-200 bg-white pl-9 text-sm shadow-sm"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          Recent Chats
+        </div>
+        {loading ? (
+          <div className="flex items-center gap-3 rounded-2xl px-3 py-4 text-sm text-slate-500">
+            <Loader2 size={16} className="animate-spin text-teal-600" />
+            Loading chats...
+          </div>
+        ) : sessions.length === 0 ? (
+          <EmptyState
+            icon={History}
+            title="No chats yet"
+            description="Start a new conversation to see it here."
+            className="px-4 py-10"
+          />
+        ) : (
+          <div className="space-y-2">
+            {sessions.map((session) => {
+              const active = activeSessionId === session.id;
+
+              return (
+                <div
+                  key={session.id}
+                  className={cn(
+                    "group flex items-start gap-2 rounded-2xl border px-3 py-3 transition",
+                    active
+                      ? "border-cyan-200 bg-cyan-50/70"
+                      : "border-transparent hover:border-slate-200 hover:bg-slate-50/70",
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => onOpenSession(session.id)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <p
+                      className={cn(
+                        "truncate text-sm font-semibold",
+                        active ? "text-cyan-900" : "text-slate-900",
+                      )}
+                      title={session.title}
+                    >
+                      {session.title}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {formatSessionDate(session.updated_at)}
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Delete chat ${session.title}`}
+                    onClick={() => onDeleteSession(session.id)}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatSessionDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function getVisibleStatus(
+  statusMessage: string,
+  isViewer: boolean,
+  isActive: boolean,
+) {
   if (isViewer && isActive) {
-    return 'Thinking...';
+    return "Searching approved knowledge...";
   }
 
   if (isViewer && !isActive) {
-    if (statusMessage.toLowerCase().includes('no supported answer')) {
+    if (statusMessage.toLowerCase().includes("no supported answer")) {
       return "I couldn't find an answer in the uploaded documents.";
     }
 
-    return 'Answer prepared from uploaded documents.';
+    return "Answer prepared from uploaded documents.";
   }
 
   if (isActive) {
-    return 'Thinking...';
+    return "Thinking...";
   }
 
-  return statusMessage || 'Thinking...';
+  return statusMessage || "Thinking...";
 }
 
 function CitationList({
@@ -780,7 +1328,8 @@ function CitationList({
       return (
         allCitations.findIndex(
           (item) =>
-            item.filename === citation.filename && item.chunk_index === citation.chunk_index,
+            item.filename === citation.filename &&
+            item.chunk_index === citation.chunk_index,
         ) === index
       );
     })
@@ -796,7 +1345,11 @@ function CitationList({
         <ShieldCheck size={12} className="text-teal-600" />
         <span>Sources</span>
         <span className="text-slate-500">· {uniqueCitations.length}</span>
-        {expanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
+        {expanded ? (
+          <ChevronUp size={14} className="text-slate-500" />
+        ) : (
+          <ChevronDown size={14} className="text-slate-500" />
+        )}
       </button>
 
       {expanded && (
@@ -815,8 +1368,12 @@ function CitationList({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900">{citation.filename}</p>
-                      <p className="mt-1 text-[11px] text-slate-500">Section {citation.chunk_index}</p>
+                      <p className="text-sm font-medium text-slate-900">
+                        {citation.filename}
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Section {citation.chunk_index}
+                      </p>
                     </div>
                     <span className="text-[11px] text-teal-600">Open</span>
                   </div>
@@ -831,7 +1388,9 @@ function CitationList({
       )}
 
       {citations.length > uniqueCitations.length && (
-        <p className="mt-2 text-[11px] text-slate-600">Showing top 5 unique sources</p>
+        <p className="mt-2 text-[11px] text-slate-600">
+          Showing top 5 unique sources
+        </p>
       )}
     </div>
   );
@@ -860,7 +1419,7 @@ function FeedbackRow({
     <div className="pl-0 sm:pl-10">
       {submitted ? (
         <p className="text-xs text-slate-500">
-          Thanks for the feedback{rating ? ` · ${rating.replaceAll('_', ' ')}` : ''}.
+          Thanks for the feedback{rating ? ` · ${rating.replaceAll("_", " ")}` : ""}.
         </p>
       ) : (
         <>
@@ -903,7 +1462,7 @@ function FeedbackRow({
                   onClick={() => onSelectMore(option)}
                   className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
                 >
-                  {option.replaceAll('_', ' ')}
+                  {option.replaceAll("_", " ")}
                 </button>
               ))}
             </div>
@@ -935,7 +1494,7 @@ function SourceDrawer({
     return null;
   }
 
-  const excerpt = citation?.chunk_text || citation?.preview || '';
+  const excerpt = citation?.chunk_text || citation?.preview || "";
 
   const handleCopyExcerpt = async () => {
     await navigator.clipboard.writeText(excerpt);
@@ -956,10 +1515,10 @@ function SourceDrawer({
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-5">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                {managerView ? 'Document Source' : 'Source'}
+                {managerView ? "Document Source" : "Source"}
               </p>
               <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                {citation?.filename || 'Source details'}
+                {citation?.filename || "Source details"}
               </h3>
             </div>
             <button
@@ -988,47 +1547,65 @@ function SourceDrawer({
 
             <div className="space-y-5">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Section</p>
-                <p className="mt-2 text-sm text-slate-800">Section {citation?.chunk_index || 0}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                  Section
+                </p>
+                <p className="mt-2 text-sm text-slate-800">
+                  Section {citation?.chunk_index || 0}
+                </p>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Excerpt</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                    Excerpt
+                  </p>
                   <button
                     type="button"
                     onClick={handleCopyExcerpt}
                     className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-slate-800"
                   >
-                    {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
-                    {copied ? 'Copied' : 'Copy excerpt'}
+                    {copied ? (
+                      <Check size={12} className="text-green-400" />
+                    ) : (
+                      <Copy size={12} />
+                    )}
+                    {copied ? "Copied" : "Copy excerpt"}
                   </button>
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                  {excerpt || 'No excerpt available.'}
+                  {excerpt || "No excerpt available."}
                 </p>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Preview</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                  Preview
+                </p>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
-                  {citation?.preview || 'No preview available.'}
+                  {citation?.preview || "No preview available."}
                 </p>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Uploaded</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                  Uploaded
+                </p>
                 <p className="mt-3 text-sm text-slate-600">
-                  {citation?.uploaded_at ? new Date(citation.uploaded_at).toLocaleString() : 'Unknown'}
+                  {citation?.uploaded_at
+                    ? new Date(citation.uploaded_at).toLocaleString()
+                    : "Unknown"}
                 </p>
               </div>
 
               {managerView && (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Source metadata</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                    Source metadata
+                  </p>
                   <div className="mt-3 space-y-2 text-sm text-slate-600">
-                    <p>Document ID: {citation?.document_id || 'Unknown'}</p>
-                    <p>Uploaded by: {citation?.uploaded_by || 'Unknown'}</p>
+                    <p>Document ID: {citation?.document_id || "Unknown"}</p>
+                    <p>Uploaded by: {citation?.uploaded_by || "Unknown"}</p>
                     <p>Section: {citation?.chunk_index || 0}</p>
                   </div>
                 </div>
@@ -1049,7 +1626,7 @@ function ThinkingDots() {
           key={i}
           className="inline-block h-1 w-1 rounded-full bg-teal-500"
           style={{
-            animation: 'thinking-dot 1.2s ease-in-out infinite',
+            animation: "thinking-dot 1.2s ease-in-out infinite",
             animationDelay: `${i * 0.15}s`,
           }}
         />

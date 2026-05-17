@@ -1,4 +1,8 @@
 import { getRequestErrorStatus } from '@/src/lib/api-errors';
+import {
+  resolveOwnedChatSession,
+  setSessionTitleFromFirstQuestionIfNeeded,
+} from '@/src/lib/chat-sessions';
 import { streamStrictAnswer, getEmbedding, STRICT_NO_ANSWER } from '@/src/lib/gemini';
 import { upsertKnowledgeGap } from '@/src/lib/knowledge-gaps';
 import { COLLECTION_NAME, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
@@ -103,15 +107,24 @@ async function streamTextFallback(
 export async function POST(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req, ALL_ROLES);
-    const { question } = await req.json();
+    const { question, session_id } = await req.json();
     await assertWorkspaceOperational(profile.workspace_id!);
 
     if (typeof question !== 'string' || !question.trim()) {
       return Response.json({ error: 'Question is required' }, { status: 400 });
     }
 
+    if (session_id !== undefined && session_id !== null && typeof session_id !== 'string') {
+      return Response.json({ error: 'Invalid chat session' }, { status: 400 });
+    }
+
     const normalizedQuestion = question.trim();
     const supabase = getSupabaseAdmin();
+    const chatSession = await resolveOwnedChatSession(supabase, {
+      sessionId: session_id,
+      workspaceId: profile.workspace_id!,
+      userId: user.id,
+    });
     const encoder = new TextEncoder();
     let clientAborted = false;
 
@@ -265,17 +278,23 @@ export async function POST(req: Request) {
             sendEvent('status', { message: statuses.attaching });
           }
 
+          await setSessionTitleFromFirstQuestionIfNeeded(supabase, {
+            sessionId: chatSession.id,
+            question: normalizedQuestion,
+          });
+
           const { data: insertedMessage, error: insertError } = await supabase
             .from('chat_messages')
             .insert({
               user_id: user.id,
               workspace_id: profile.workspace_id,
+              session_id: chatSession.id,
               question: normalizedQuestion,
               answer,
               citations,
             })
             .select('id')
-            .single();
+            .maybeSingle();
 
           if (insertError || !insertedMessage) {
             throw insertError;
@@ -295,6 +314,7 @@ export async function POST(req: Request) {
             answer,
             citations,
             chatMessageId: insertedMessage.id,
+            sessionId: chatSession.id,
             statusMessage:
               answer === STRICT_NO_ANSWER
                 ? 'No supported answer found in the uploaded documents.'

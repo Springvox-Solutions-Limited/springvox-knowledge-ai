@@ -29,6 +29,7 @@ Typical flow:
 - Upload approved documents
 - Invite users
 - Let staff ask questions
+- Start a new chat and reopen recent private conversations
 - Show sources for answers
 - Track unanswered questions
 - Review feedback
@@ -71,6 +72,7 @@ Typical flow:
 - asks questions only
 - sees simple answers and sources
 - can submit feedback
+- sees only their own private chat history
 - cannot upload or manage documents
 
 Public signup must never create `platform_admin`.
@@ -97,7 +99,8 @@ Run these in order:
 4. `sql/role_model_platform_tenant.sql`
 5. `sql/organisation_onboarding.sql`
 6. `sql/platform_admin_console.sql`
-7. any later slug/security hardening SQL if added
+7. `sql/chat_sessions.sql`
+8. any later slug/security hardening SQL if added
 
 Migration files:
 
@@ -107,6 +110,7 @@ Migration files:
 - [role_model_platform_tenant.sql](/home/water/Downloads/springvox-knowledge-ai/sql/role_model_platform_tenant.sql)
 - [organisation_onboarding.sql](/home/water/Downloads/springvox-knowledge-ai/sql/organisation_onboarding.sql)
 - [platform_admin_console.sql](/home/water/Downloads/springvox-knowledge-ai/sql/platform_admin_console.sql)
+- [chat_sessions.sql](/home/water/Downloads/springvox-knowledge-ai/sql/chat_sessions.sql)
 
 ## Manual Platform Admin Promotion
 
@@ -147,9 +151,17 @@ Platform admin privacy constraints:
 
 - does not view uploaded document text or chunk contents through the platform console
 - does not view full private chat answers or conversations through the platform console
+- does not view private user chat session history
 - does not upload documents for tenants in this phase
 - does not use payment processing or billing checkout in this phase
 - does not add subdomains or custom domains in this phase
+
+## Chat History
+
+- each user now has private workspace-scoped chat sessions
+- `/dashboard/chat` supports `New Chat` and `Recent Chats`
+- chat history is visible only to the authenticated user who created it
+- platform admin does not see private tenant chat conversations through the platform console
 
 ## Workspace Signup And Invites
 

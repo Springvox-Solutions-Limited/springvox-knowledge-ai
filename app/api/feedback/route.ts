@@ -21,9 +21,10 @@ export async function POST(req: Request) {
     const supabase = getSupabaseAdmin();
     const { data: chatMessage, error: chatMessageError } = await supabase
       .from('chat_messages')
-      .select('id, workspace_id')
+      .select('id, workspace_id, user_id')
       .eq('id', chatMessageId)
       .eq('workspace_id', profile.workspace_id)
+      .eq('user_id', user.id)
       .single();
 
     if (chatMessageError || !chatMessage) {

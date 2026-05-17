@@ -21,7 +21,7 @@ export async function getWorkspaceAccessSnapshot(workspaceId: string) {
     .from('workspaces')
     .select('id, name, slug, status, plan')
     .eq('id', workspaceId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) {
     throw error || new Error('Workspace not found');
