@@ -12,17 +12,23 @@ export function StatusBadge({ status }: { status: string | null | undefined }) {
         ? "Suspended"
         : value === "inactive"
           ? "Inactive"
-          : value;
+          : value === "ready"
+            ? "Completed"
+            : value === "processing"
+              ? "Processing"
+              : value === "failed"
+                ? "Failed"
+                : value;
 
-  if (value === "active") {
+  if (value === "active" || value === "ready") {
     return <AppBadge tone="success">{label}</AppBadge>;
   }
 
-  if (value === "trial") {
+  if (value === "trial" || value === "processing") {
     return <AppBadge tone="info">{label}</AppBadge>;
   }
 
-  if (value === "suspended") {
+  if (value === "suspended" || value === "failed") {
     return <AppBadge tone="warning">{label}</AppBadge>;
   }
 

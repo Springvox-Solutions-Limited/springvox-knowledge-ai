@@ -56,7 +56,7 @@ export function ProductMockup() {
                 <div className="space-y-3">
                   {['Security_Policy.pdf', 'Compliance_Guide.pdf'].map((source) => (
                     <div key={source} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-3">
-                      <p className="text-[11px] font-bold text-slate-950">{source}</p>
+                      <p className="truncate text-[11px] font-bold text-slate-950" title={source}>{source}</p>
                       <div className="mt-1 h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
                         <div className="h-full bg-slate-950 w-3/4" />
                       </div>

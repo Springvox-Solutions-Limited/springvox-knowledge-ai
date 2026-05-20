@@ -39,3 +39,9 @@ next-env.d.ts
 
 # Supabase local
 .supabase/
+
+# === Added by security-skill ===
+.env.*
+*.key
+*.pem
+secrets/

@@ -43,14 +43,21 @@ export function AppTableBody({
   className,
   ...props
 }: React.ComponentProps<typeof TableBody>) {
-  return <TableBody className={cn("[&_tr]:border-slate-100", className)} {...props} />;
+  return (
+    <TableBody
+      className={cn("[&_tr]:border-slate-100", className)}
+      {...props}
+    />
+  );
 }
 
 export function AppTableRow({
   className,
   ...props
 }: React.ComponentProps<typeof TableRow>) {
-  return <TableRow className={cn("hover:bg-slate-50/60", className)} {...props} />;
+  return (
+    <TableRow className={cn("hover:bg-slate-50/60", className)} {...props} />
+  );
 }
 
 export function AppTableHead({
@@ -60,7 +67,7 @@ export function AppTableHead({
   return (
     <TableHead
       className={cn(
-        "px-5 py-4 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500",
+        "px-5 py-3 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600",
         className,
       )}
       {...props}
@@ -72,5 +79,7 @@ export function AppTableCell({
   className,
   ...props
 }: React.ComponentProps<typeof TableCell>) {
-  return <TableCell className={cn("px-5 py-4 align-middle", className)} {...props} />;
+  return (
+    <TableCell className={cn("px-5 py-3 align-middle", className)} {...props} />
+  );
 }

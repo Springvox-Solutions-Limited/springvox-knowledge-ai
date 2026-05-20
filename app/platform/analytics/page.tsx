@@ -153,11 +153,11 @@ export default function PlatformAnalyticsPage() {
             {(data?.topCompaniesByQuestions || []).map((item) => (
               <div key={item.id} className="rounded-2xl border border-slate-100 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <Link href={`/platform/companies/${item.id}`} className="font-semibold text-slate-950 hover:text-cyan-700">{item.name}</Link>
-                  <span className="text-sm font-bold text-slate-700">{item.totalQuestions} questions</span>
+                  <Link href={`/platform/companies/${item.id}`} className="min-w-0 truncate font-semibold text-slate-950 hover:text-cyan-700" title={item.name}>{item.name}</Link>
+                  <span className="shrink-0 text-sm font-bold text-slate-700">{item.totalQuestions} questions</span>
                 </div>
-                <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
-                  <span>{item.slug}</span>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                  <span className="max-w-full truncate" title={item.slug}>{item.slug}</span>
                   <PlanBadge plan={item.plan} />
                   <StatusBadge status={item.status} />
                 </div>
@@ -169,12 +169,12 @@ export default function PlatformAnalyticsPage() {
         <AnalyticsPanel title="Recent user signups" loading={loading}>
           <div className="space-y-4">
             {(data?.recentUserSignups || []).map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-slate-950">{item.email || 'No email'}</p>
-                  <p className="mt-1 text-xs text-slate-500">{item.workspace_name}</p>
+              <div key={item.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-100 p-4">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-950" title={item.email || ''}>{item.email || 'No email'}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500" title={item.workspace_name}>{item.workspace_name}</p>
                 </div>
-                <div className="text-right">
+                <div className="shrink-0 text-right">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">{getRoleLabel(item.role as any)}</p>
                   <p className="mt-1 text-xs text-slate-500">{formatDate(item.created_at)}</p>
                 </div>

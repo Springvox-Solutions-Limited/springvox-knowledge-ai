@@ -32,6 +32,7 @@ import {
 
 import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
+import { OverflowGuard } from "@/src/components/layout/OverflowGuard";
 import { isWorkspaceAdminRole, type UserProfile } from "@/src/lib/workspace";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 import { EmptyState } from "@/src/components/ui/empty-state";
@@ -136,7 +137,9 @@ export default function AnalyticsPage() {
   const totalQuestions = data.summary.totalQuestions || 0;
   const sourceBacked = data.summary.sourceBackedAnswers || 0;
   const fallback = data.summary.fallbackAnswers || 0;
-  const gapRate = totalQuestions ? Math.round((fallback / totalQuestions) * 100) : 0;
+  const gapRate = totalQuestions
+    ? Math.round((fallback / totalQuestions) * 100)
+    : 0;
   const healthScore = Math.max(0, 100 - gapRate);
   const recentNegativeFeedback =
     data.feedbackSummary.recentNegativeFeedback.length || 0;
@@ -160,10 +163,10 @@ export default function AnalyticsPage() {
       <AppPageHeader
         eyebrow="Analytics"
         title={`${data.workspace?.name || "Workspace"} analytics`}
-        subtitle="Track question activity, answer coverage, and the areas that still need better document support."
+        subtitle="Track usage, answer coverage, and knowledge gaps."
         aside={
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
               Answer coverage
             </p>
             <div className="mt-1 flex items-center gap-2">
@@ -209,7 +212,7 @@ export default function AnalyticsPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             Recent feedback flags
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
@@ -220,7 +223,7 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             Pending invites
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
@@ -231,7 +234,7 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             No answer rate
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
@@ -243,9 +246,9 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr),340px]">
-        <div className="admin-shell-card p-5 sm:p-6 lg:p-7">
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr),340px]">
+        <div className="admin-shell-card p-4 sm:p-5 lg:p-6">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-950">
                 <BarChart3 size={18} />
@@ -255,7 +258,7 @@ export default function AnalyticsPage() {
                   Question activity
                 </h2>
                 <p className="text-sm text-slate-500">
-                  Daily question volume over the last 14 days.
+                  Last 14 days of question volume.
                 </p>
               </div>
             </div>
@@ -265,20 +268,28 @@ export default function AnalyticsPage() {
             <EmptyState
               icon={BarChart3}
               title="No activity data yet"
-              description="Question activity will appear here after your team starts using the workspace."
+              description="Activity will appear here after questions are asked."
               className="border-0 bg-transparent py-8"
             />
           ) : (
-            <div className="h-[220px] w-full sm:h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[200px] w-full sm:h-[260px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <AreaChart data={data.dailyQuestionCounts}>
                   <defs>
                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0f172a" stopOpacity={0.12} />
+                      <stop
+                        offset="5%"
+                        stopColor="#0f172a"
+                        stopOpacity={0.12}
+                      />
                       <stop offset="95%" stopColor="#0f172a" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#f1f5f9"
+                  />
                   <XAxis
                     dataKey="date"
                     axisLine={false}
@@ -307,7 +318,12 @@ export default function AnalyticsPage() {
                     strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#colorCount)"
-                    activeDot={{ r: 5, fill: "#0f172a", stroke: "#fff", strokeWidth: 2 }}
+                    activeDot={{
+                      r: 5,
+                      fill: "#0f172a",
+                      stroke: "#fff",
+                      strokeWidth: 2,
+                    }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -316,18 +332,18 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex flex-col gap-6">
-          <div className="admin-shell-card p-5 sm:p-6">
-            <div className="mb-5">
+          <div className="admin-shell-card p-4 sm:p-5">
+            <div className="mb-4">
               <h2 className="text-lg font-bold tracking-tight text-slate-950">
                 Answer summary
               </h2>
               <p className="text-sm text-slate-500">
-                How often answers were supported by uploaded documents.
+                Coverage of answers with source documents.
               </p>
             </div>
 
-            <div className="relative h-[180px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="relative h-[160px] w-full">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -349,7 +365,7 @@ export default function AnalyticsPage() {
                 <span className="text-2xl font-bold text-slate-950">
                   {healthScore}%
                 </span>
-                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
                   Covered
                 </span>
               </div>
@@ -378,8 +394,8 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          <div className="admin-shell-card p-5 sm:p-6">
-            <div className="mb-5 flex items-center gap-3">
+          <div className="admin-shell-card p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-cyan-50 text-cyan-800">
                 <Users size={18} />
               </div>
@@ -388,13 +404,13 @@ export default function AnalyticsPage() {
                   Team summary
                 </h2>
                 <p className="text-sm text-slate-500">
-                  Workspace users, admins, and open invitations.
+                  Users, admins, and pending invites.
                 </p>
               </div>
             </div>
 
-            <div className="h-[180px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[160px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <BarChart data={userSummaryData}>
                   <CartesianGrid vertical={false} stroke="#eef2f7" />
                   <XAxis
@@ -419,19 +435,19 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-        <div className="admin-shell-card overflow-hidden p-5 sm:p-6 lg:p-7">
-          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="admin-shell-card overflow-hidden p-4 sm:p-5 lg:p-6">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-bold tracking-tight text-slate-950">
                 Recent questions
               </h2>
               <p className="text-sm text-slate-500">
-                A quick look at the latest questions from your team.
+                Latest questions from your team.
               </p>
             </div>
             <Link
               href="/dashboard/chat"
-              className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 transition-colors hover:text-slate-950"
+              className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-slate-950"
             >
               Open chat
               <ArrowRight size={12} />
@@ -447,14 +463,14 @@ export default function AnalyticsPage() {
             />
           ) : (
             <>
-              <div className="hidden overflow-x-auto md:block">
+              <OverflowGuard className="hidden md:block" mode="scroll">
                 <table className="app-table w-full min-w-[680px] border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                      <th className="pb-4 pr-4">Question</th>
-                      <th className="pb-4 pr-4">Outcome</th>
-                      <th className="pb-4 pr-4">Review</th>
-                      <th className="pb-4">Date</th>
+                    <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      <th className="pb-3 pr-4">Question</th>
+                      <th className="pb-3 pr-4">Outcome</th>
+                      <th className="pb-3 pr-4">Review</th>
+                      <th className="pb-3">Date</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -463,18 +479,18 @@ export default function AnalyticsPage() {
                         key={item.id}
                         className="group transition-colors hover:bg-slate-50/50"
                       >
-                        <td className="py-4 pr-4">
+                        <td className="py-3 pr-4">
                           <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">
                             {item.question}
                           </p>
                           <p
-                            className="mt-1 truncate text-[11px] text-slate-400"
+                            className="mt-1 truncate text-[11px] text-slate-500"
                             title={item.user_email}
                           >
                             {item.user_email}
                           </p>
                         </td>
-                        <td className="py-4 pr-4">
+                        <td className="py-3 pr-4">
                           <span
                             className={cn(
                               "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
@@ -483,36 +499,45 @@ export default function AnalyticsPage() {
                                 : "border-slate-200 bg-slate-100 text-slate-600",
                             )}
                           >
-                            {item.had_sources ? "Has sources" : "No answer found"}
+                            {item.had_sources
+                              ? "Has sources"
+                              : "No answer found"}
                           </span>
                         </td>
-                        <td className="py-4 pr-4">
+                        <td className="py-3 pr-4">
                           <span
                             className={cn(
                               "inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em]",
-                              item.knowledge_gap ? "text-red-600" : "text-slate-400",
+                              item.knowledge_gap
+                                ? "text-red-600"
+                                : "text-slate-400",
                             )}
                           >
                             <span
                               className={cn(
                                 "h-1.5 w-1.5 rounded-full",
-                                item.knowledge_gap ? "bg-red-600" : "bg-slate-300",
+                                item.knowledge_gap
+                                  ? "bg-red-600"
+                                  : "bg-slate-300",
                               )}
                             />
                             {item.knowledge_gap ? "Needs review" : "Covered"}
                           </span>
                         </td>
-                        <td className="py-4 text-[11px] font-semibold text-slate-400">
-                          {new Date(item.created_at).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })}
+                        <td className="py-3 text-[11px] font-semibold text-slate-500">
+                          {new Date(item.created_at).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </OverflowGuard>
 
               <div className="grid gap-3 md:hidden">
                 {data.recentQuestions.slice(0, 6).map((item) => (
@@ -541,13 +566,13 @@ export default function AnalyticsPage() {
           )}
         </div>
 
-        <div className="admin-shell-card p-5 sm:p-6 lg:p-7">
-          <div className="mb-5">
+        <div className="admin-shell-card p-4 sm:p-5 lg:p-6">
+          <div className="mb-4">
             <h2 className="text-lg font-bold tracking-tight text-slate-950">
               Unanswered questions
             </h2>
             <p className="text-sm text-slate-500">
-              Questions that still need better document coverage.
+              Knowledge gaps needing document coverage.
             </p>
           </div>
 

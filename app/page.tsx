@@ -14,7 +14,7 @@ export default function LandingPage() {
   return (
     <div className="public-shell selection:bg-slate-900 selection:text-white">
       <LandingNavbar />
-      <main>
+      <main className="overflow-x-clip">
         <HeroSection />
         <ProblemSection />
         <HowItWorksSection />

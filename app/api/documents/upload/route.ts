@@ -88,104 +88,23 @@ export async function POST(req: Request) {
       throw uploadError;
     }
 
-    let extractedText = '';
-    const extension = getFileExtension(filename);
-
-    if (extension === '.pdf') {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const parsed = await pdfParse(buffer);
-      extractedText = parsed.text || '';
-    } else if (extension === '.txt') {
-      extractedText = await file.text();
-    }
-
-    const chunks = chunkDocumentText(extractedText);
-    if (chunks.length === 0) {
-      throw new Error('No text could be extracted from the uploaded document');
-    }
-
-    await ensureQdrantCollection();
-
-    const chunkRows: Array<{
-      user_id: string;
-      workspace_id: string;
-      document_id: string;
-      chunk_index: number;
-      chunk_text: string;
-      qdrant_point_id: string;
-    }> = [];
-
-    const points: Array<{
-      id: string;
-      vector: number[];
-      payload: {
-        workspace_id: string;
-        uploaded_by: string;
-        document_id: string;
-        filename: string;
-        chunk_index: number;
-        chunk_text: string;
-        preview: string;
-      };
-    }> = [];
-
-    for (const [index, chunkText] of chunks.entries()) {
-      const chunkIndex = index + 1;
-      const pointId = uuidv4();
-      const vector = await getEmbedding(chunkText);
-
-      chunkRows.push({
-        user_id: user.id,
-        workspace_id: profile.workspace_id,
-        document_id: documentId,
-        chunk_index: chunkIndex,
-        chunk_text: chunkText,
-        qdrant_point_id: pointId,
-      });
-
-      points.push({
-        id: pointId,
-        vector,
-        payload: {
-          workspace_id: profile.workspace_id,
-          uploaded_by: user.id,
-          document_id: documentId,
-          filename,
-          chunk_index: chunkIndex,
-          chunk_text: chunkText,
-          preview: buildPreview(chunkText),
-        },
-      });
-    }
-
-    const { error: chunkInsertError } = await supabase.from('document_chunks').insert(chunkRows);
-    if (chunkInsertError) {
-      throw chunkInsertError;
-    }
-
-    await qdrant.upsert(COLLECTION_NAME, {
-      wait: true,
-      points,
+    // Dispatch the background event to Inngest to parse, chunk, and embed asynchronously
+    const { inngest } = await import('@/src/lib/inngest/client');
+    await inngest.send({
+      name: "document/process.started",
+      data: {
+        documentId,
+        workspaceId: profile.workspace_id,
+        storagePath: uploadedFilePath,
+        originalFilename: filename,
+        userId: user.id,
+      },
     });
-
-    const { error: completeError } = await supabase
-      .from('documents')
-      .update({
-        status: 'completed',
-        error_message: null,
-        total_chunks: chunkRows.length,
-      })
-      .eq('id', documentId)
-      .eq('user_id', user.id);
-
-    if (completeError) {
-      throw completeError;
-    }
 
     return Response.json({
       success: true,
       documentId,
-      totalChunks: chunkRows.length,
+      status: 'processing',
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected upload error';

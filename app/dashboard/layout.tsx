@@ -114,8 +114,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             imageClassName="h-10 w-auto max-w-[190px] object-contain object-left"
           />
           <div className={cn("mt-5 flex items-center gap-2 px-1", isViewerRole && "mt-6")}>
-            <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.45)]" />
-            <span className="block truncate text-[9px] font-bold uppercase tracking-[0.25em] text-slate-500">
+            <div className="h-1.5 w-1.5 rounded-full bg-[#F97316] shadow-[0_0_10px_rgba(249,115,22,0.6)] animate-pulse" />
+            <span className="block truncate text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">
               {workspace?.name || 'Workspace'}
             </span>
           </div>
@@ -123,20 +123,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <nav className={cn("space-y-1.5 overflow-y-auto", isViewerRole ? "flex-1" : "flex-1")}>
           <p className={cn(
-            "text-[10px] font-bold uppercase tracking-widest text-slate-600",
+            "text-[10px] font-bold uppercase tracking-widest text-slate-500",
             isViewerRole ? "mb-4 ml-3" : "mb-4 ml-6"
           )}>
             {isWorkspaceAdminRole(profile.role) ? 'Workspace Admin' : 'Workspace User'}
           </p>
           {isPlatformAdminRole(profile.role) && (
-            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-3">
+            <div className="mb-4 rounded-2xl border border-white/5 bg-white/[0.02] p-3 shadow-inner">
               <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-200/80">
                 Quick Switch
               </p>
               <Link
                 href="/platform"
                 onClick={() => setSidebarOpen(false)}
-                className="mt-3 flex items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/15"
+                className="mt-3 flex items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition duration-300 hover:bg-[#F97316]/20 hover:border-[#F97316]/30"
               >
                 <span>Platform Console</span>
                 <span>→</span>
@@ -151,14 +151,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "group flex items-center gap-3 rounded-xl border transition-all",
+                  "group flex items-center gap-3 rounded-xl border transition-all duration-300",
                   isViewerRole
                     ? isActive
-                      ? "border-cyan-400/35 bg-cyan-400/10 px-4 py-3.5 text-white shadow-[inset_0_0_0_1px_rgba(34,211,238,0.08)]"
-                      : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                      ? "border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-[#1E3A5F]/15 px-4 py-3.5 text-white shadow-[0_4px_20px_rgba(34,211,238,0.05)]"
+                      : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
                     : isActive
-                      ? "border-cyan-400/30 bg-cyan-400/12 px-4 py-3.5 text-white shadow-[inset_0_0_0_1px_rgba(34,211,238,0.08)]"
-                      : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                      ? "border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-[#1E3A5F]/15 px-4 py-3.5 text-white shadow-[0_4px_20px_rgba(34,211,238,0.05)]"
+                      : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
                 )}
               >
                 <item.icon size={18} className={cn("transition-all duration-300", isActive ? "text-cyan-200" : "text-slate-500 group-hover:text-slate-300")} />
@@ -175,12 +175,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className={cn("border-t border-white/5", isViewerRole ? "pt-5" : "mt-6 pt-6")}>
           <div className="flex flex-col gap-3">
             <div className={cn(
-              "flex items-center gap-3 border border-white/5 transition-all",
+              "flex items-center gap-3 border border-white/5 transition-all duration-300",
               isViewerRole
                 ? "rounded-2xl bg-white/[0.03] px-4 py-3"
                 : "rounded-2xl bg-slate-900 px-4 py-3"
             )}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#132744] text-[11px] font-bold text-white shadow-sm border border-white/5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E3A5F] text-[11px] font-bold text-white shadow-sm border border-white/5">
                 {(workspace?.name || user.email || 'S').slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
@@ -206,9 +206,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+    <div className="flex min-h-screen bg-slate-50/50 text-slate-900">
       <aside className={cn(
-        "hidden min-h-screen shrink-0 bg-[#0d1f35] text-white shadow-2xl lg:flex",
+        "hidden min-h-screen shrink-0 bg-[#0F172A] text-white shadow-[10px_0_30px_rgba(15,23,42,0.03)] lg:flex border-r border-white/5",
         isViewerRole ? "w-[17.5rem]" : "w-64"
       )}>
         <div className="flex flex-1 flex-col p-6">
@@ -219,7 +219,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent
           side="left"
-          className="w-[88vw] max-w-[20rem] border-r-0 bg-[#0d1f35] p-0 text-white"
+          aria-describedby={undefined}
+          className="w-[min(100vw-1rem,20rem)] border-r-0 bg-[#0F172A] p-0 text-white"
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Workspace navigation</SheetTitle>

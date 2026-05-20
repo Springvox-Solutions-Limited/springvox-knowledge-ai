@@ -20,7 +20,7 @@ export function LandingNavbar() {
   ];
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/92 backdrop-blur-xl">
+    <nav className="fixed inset-x-0 top-0 z-50 overflow-x-clip border-b border-slate-200 bg-white/92 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-6 lg:px-8">
         <div className="flex min-w-0 items-center lg:justify-start">
           <Link href="/" className="flex h-10 min-w-0 items-center group sm:h-12">
@@ -67,7 +67,8 @@ export function LandingNavbar() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="left"
-          className="w-[88vw] max-w-[22rem] border-r border-slate-200 bg-white p-0"
+          aria-describedby={undefined}
+          className="w-[min(100vw-1rem,22rem)] border-r border-slate-200 bg-white p-0"
         >
           <SheetHeader className="border-b border-slate-200 px-5 py-5">
             <SheetTitle className="text-left">
@@ -78,7 +79,7 @@ export function LandingNavbar() {
               />
             </SheetTitle>
           </SheetHeader>
-          <div className="flex h-full flex-col px-5 py-5">
+          <div className="flex h-full min-w-0 flex-col px-5 py-5">
             <div className="space-y-2">
               {navLinks.map((item) => (
                 <Link

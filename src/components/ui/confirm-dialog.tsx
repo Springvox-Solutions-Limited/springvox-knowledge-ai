@@ -34,8 +34,25 @@ export function ConfirmDialog({
   onConfirm: () => void | Promise<void>;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-[24px] border-slate-200 bg-white sm:max-w-md">
+    <Dialog open={open} onOpenChange={(nextOpen) => {
+      if (!loading) {
+        onOpenChange(nextOpen);
+      }
+    }}>
+      <DialogContent
+        showCloseButton={!loading}
+        onEscapeKeyDown={(event) => {
+          if (loading) {
+            event.preventDefault();
+          }
+        }}
+        onInteractOutside={(event) => {
+          if (loading) {
+            event.preventDefault();
+          }
+        }}
+        className="rounded-[24px] border-slate-200 bg-white sm:max-w-md"
+      >
         <DialogHeader>
           <DialogTitle className="text-slate-950">{title}</DialogTitle>
           <DialogDescription className="text-slate-600">
@@ -43,7 +60,7 @@ export function ConfirmDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:justify-end">
-          <AppButton tone="secondary" onClick={() => onOpenChange(false)}>
+          <AppButton tone="secondary" disabled={loading} onClick={() => onOpenChange(false)}>
             {cancelLabel}
           </AppButton>
           <AppButton tone={confirmTone} disabled={loading} onClick={() => void onConfirm()}>

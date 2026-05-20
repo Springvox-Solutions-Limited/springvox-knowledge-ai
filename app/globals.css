@@ -5,28 +5,38 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-sans: "Inter", var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Inter", var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SFMono-Regular", Consolas, "Liberation Mono",
+    Menlo, monospace;
 
   --color-accent: #14b8a6;
   --color-subtle: #cbd5e1;
   --color-card: #ffffff;
+  --color-brand-navy: #1E3A5F;
+  --color-brand-orange: #F97316;
+  --color-brand-emerald: #10B981;
+  --color-brand-sidebar: #0F172A;
+  --color-brand-cyan: #22d3ee;
 }
 
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
-  --brand-navy: #0f172a;
-  --brand-sidebar: #10233b;
-  --brand-sidebar-soft: #16304d;
+  --brand-navy: #1E3A5F;
+  --brand-orange: #F97316;
+  --brand-emerald: #10B981;
+  --brand-sidebar: #0F172A;
+  --brand-sidebar-soft: #1e293b;
   --brand-cyan: #22d3ee;
   --brand-teal: #14b8a6;
-  --brand-line: #dbe5ef;
+  --brand-line: #e2e8f0;
   --brand-surface: #ffffff;
-  --brand-surface-soft: #f8fbfd;
+  --brand-surface-soft: #f8fafc;
   --brand-text-soft: #64748b;
-  --brand-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
-  --brand-shadow-soft: 0 12px 28px rgba(15, 23, 42, 0.05);
+  --brand-shadow: 0 20px 50px rgba(15, 23, 42, 0.04);
+  --brand-shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.03);
   --brand-radius-lg: 1.5rem;
   --brand-radius-xl: 1.75rem;
   --card: oklch(1 0 0);
@@ -105,7 +115,9 @@ a {
 }
 
 .markdown-container {
-  @apply text-[15px] leading-7 text-slate-700;
+  @apply min-w-0 max-w-full text-[15px] leading-7 text-slate-700;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .markdown-container p {
@@ -135,7 +147,17 @@ a {
   @apply font-semibold text-slate-950;
 }
 
-.markdown-container ul, .markdown-container ol {
+.markdown-container a,
+.markdown-container li,
+.markdown-container blockquote,
+.markdown-container td,
+.markdown-container th {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.markdown-container ul,
+.markdown-container ol {
   @apply mb-4 ml-5 space-y-2;
 }
 
@@ -157,6 +179,8 @@ a {
 
 .markdown-container code {
   @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[13px] text-cyan-700;
+  white-space: break-spaces;
+  word-break: break-word;
 }
 
 .markdown-container pre {
@@ -171,28 +195,52 @@ a {
   @apply mb-4 border-l-2 border-cyan-400/60 pl-4 text-slate-500;
 }
 
+.markdown-container table {
+  @apply mb-4 block w-full overflow-x-auto rounded-2xl border border-slate-200;
+}
+
+.markdown-container thead {
+  @apply bg-slate-50;
+}
+
+.markdown-container tbody,
+.markdown-container tr {
+  @apply border-slate-200;
+}
+
+.markdown-container th,
+.markdown-container td {
+  @apply min-w-[8rem] border-b border-slate-200 px-3 py-2 text-left;
+}
+
+.markdown-container img,
+.markdown-container video,
+.markdown-container iframe {
+  @apply max-w-full rounded-2xl;
+}
+
 .admin-page {
-  @apply space-y-6 text-slate-900 md:space-y-8;
+  @apply min-w-0 max-w-full space-y-4 text-slate-900 md:space-y-5;
 }
 
 .admin-shell-card {
-  @apply rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)];
+  @apply rounded-[24px] border-0 bg-white shadow-[0_20px_50px_rgba(30,58,95,0.04)] hover:shadow-[0_24px_60px_rgba(30,58,95,0.07)] transition-all duration-300;
 }
 
 .admin-shell-card-muted {
-  @apply rounded-[28px] border border-slate-200 bg-slate-50/90 shadow-[0_14px_28px_rgba(15,23,42,0.04)];
+  @apply rounded-[24px] border-0 bg-slate-50/50 shadow-[0_12px_30px_rgba(30,58,95,0.02)] transition-all duration-300;
 }
 
 .admin-kpi-card {
-  @apply rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_14px_28px_rgba(15,23,42,0.05)];
+  @apply rounded-[24px] border-0 bg-white p-5 shadow-[0_20px_50px_rgba(30,58,95,0.04)] transition-all duration-300;
 }
 
 .admin-input {
-  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100;
+  @apply w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 transition duration-300 focus:border-[#1E3A5F] focus:bg-white focus:ring-4 focus:ring-[#22d3ee]/20 focus:ring-offset-0;
 }
 
 .admin-hero-card {
-  @apply border-b border-slate-200 pb-5;
+  @apply border-b border-slate-200 pb-4;
 }
 
 .admin-hero-title {
@@ -200,11 +248,11 @@ a {
 }
 
 .admin-hero-copy {
-  @apply max-w-2xl text-sm text-slate-600;
+  @apply max-w-2xl text-sm text-slate-700;
 }
 
 .admin-chip {
-  @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500;
+  @apply inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-600;
 }
 
 .app-button-primary {
@@ -232,35 +280,35 @@ a {
 }
 
 .app-table th {
-  @apply px-5 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500;
+  @apply px-5 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600;
 }
 
 .app-table td {
-  @apply px-5 py-4 align-middle;
+  @apply px-5 py-3 align-middle;
 }
 
 .app-section-label {
-  @apply text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400;
+  @apply text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500;
 }
 
 .public-shell {
-  @apply min-h-screen bg-[#f4f7fb] text-slate-900;
+  @apply min-h-screen overflow-x-clip bg-[#f4f7fb] text-slate-900;
 }
 
 .public-page-wrap {
-  @apply flex min-h-screen items-center justify-center bg-[#f4f7fb] px-4 py-8;
+  @apply flex min-h-screen w-full max-w-full items-center justify-center overflow-x-clip bg-[#f4f7fb] px-4 py-8;
 }
 
 .public-card {
-  @apply rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)];
+  @apply w-full min-w-0 max-w-full rounded-[20px] border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)];
 }
 
 .public-panel {
-  @apply rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)];
+  @apply min-w-0 max-w-full rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_24px_rgba(15,23,42,0.04)];
 }
 
 .landing-panel {
-  @apply rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)];
+  @apply rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_24px_rgba(15,23,42,0.04)];
 }
 
 .lab-bg::before {
@@ -271,8 +319,15 @@ a {
 }
 
 @keyframes composer-glow {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.08); }
-  50% { box-shadow: 0 0 24px 2px rgba(34, 211, 238, 0.12), 0 0 0 1px rgba(34, 211, 238, 0.18); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 24px 2px rgba(34, 211, 238, 0.12),
+      0 0 0 1px rgba(34, 211, 238, 0.18);
+  }
 }
 
 .composer-focus-glow {

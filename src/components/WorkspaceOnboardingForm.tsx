@@ -3,9 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Building2, CheckCircle2, Loader2, Mail, ShieldCheck, UserPlus } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  Loader2,
+  Mail,
+  ShieldCheck,
+  UserPlus,
+} from "lucide-react";
 
-import { getDefaultRouteForRole, getRoleLabel, type AnyAppRole } from "@/src/lib/workspace";
+import {
+  getDefaultRouteForRole,
+  getRoleLabel,
+  type AnyAppRole,
+} from "@/src/lib/workspace";
 import { supabase } from "@/src/lib/supabase";
 import { slugifyWorkspaceName } from "@/src/lib/onboarding";
 import { getCurrentUserProfile } from "@/src/lib/auth-client";
@@ -40,7 +51,9 @@ export default function WorkspaceOnboardingForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [inviteDetails, setInviteDetails] = useState<InviteDetails | null>(null);
+  const [inviteDetails, setInviteDetails] = useState<InviteDetails | null>(
+    null,
+  );
 
   const [companyName, setCompanyName] = useState("");
   const [workspaceSlug, setWorkspaceSlug] = useState("");
@@ -82,7 +95,9 @@ export default function WorkspaceOnboardingForm() {
       } catch (inviteError) {
         if (!cancelled) {
           setError(
-            inviteError instanceof Error ? inviteError.message : "Invalid invite",
+            inviteError instanceof Error
+              ? inviteError.message
+              : "Invalid invite",
           );
         }
       }
@@ -106,7 +121,11 @@ export default function WorkspaceOnboardingForm() {
       return;
     }
 
-    setSlugStatus({ checking: true, message: "Checking slug...", available: null });
+    setSlugStatus({
+      checking: true,
+      message: "Checking slug...",
+      available: null,
+    });
     try {
       const response = await fetch(
         `/api/workspaces/check-slug?slug=${encodeURIComponent(slug)}`,
@@ -175,7 +194,9 @@ export default function WorkspaceOnboardingForm() {
 
       setSuccess("Workspace created. Redirecting to your dashboard...");
       const profile = await getCurrentUserProfile();
-      router.push(profile ? getDefaultRouteForRole(profile.role) : "/dashboard");
+      router.push(
+        profile ? getDefaultRouteForRole(profile.role) : "/dashboard",
+      );
       router.refresh();
     } catch (createError) {
       setError(
@@ -213,7 +234,9 @@ export default function WorkspaceOnboardingForm() {
       const registerData = await registerResponse.json();
 
       if (!registerResponse.ok) {
-        throw new Error(registerData.error || "Unable to create invite account");
+        throw new Error(
+          registerData.error || "Unable to create invite account",
+        );
       }
 
       const signInResult = await supabase.auth.signInWithPassword({
@@ -247,7 +270,9 @@ export default function WorkspaceOnboardingForm() {
 
       setSuccess("Invitation accepted. Redirecting to workspace chat...");
       const profile = await getCurrentUserProfile();
-      router.push(profile ? getDefaultRouteForRole(profile.role) : "/dashboard/chat");
+      router.push(
+        profile ? getDefaultRouteForRole(profile.role) : "/dashboard/chat",
+      );
       router.refresh();
     } catch (inviteError) {
       setError(
@@ -284,30 +309,32 @@ export default function WorkspaceOnboardingForm() {
   }
 
   return (
-    <div className="public-card w-full max-w-5xl p-5 sm:p-8 lg:p-10">
-      <div className="grid gap-8 lg:grid-cols-[1.12fr_0.88fr]">
-        <div className="space-y-6">
-          <div className="space-y-3">
+    <div className="public-card w-full max-w-5xl min-w-0 p-4 sm:p-6 lg:p-8">
+      <div className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr]">
+        <div className="min-w-0 space-y-5">
+          <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
               Secure onboarding
             </p>
             <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-              {mode === "join" ? "Join with invitation" : "Create your company workspace"}
-            </h1>
-            <p className="text-sm leading-7 text-slate-600">
               {mode === "join"
-                ? "Create your account for an existing organisation and join the workspace from your invitation."
-                : "Create a secure workspace for your team. Upload approved documents and invite staff to ask questions from your company documents."}
+                ? "Join with invitation"
+                : "Create your company workspace"}
+            </h1>
+            <p className="text-sm leading-7 text-slate-700">
+              {mode === "join"
+                ? "Create your account and join the workspace."
+                : "Set up a secure workspace for your team to ask questions about company documents."}
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+          <div className="rounded-[20px] border border-slate-200 bg-slate-50/80 p-3 sm:p-4">
             <div className="grid gap-3 sm:grid-cols-3">
               {stepLabels.map((label, index) => (
                 <div
                   key={label}
                   className={cn(
-                    "relative flex items-center gap-3 rounded-2xl border px-4 py-3",
+                    "relative flex items-center gap-3 rounded-2xl border px-3 py-2.5",
                     index === 0
                       ? "border-cyan-200 bg-white shadow-sm"
                       : "border-slate-200 bg-white/80",
@@ -317,10 +344,12 @@ export default function WorkspaceOnboardingForm() {
                     {index + 1}
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
                       Step {index + 1}
                     </p>
-                    <p className="text-sm font-semibold text-slate-900">{label}</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {label}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -336,8 +365,8 @@ export default function WorkspaceOnboardingForm() {
               }}
               className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 mode === "create"
-                    ? "bg-white text-slate-950 shadow-sm"
-                    : "text-slate-500"
+                  ? "bg-white text-slate-950 shadow-sm"
+                  : "text-slate-500"
               }`}
             >
               Create workspace
@@ -347,8 +376,8 @@ export default function WorkspaceOnboardingForm() {
               onClick={() => setMode("join")}
               className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 mode === "join"
-                    ? "bg-white text-slate-950 shadow-sm"
-                    : "text-slate-500"
+                  ? "bg-white text-slate-950 shadow-sm"
+                  : "text-slate-500"
               }`}
             >
               Join with invite
@@ -356,11 +385,11 @@ export default function WorkspaceOnboardingForm() {
           </div>
 
           {mode === "create" ? (
-            <form onSubmit={handleCreateWorkspace} className="space-y-5">
+            <form onSubmit={handleCreateWorkspace} className="space-y-4">
               <FormSection
                 step="Step 1"
                 title="Company details"
-                description="Set the organisation name your team will recognize inside SpringVox."
+                description="Set the organisation name your team will recognize."
               >
                 <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
                   <Field label="Company Name">
@@ -382,7 +411,9 @@ export default function WorkspaceOnboardingForm() {
                     <Input
                       value={workspaceSlug}
                       onChange={(event) => {
-                        const nextSlug = slugifyWorkspaceName(event.target.value);
+                        const nextSlug = slugifyWorkspaceName(
+                          event.target.value,
+                        );
                         setWorkspaceSlug(nextSlug);
                         void checkSlug(nextSlug);
                       }}
@@ -476,7 +507,11 @@ export default function WorkspaceOnboardingForm() {
                 disabled={loading || createDisabled}
                 className="flex w-full"
               >
-                {loading ? <Loader2 size={18} className="animate-spin" /> : <Building2 size={18} />}
+                {loading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <Building2 size={18} />
+                )}
                 Create company workspace
               </AppButton>
             </form>
@@ -487,19 +522,26 @@ export default function WorkspaceOnboardingForm() {
                 title="Invitation details"
                 description="Confirm the invited workspace and role before creating your account."
               >
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                {inviteDetails ? (
-                  <div className="space-y-2">
-                    <p className="font-semibold text-slate-950">
-                      Joining {inviteDetails.workspace_name}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                  {inviteDetails ? (
+                    <div className="space-y-2">
+                      <p className="break-words font-semibold text-slate-950 [overflow-wrap:anywhere]">
+                        Joining {inviteDetails.workspace_name}
+                      </p>
+                      <p className="break-words [overflow-wrap:anywhere]">
+                        Invited email: {inviteDetails.email}
+                      </p>
+                      <p>
+                        Role: {getRoleLabel(inviteDetails.role as AnyAppRole)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p>
+                      Have an invite link? Paste it below or open your invite
+                      URL first.
                     </p>
-                    <p>Invited email: {inviteDetails.email}</p>
-                    <p>Role: {getRoleLabel(inviteDetails.role as AnyAppRole)}</p>
-                  </div>
-                ) : (
-                  <p>Have an invite link? Paste it below or open your invite URL first.</p>
-                )}
-              </div>
+                  )}
+                </div>
               </FormSection>
               {!inviteToken && (
                 <FormSection
@@ -563,7 +605,11 @@ export default function WorkspaceOnboardingForm() {
                   disabled={loading || !inviteDetails}
                   className="flex w-full"
                 >
-                  {loading ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
+                  {loading ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <UserPlus size={18} />
+                  )}
                   Join with invitation
                 </AppButton>
               ) : null}
@@ -603,25 +649,31 @@ export default function WorkspaceOnboardingForm() {
           {mode === "join" ? (
             <div className="space-y-3 text-sm text-slate-600">
               <ChecklistItem>
-                Join your organisation's existing workspace with the role assigned in your invite.
+                Join your organisation's existing workspace with the role
+                assigned in your invite.
               </ChecklistItem>
               <ChecklistItem>
-                Your invite email stays linked to the account that accepts the invitation.
+                Your invite email stays linked to the account that accepts the
+                invitation.
               </ChecklistItem>
               <ChecklistItem>
-                After setup, you will land directly inside the invited workspace.
+                After setup, you will land directly inside the invited
+                workspace.
               </ChecklistItem>
             </div>
           ) : (
             <div className="space-y-3 text-sm text-slate-600">
               <ChecklistItem>
-                After creation, you become the Workspace Admin for your company workspace.
+                After creation, you become the Workspace Admin for your company
+                workspace.
               </ChecklistItem>
               <ChecklistItem>
-                Your team can upload approved documents and ask questions from one shared knowledge base.
+                Your team can upload approved documents and ask questions from
+                one shared knowledge base.
               </ChecklistItem>
               <ChecklistItem>
-                You can invite more staff, manage access, and review analytics from the dashboard.
+                You can invite more staff, manage access, and review analytics
+                from the dashboard.
               </ChecklistItem>
             </div>
           )}
@@ -632,9 +684,12 @@ export default function WorkspaceOnboardingForm() {
                 <CheckCircle2 size={18} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-950">What you will see after setup</p>
+                <p className="text-sm font-semibold text-slate-950">
+                  What you will see after setup
+                </p>
                 <p className="mt-1 text-xs leading-6 text-slate-500">
-                  A clean workspace with documents, users, analytics, and chat ready for your team.
+                  A clean workspace with documents, users, analytics, and chat
+                  ready for your team.
                 </p>
               </div>
             </div>
@@ -642,7 +697,10 @@ export default function WorkspaceOnboardingForm() {
 
           <div className="mt-8 border-t border-slate-200 pt-6 text-sm text-slate-600">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-cyan-700 hover:underline">
+            <Link
+              href="/login"
+              className="font-semibold text-cyan-700 hover:underline"
+            >
               Login
             </Link>
           </div>

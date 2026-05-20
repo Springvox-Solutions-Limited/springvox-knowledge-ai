@@ -74,7 +74,7 @@ export async function GET(req: Request) {
     const workspace = workspaceResult.data || null;
 
     const profileEmailById = new Map(profiles.map((item) => [item.id, item.email || 'Unknown user']));
-    const docsCompleted = documents.filter((doc) => doc.status === 'completed').length;
+    const docsCompleted = documents.filter((doc) => doc.status === 'ready').length;
     const docsFailed = documents.filter((doc) => doc.status === 'failed').length;
     const totalChunks = documents.reduce((sum, doc) => sum + Number(doc.total_chunks || 0), 0);
     const totalQuestions = chatMessages.length;

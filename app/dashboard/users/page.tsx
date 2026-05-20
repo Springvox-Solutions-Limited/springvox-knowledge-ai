@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Copy,
-  Loader2,
-  MailPlus,
-  Shield,
-  Users,
-  X,
-  AlertCircle,
-} from "lucide-react";
+import { Copy, Loader2, MailPlus, Users, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -25,6 +24,9 @@ import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
 import { AppButton } from "@/src/components/ui/app-button";
 import { EmptyState } from "@/src/components/ui/empty-state";
+import { MobileCardList } from "@/src/components/layout/MobileCardList";
+import { OverflowGuard } from "@/src/components/layout/OverflowGuard";
+import { ResponsiveToolbar } from "@/src/components/layout/ResponsiveToolbar";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import {
   type AnyAppRole,
@@ -301,12 +303,12 @@ export default function UsersPage() {
       <AppPageHeader
         eyebrow="Access Control"
         title="Workspace users"
-        subtitle="Manage roles, permissions, and workspace invitations in one place."
+        subtitle="Manage team roles and invitations."
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             Workspace users
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
@@ -314,7 +316,7 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             Workspace admins
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
@@ -322,7 +324,7 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             Viewers
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
@@ -330,7 +332,7 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
             Pending invites
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
@@ -339,7 +341,7 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+      <ResponsiveToolbar className="lg:items-center">
         <AppButton
           type="button"
           onClick={() => {
@@ -374,7 +376,7 @@ export default function UsersPage() {
         {hasFilters ? (
           <AppButton
             tone="secondary"
-            className="h-11 px-4 text-xs"
+            className="h-11 w-full px-4 text-xs sm:w-auto"
             onClick={() => {
               setSearchQuery("");
               setRoleFilter("all");
@@ -383,7 +385,7 @@ export default function UsersPage() {
             Clear filters
           </AppButton>
         ) : null}
-      </div>
+      </ResponsiveToolbar>
 
       {error && (
         <Alert className="rounded-2xl border-red-200 bg-red-50/50 text-red-700">
@@ -392,7 +394,10 @@ export default function UsersPage() {
         </Alert>
       )}
 
-      <div className="hidden overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:block">
+      <OverflowGuard
+        className="hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:block"
+        mode="scroll"
+      >
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 px-6 py-24">
             <div className="relative w-12 h-12">
@@ -419,29 +424,40 @@ export default function UsersPage() {
                 <AppTableHead className="w-[16%]">Role</AppTableHead>
                 <AppTableHead className="w-[16%]">Added</AppTableHead>
                 <AppTableHead className="w-[16%]">Updated</AppTableHead>
-                <AppTableHead className="w-[20%] text-right">Actions</AppTableHead>
+                <AppTableHead className="w-[20%] text-right">
+                  Actions
+                </AppTableHead>
               </AppTableRow>
             </AppTableHeader>
             <AppTableBody>
               {pagedUsers.map((user) => (
                 <AppTableRow key={user.id}>
                   <AppTableCell className="max-w-[18rem]">
-                    <p className="truncate text-sm font-bold text-slate-900" title={user.email || ""}>
+                    <p
+                      className="truncate text-sm font-bold text-slate-900"
+                      title={user.email || ""}
+                    >
                       {user.email || "Anonymous"}
                     </p>
                     {user.full_name && (
-                      <p className="mt-1 truncate text-xs font-medium text-slate-500" title={user.full_name}>
+                      <p
+                        className="mt-1 truncate text-xs font-medium text-slate-500"
+                        title={user.full_name}
+                      >
                         {user.full_name}
                       </p>
                     )}
-                    <p className="mt-2 text-[11px] font-medium text-slate-400">
+                    <p
+                      className="mt-2 truncate text-[11px] font-medium text-slate-400"
+                      title={user.workspace_name}
+                    >
                       {user.workspace_name}
                     </p>
                   </AppTableCell>
                   <AppTableCell>
                     <span
                       className={cn(
-                        "inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
+                        "inline-flex max-w-full truncate rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
                         getRoleTone(user.role),
                       )}
                     >
@@ -462,7 +478,9 @@ export default function UsersPage() {
                           type="button"
                           disabled={saving || roleOption === user.role}
                           onClick={() => updateRole(user, roleOption, false)}
-                          tone={roleOption === user.role ? "ghost" : "secondary"}
+                          tone={
+                            roleOption === user.role ? "ghost" : "secondary"
+                          }
                           className={cn(
                             "h-8 rounded-lg px-2.5 text-[11px]",
                             roleOption === user.role
@@ -470,7 +488,9 @@ export default function UsersPage() {
                               : "",
                           )}
                         >
-                          {roleOption === "tenant_admin" ? "Make admin" : "Make viewer"}
+                          {roleOption === "tenant_admin"
+                            ? "Make admin"
+                            : "Make viewer"}
                         </AppButton>
                       ))}
                     </div>
@@ -480,28 +500,42 @@ export default function UsersPage() {
             </AppTableBody>
           </AppTable>
         )}
-      </div>
+      </OverflowGuard>
 
       {!loading && filteredUsers.length > 0 ? (
-        <div className="grid gap-4 md:hidden">
+        <MobileCardList>
           {pagedUsers.map((user) => (
-            <div key={`${user.id}-mobile`} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
+            <div
+              key={`${user.id}-mobile`}
+              className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_14px_28px_rgba(15,23,42,0.05)]"
+            >
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-slate-950" title={user.email || ""}>
+                    <p
+                      className="truncate text-sm font-bold text-slate-950"
+                      title={user.email || ""}
+                    >
                       {user.email || "Anonymous"}
                     </p>
                     {user.full_name ? (
-                      <p className="mt-1 truncate text-xs text-slate-500">{user.full_name}</p>
+                      <p
+                        className="mt-1 truncate text-xs text-slate-500"
+                        title={user.full_name}
+                      >
+                        {user.full_name}
+                      </p>
                     ) : null}
-                    <p className="mt-2 text-[11px] font-medium text-slate-400">
+                    <p
+                      className="mt-2 truncate text-[11px] font-medium text-slate-400"
+                      title={user.workspace_name}
+                    >
                       {user.workspace_name}
                     </p>
                   </div>
                   <span
                     className={cn(
-                      "rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]",
+                      "max-w-[8rem] truncate rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em]",
                       getRoleTone(user.role),
                     )}
                   >
@@ -510,7 +544,9 @@ export default function UsersPage() {
                 </div>
                 <div className="grid gap-2 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 text-xs text-slate-500">
                   <p>Added: {new Date(user.created_at).toLocaleDateString()}</p>
-                  <p>Updated: {new Date(user.updated_at).toLocaleDateString()}</p>
+                  <p>
+                    Updated: {new Date(user.updated_at).toLocaleDateString()}
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {ROLE_OPTIONS.map((roleOption) => (
@@ -527,26 +563,42 @@ export default function UsersPage() {
                           : "",
                       )}
                     >
-                      {roleOption === "tenant_admin" ? "Make Admin" : "Make Viewer"}
+                      {roleOption === "tenant_admin"
+                        ? "Make Admin"
+                        : "Make Viewer"}
                     </AppButton>
                   ))}
                 </div>
               </div>
             </div>
           ))}
-        </div>
+        </MobileCardList>
       ) : null}
 
       {filteredUsers.length > PAGE_SIZE ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-slate-500">
-            Showing {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, filteredUsers.length)} of {filteredUsers.length}
+            Showing {(currentPage - 1) * PAGE_SIZE + 1}-
+            {Math.min(currentPage * PAGE_SIZE, filteredUsers.length)} of{" "}
+            {filteredUsers.length}
           </p>
-          <div className="flex gap-2">
-            <AppButton tone="secondary" className="h-9 px-3 text-xs" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <AppButton
+              tone="secondary"
+              className="h-9 px-3 text-xs"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            >
               Previous
             </AppButton>
-            <AppButton tone="secondary" className="h-9 px-3 text-xs" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+            <AppButton
+              tone="secondary"
+              className="h-9 px-3 text-xs"
+              disabled={currentPage === totalPages}
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+            >
               Next
             </AppButton>
           </div>
@@ -672,27 +724,37 @@ export default function UsersPage() {
         }}
       />
 
-      {inviteOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-slate-950">
-                  Invite user
-                </h2>
-                <p className="mt-1 text-xs text-slate-500 font-medium">
-                  Create a secure entry link for this workspace.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setInviteOpen(false)}
-                aria-label="Close invite dialog"
-                className="rounded-xl p-2 text-slate-400 hover:bg-slate-50 transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
+      <Dialog
+        open={inviteOpen}
+        onOpenChange={(open) => {
+          if (!saving) {
+            setInviteOpen(open);
+          }
+        }}
+      >
+        <DialogContent
+          showCloseButton={!saving}
+          onEscapeKeyDown={(event) => {
+            if (saving) {
+              event.preventDefault();
+            }
+          }}
+          onInteractOutside={(event) => {
+            if (saving) {
+              event.preventDefault();
+            }
+          }}
+          className="rounded-[28px] border-slate-200 bg-white p-0 sm:max-w-lg"
+        >
+          <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-8">
+            <DialogHeader className="mb-8">
+              <DialogTitle className="text-xl font-bold tracking-tight text-slate-950">
+                Invite user
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-xs font-medium text-slate-500">
+                Create a secure entry link for this workspace.
+              </DialogDescription>
+            </DialogHeader>
 
             <form onSubmit={createInvitation} className="space-y-6">
               <div className="space-y-2">
@@ -721,7 +783,9 @@ export default function UsersPage() {
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200">
                     <SelectItem value="viewer">Viewer</SelectItem>
-                    <SelectItem value="tenant_admin">Workspace Admin</SelectItem>
+                    <SelectItem value="tenant_admin">
+                      Workspace Admin
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -732,7 +796,7 @@ export default function UsersPage() {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
                       Invitation link ready
                     </p>
-                    <p className="mt-2 break-all text-xs font-mono text-emerald-800 bg-white/50 p-3 rounded-lg border border-emerald-100">
+                    <p className="mt-2 rounded-lg border border-emerald-100 bg-white/50 p-3 font-mono text-xs text-emerald-800 [overflow-wrap:anywhere]">
                       {createdInviteUrl}
                     </p>
                   </div>
@@ -752,19 +816,15 @@ export default function UsersPage() {
 
               {!createdInviteUrl && (
                 <div className="flex flex-col gap-3 pt-4">
-                  <AppButton
-                    type="submit"
-                    disabled={saving}
-                    className="w-full"
-                  >
+                  <AppButton type="submit" disabled={saving} className="w-full">
                     {saving ? "Creating invite..." : "Create Invite Link"}
                   </AppButton>
                 </div>
               )}
             </form>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

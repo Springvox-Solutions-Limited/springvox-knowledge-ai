@@ -13,6 +13,8 @@ import {
   History,
   Loader2,
   MessageSquarePlus,
+  Mic,
+  MicOff,
   RefreshCw,
   Search,
   Send,
@@ -44,9 +46,12 @@ import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 type Citation = {
   filename: string;
@@ -175,6 +180,9 @@ export default function ChatPage() {
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const startedAtRef = useRef<number | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -195,6 +203,90 @@ export default function ChatPage() {
     maxHeight: 192,
   });
   const sessionParam = searchParams.get("session");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      setSpeechSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          setInput((prev) => {
+            const trimmed = prev.trim();
+            const connector = trimmed ? " " : "";
+            return `${trimmed}${connector}${finalTranscript.trim()}`;
+          });
+          setTimeout(() => adjustHeight(), 10);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        if (event.error === "aborted") {
+          // 'aborted' is a benign lifecycle status triggered when stopping recognition programmatically
+          return;
+        }
+        console.warn("Speech recognition warning:", event.error);
+        setIsRecording(false);
+
+        if (event.error === "not-allowed") {
+          toast.error("Microphone permission denied. Please allow microphone access in your browser settings.");
+        } else if (event.error === "network") {
+          toast.error("Network error during speech recognition. Please check your network connection.");
+        }
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+  }, [adjustHeight]);
+
+  const toggleRecording = () => {
+    if (!speechSupported) {
+      toast.error("Speech recognition is not supported on this browser. Please try using Chrome, Edge, or Safari.");
+      return;
+    }
+    if (!recognitionRef.current) return;
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      setIsRecording(true);
+      recognitionRef.current.start();
+    }
+  };
 
   useEffect(() => {
     async function loadChatContext() {
@@ -501,10 +593,24 @@ export default function ChatPage() {
       return;
     }
 
+    if (isRecording) {
+      try {
+        recognitionRef.current?.stop();
+      } catch (e) {}
+      setIsRecording(false);
+    }
+
     stopTypingBuffer();
 
-    const userMessageId = crypto.randomUUID();
-    const assistantMessageId = crypto.randomUUID();
+    const generateId = () => {
+      if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    };
+
+    const userMessageId = generateId();
+    const assistantMessageId = generateId();
 
     setMessages((currentMessages) => [
       ...currentMessages,
@@ -754,6 +860,7 @@ export default function ChatPage() {
   const filteredSessions = sessions.filter((session) =>
     session.title.toLowerCase().includes(sessionSearch.toLowerCase()),
   );
+  const activeSessionTitle = activeSession?.title || "Current chat";
 
   const historyPanel = (
     <ChatHistoryPanel
@@ -799,6 +906,7 @@ export default function ChatPage() {
               <button
                 type="button"
                 onClick={() => setHistoryOpen(true)}
+                aria-label="Open recent chats"
                 className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 <History size={16} />
@@ -831,6 +939,9 @@ export default function ChatPage() {
             )}>
               <div
                 ref={scrollRef}
+                role="log"
+                aria-live="polite"
+                aria-label="Chat conversation"
                 className={cn(
                   "flex-1 overflow-y-auto scrollbar-hide",
                   isViewer
@@ -874,6 +985,7 @@ export default function ChatPage() {
                     )}>
                       {EMPTY_PROMPTS.map((prompt) => (
                         <button
+                          type="button"
                           key={prompt}
                           onClick={() => setInput(prompt)}
                           className={cn(
@@ -901,11 +1013,11 @@ export default function ChatPage() {
                         )}
                       >
                         {message.role === "user" ? (
-                          <div className={cn(
-                            "rounded-[1.4rem] rounded-br-md bg-slate-900 text-white shadow-sm",
-                            isViewer ? "px-5 py-3.5 text-[15px] leading-7" : "px-5 py-3.5 text-[15px] leading-7"
-                          )}>
-                            <div className="whitespace-pre-wrap">{message.content}</div>
+                            <div className={cn(
+                              "rounded-[1.4rem] rounded-br-md bg-slate-900 text-white shadow-sm",
+                              isViewer ? "px-5 py-3.5 text-[15px] leading-7" : "px-5 py-3.5 text-[15px] leading-7"
+                            )}>
+                            <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.content}</div>
                           </div>
                         ) : (
                           <div className="space-y-3">
@@ -1048,23 +1160,46 @@ export default function ChatPage() {
                 )}>
                   <div
                     className={cn(
-                      "rounded-[30px] border bg-white backdrop-blur-xl transition-all duration-500",
-                      isViewer ? "shadow-[0_20px_45px_rgba(15,23,42,0.08)]" : "shadow-[0_12px_28px_rgba(15,23,42,0.05)]",
+                      "relative rounded-[28px] border bg-white/95 backdrop-blur-xl transition-all duration-500",
+                      isViewer ? "shadow-[0_24px_55px_rgba(30,58,95,0.06)]" : "shadow-[0_16px_40px_rgba(30,58,95,0.04)]",
                       inputFocused
-                        ? "border-cyan-400/50 ring-4 ring-cyan-100"
-                        : "border-slate-200",
+                        ? "border-cyan-400/50 ring-4 ring-cyan-50 shadow-[0_0_30px_rgba(34,211,238,0.12)]"
+                        : isRecording
+                        ? "border-[#F97316]/50 ring-4 ring-orange-50 shadow-[0_0_30px_rgba(249,115,22,0.15)] animate-[pulse_2s_infinite]"
+                        : "border-slate-200/80",
                     )}
                   >
-                    <textarea
+                    <button
+                      type="button"
+                      onClick={toggleRecording}
+                      disabled={loading}
+                      aria-label={isRecording ? "Stop recording speech" : "Start recording speech"}
+                      title={isRecording ? "Stop recording speech" : "Start recording speech"}
+                      className={cn(
+                        "absolute left-3.5 bottom-2.5 rounded-full p-2.5 transition-all duration-300 outline-none z-10 active:scale-95",
+                        isRecording
+                          ? "bg-[#F97316] text-white shadow-[0_0_15px_rgba(249,115,22,0.5)] hover:bg-[#ea580c] focus-visible:ring-2 focus-visible:ring-orange-300"
+                          : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-200",
+                        !speechSupported && "opacity-50 cursor-not-allowed hover:bg-slate-50 hover:text-slate-400"
+                      )}
+                    >
+                      {isRecording ? <MicOff size={16} className="animate-pulse" /> : <Mic size={16} />}
+                    </button>
+                    <Textarea
                       ref={textareaRef}
                       rows={1}
                       className={cn(
-                        "max-h-48 w-full resize-none bg-transparent text-slate-900 outline-none placeholder:text-slate-400",
+                        "max-h-48 w-full resize-none border-0 bg-transparent text-slate-900 shadow-none outline-none placeholder:text-slate-400 focus-visible:ring-0",
                         isViewer
-                          ? "min-h-[64px] px-5 py-4 pr-24 text-[15px] leading-7 sm:pr-28"
-                          : "min-h-[60px] px-4 py-4 pr-24 text-sm leading-7 sm:px-5 sm:pr-28"
+                          ? "min-h-[64px] py-4 text-[15px] leading-7 pl-14 pr-5 sm:pr-28"
+                          : "min-h-[60px] py-4 text-sm leading-7 pl-12 pr-4 sm:pl-14 sm:pr-28"
                       )}
-                      placeholder="Ask anything from your approved documents..."
+                      placeholder={
+                        isRecording
+                          ? "Listening... Speak clearly now..."
+                          : "Ask anything from your approved documents..."
+                      }
+                      aria-label="Ask a question from approved documents"
                       value={input}
                       onChange={(event) => {
                         setInput(event.target.value);
@@ -1081,7 +1216,7 @@ export default function ChatPage() {
                       disabled={loading}
                       style={{ overflow: "hidden" }}
                     />
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                    <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-4 py-3 sm:absolute sm:bottom-3 sm:right-3 sm:border-t-0 sm:bg-transparent sm:p-0">
                       {loading && (
                         <button
                           aria-label="Stop generating answer"
@@ -1090,14 +1225,14 @@ export default function ChatPage() {
                           className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-[11px] text-slate-500 transition-colors hover:text-slate-800 sm:px-3"
                         >
                           <Square size={11} className="fill-current" />
-                          Stop
+                          <span className="hidden sm:inline">Stop</span>
                         </button>
                       )}
                       <button
                         aria-label="Send message"
                         type="submit"
                         disabled={loading || !input.trim()}
-                        className="rounded-full bg-slate-900 p-2.5 text-white shadow-sm transition-all hover:bg-[#132744] disabled:bg-slate-200 disabled:text-slate-400"
+                        className="rounded-full bg-gradient-to-r from-[#1E3A5F] to-[#22d3ee] p-2.5 text-white shadow-[0_4px_12px_rgba(30,58,95,0.15)] hover:from-[#152a46] hover:to-[#06b6d4] hover:shadow-[0_6px_18px_rgba(34,211,238,0.25)] hover:ring-2 hover:ring-[#F97316]/50 active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:ring-0 transition-all duration-300"
                       >
                         <Send size={16} />
                       </button>
@@ -1119,10 +1254,13 @@ export default function ChatPage() {
       <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
         <SheetContent
           side="left"
-          className="w-[88vw] max-w-[22rem] border-r border-slate-200 bg-white p-0"
+          className="w-[min(100vw-1rem,22rem)] border-r border-slate-200 bg-white p-0"
         >
           <SheetHeader className="border-b border-slate-200 px-5 py-4">
             <SheetTitle>Recent Chats</SheetTitle>
+            <SheetDescription className="sr-only">
+              Browse, reopen, or delete your recent private chat sessions.
+            </SheetDescription>
           </SheetHeader>
           <div className="p-4">
             <ChatHistoryPanel
@@ -1165,6 +1303,7 @@ export default function ChatPage() {
         loading={sourceLoading}
         error={sourceError}
         managerView={!!profile && isWorkspaceAdminRole(profile.role)}
+        sessionTitle={activeSessionTitle}
       />
     </>
   );
@@ -1212,6 +1351,7 @@ function ChatHistoryPanel({
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search chats..."
+            aria-label="Search recent chats"
             className="h-11 rounded-xl border-slate-200 bg-white pl-9 text-sm shadow-sm"
           />
         </div>
@@ -1269,6 +1409,7 @@ function ChatHistoryPanel({
                   <button
                     type="button"
                     aria-label={`Delete chat ${session.title}`}
+                    title={`Delete ${session.title}`}
                     onClick={() => onDeleteSession(session.id)}
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                   >
@@ -1340,6 +1481,7 @@ function CitationList({
       <button
         type="button"
         onClick={() => setExpanded((currentValue) => !currentValue)}
+        aria-expanded={expanded}
         className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 shadow-sm"
       >
         <ShieldCheck size={12} className="text-teal-600" />
@@ -1359,6 +1501,7 @@ function CitationList({
               type="button"
               key={`${citation.filename}-${citation.chunk_index}`}
               onClick={() => onOpenSource(citation)}
+              aria-label={`Open source ${citation.filename} section ${citation.chunk_index}`}
               className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-colors hover:border-teal-300 hover:bg-teal-50/30"
             >
               <div className="flex items-start gap-3">
@@ -1368,7 +1511,7 @@ function CitationList({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="truncate text-sm font-medium text-slate-900" title={citation.filename}>
                         {citation.filename}
                       </p>
                       <p className="mt-1 text-[11px] text-slate-500">
@@ -1446,6 +1589,8 @@ function FeedbackRow({
               type="button"
               disabled={loading}
               onClick={onToggleMore}
+              aria-expanded={expanded}
+              aria-label="Show more feedback options"
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
             >
               More options
@@ -1480,6 +1625,7 @@ function SourceDrawer({
   loading,
   error,
   managerView,
+  sessionTitle,
 }: {
   open: boolean;
   onClose: () => void;
@@ -1487,12 +1633,9 @@ function SourceDrawer({
   loading: boolean;
   error: string | null;
   managerView: boolean;
+  sessionTitle: string;
 }) {
   const [copied, setCopied] = useState(false);
-
-  if (!open) {
-    return null;
-  }
 
   const excerpt = citation?.chunk_text || citation?.preview || "";
 
@@ -1503,33 +1646,40 @@ function SourceDrawer({
   };
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Close source panel overlay"
-        className="fixed inset-0 z-40 bg-black/30"
-        onClick={onClose}
-      />
-      <aside className="fixed inset-0 z-50 w-full border-l border-slate-200 bg-white shadow-[0_0_40px_rgba(15,23,42,0.10)] sm:inset-y-0 sm:right-0 sm:left-auto sm:max-w-xl">
-        <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-5">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
-                {managerView ? "Document Source" : "Source"}
-              </p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                {citation?.filename || "Source details"}
-              </h3>
+    <Sheet open={open} onOpenChange={(nextOpen) => {
+      if (!nextOpen) {
+        onClose();
+      }
+    }}>
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        className="w-full max-w-full border-l border-slate-200 bg-white p-0 sm:max-w-xl"
+      >
+        <div className="flex h-full min-w-0 flex-col">
+          <SheetHeader className="border-b border-slate-200 px-4 py-4 sm:px-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+                  {managerView ? "Document Source" : "Source"}
+                </p>
+                <SheetTitle className="mt-1 break-words text-left text-lg font-semibold text-slate-900 [overflow-wrap:anywhere]">
+                  {citation?.filename || "Source details"}
+                </SheetTitle>
+                <SheetDescription className="sr-only">
+                  View source details and excerpt for the selected citation from {sessionTitle}.
+                </SheetDescription>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close source panel"
+                className="rounded-xl border border-slate-200 p-2.5 text-slate-400 transition-colors hover:text-slate-700"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close source panel"
-              className="rounded-xl border border-slate-200 p-2.5 text-slate-400 transition-colors hover:text-slate-700"
-            >
-              <X size={16} />
-            </button>
-          </div>
+          </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-5">
             {loading && (
@@ -1573,7 +1723,7 @@ function SourceDrawer({
                     {copied ? "Copied" : "Copy excerpt"}
                   </button>
                 </div>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700 [overflow-wrap:anywhere]">
                   {excerpt || "No excerpt available."}
                 </p>
               </div>
@@ -1582,7 +1732,7 @@ function SourceDrawer({
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
                   Preview
                 </p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
+                <p className="mt-3 break-words text-sm leading-7 text-slate-600 [overflow-wrap:anywhere]">
                   {citation?.preview || "No preview available."}
                 </p>
               </div>
@@ -1604,8 +1754,8 @@ function SourceDrawer({
                     Source metadata
                   </p>
                   <div className="mt-3 space-y-2 text-sm text-slate-600">
-                    <p>Document ID: {citation?.document_id || "Unknown"}</p>
-                    <p>Uploaded by: {citation?.uploaded_by || "Unknown"}</p>
+                    <p className="break-words [overflow-wrap:anywhere]">Document ID: {citation?.document_id || "Unknown"}</p>
+                    <p className="break-words [overflow-wrap:anywhere]">Uploaded by: {citation?.uploaded_by || "Unknown"}</p>
                     <p>Section: {citation?.chunk_index || 0}</p>
                   </div>
                 </div>
@@ -1613,8 +1763,8 @@ function SourceDrawer({
             </div>
           </div>
         </div>
-      </aside>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }
 

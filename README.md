@@ -378,7 +378,6 @@ If there is no data, the UI should show `0` or an empty state.
 - PDF and TXT support only for now
 - scanned PDFs and OCR are not yet supported
 - background processing is not yet added
-- voice, TTS, and STT are not yet added
 - no full platform admin dashboard yet
 - `platform_admin` is still assigned manually
 

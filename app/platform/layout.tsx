@@ -177,7 +177,8 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent
           side="left"
-          className="w-[88vw] max-w-[20rem] border-r-0 bg-[#0d1f35] p-0 text-white"
+          aria-describedby={undefined}
+          className="w-[min(100vw-1rem,20rem)] border-r-0 bg-[#0d1f35] p-0 text-white"
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Platform navigation</SheetTitle>

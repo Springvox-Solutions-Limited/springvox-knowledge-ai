@@ -15,6 +15,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { fetchPlatformJson } from '@/src/lib/platform-client';
 import { AppButton } from '@/src/components/ui/app-button';
+import { ConfirmDialog } from '@/src/components/ui/confirm-dialog';
 import {
   AppTable,
   AppTableBody,
@@ -88,6 +89,7 @@ export default function PlatformCompanyDetailPage() {
   const [planValue, setPlanValue] = useState<string>('pilot');
   const [suspensionReason, setSuspensionReason] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
+  const [removeUserId, setRemoveUserId] = useState<string | null>(null);
 
   const load = async () => {
     try {
@@ -283,7 +285,7 @@ export default function PlatformCompanyDetailPage() {
                           <>
                             <AppButton onClick={() => updateUserRole(user.id, 'tenant_admin')} disabled={saving} tone="secondary" className="h-9 rounded-lg px-3 text-xs">Make Workspace Admin</AppButton>
                             <AppButton onClick={() => updateUserRole(user.id, 'viewer')} disabled={saving} tone="secondary" className="h-9 rounded-lg px-3 text-xs">Make Viewer</AppButton>
-                            <AppButton onClick={() => removeUser(user.id)} disabled={saving} tone="destructive" className="h-9 rounded-lg px-3 text-xs uppercase tracking-[0.16em]">Remove</AppButton>
+                            <AppButton onClick={() => setRemoveUserId(user.id)} disabled={saving} tone="destructive" className="h-9 rounded-lg px-3 text-xs uppercase tracking-[0.16em]">Remove</AppButton>
                           </>
                         )}
                       </div>
@@ -393,6 +395,24 @@ export default function PlatformCompanyDetailPage() {
           This table intentionally excludes document text, section text, and private document contents.
         </p>
       </section>
+
+      <ConfirmDialog
+        open={Boolean(removeUserId)}
+        onOpenChange={(open) => {
+          if (!open) setRemoveUserId(null);
+        }}
+        title="Remove user from workspace"
+        description="This removes the selected user from the company workspace. Platform admin access is still managed separately."
+        confirmLabel="Remove user"
+        cancelLabel="Keep user"
+        confirmTone="destructive"
+        loading={saving}
+        onConfirm={async () => {
+          if (!removeUserId) return;
+          await removeUser(removeUserId);
+          setRemoveUserId(null);
+        }}
+      />
     </div>
   );
 }
