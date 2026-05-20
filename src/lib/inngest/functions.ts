@@ -14,9 +14,19 @@ export const processDocument = inngest.createFunction(
     try {
       // Step 1: Download from Supabase
       const fileBuffer = await step.run("download-file", async () => {
+        const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+        if (!bucket) {
+          throw new Error("Missing Supabase storage bucket env var");
+        }
+        if (!storagePath) {
+          throw new Error("Missing document storage path");
+        }
+
+        console.log(`[Inngest] Downloading document from bucket: "${bucket}", path: "${storagePath}"`);
+
         const supabase = getSupabaseAdmin();
         const { data, error } = await supabase.storage
-          .from("documents")
+          .from(bucket)
           .download(storagePath);
           
         if (error || !data) {

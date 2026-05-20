@@ -61,6 +61,16 @@ export async function POST(req: Request) {
     documentId = crypto.randomUUID();
     uploadedFilePath = `${user.id}/${documentId}/${filename}`;
 
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET;
+    if (!bucket) {
+      throw new Error("Missing Supabase storage bucket env var");
+    }
+    if (!uploadedFilePath) {
+      throw new Error("Missing document storage path");
+    }
+
+    console.log(`[Upload] Uploading document to bucket: ${bucket}, path: ${uploadedFilePath}`);
+
     const { error: documentError } = await supabase
       .from('documents')
       .insert({
@@ -79,7 +89,7 @@ export async function POST(req: Request) {
       throw documentError || new Error('Failed to create document record');
     }
 
-    const { error: uploadError } = await supabase.storage.from('documents').upload(uploadedFilePath, file, {
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(uploadedFilePath, file, {
       upsert: false,
       contentType: file.type || 'application/octet-stream',
     });
@@ -128,7 +138,8 @@ export async function POST(req: Request) {
         await deleteDocumentVectors(documentId, authenticatedWorkspaceId);
 
         if (uploadedFilePath) {
-          await supabase.storage.from('documents').remove([uploadedFilePath]);
+          const cleanupBucket = process.env.SUPABASE_STORAGE_BUCKET || 'documents';
+          await supabase.storage.from(cleanupBucket).remove([uploadedFilePath]);
         }
 
         await supabase
