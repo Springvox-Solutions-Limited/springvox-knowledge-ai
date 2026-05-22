@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-inter",
   display: "swap",
 });
@@ -27,13 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} font-sans`}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-      </head>
-      <body suppressHydrationWarning className="overflow-x-hidden antialiased tracking-tight">
+    <html lang="en" className={`${inter.variable} ${inter.className} font-sans`}>
+      <body suppressHydrationWarning className="overflow-x-hidden antialiased">
         <TooltipProvider>
           {children}
           <Toaster richColors position="top-right" />

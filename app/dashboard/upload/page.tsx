@@ -20,6 +20,9 @@ import Link from 'next/link';
 import { AppPageHeader } from '@/src/components/shared/AppPageHeader';
 import { AppButton } from '@/src/components/ui/app-button';
 
+const MAX_UPLOAD_MB = Number.parseInt(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '20', 10) || 20;
+const SUPPORTED_UPLOAD_COPY = `PDF, TXT, DOCX, CSV, XLSX, PPTX up to ${MAX_UPLOAD_MB}MB`;
+
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -34,14 +37,26 @@ export default function UploadPage() {
     }
   }, []);
 
+  const onDropRejected = useCallback(() => {
+    setFile(null);
+    setStatus('error');
+    setError(`Please upload a supported document up to ${MAX_UPLOAD_MB}MB.`);
+  }, []);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected,
     accept: {
       'application/pdf': ['.pdf'],
-      'text/plain': ['.txt']
+      'text/plain': ['.txt'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'text/csv': ['.csv'],
+      'application/vnd.ms-excel': ['.csv'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
     },
     maxFiles: 1,
-    maxSize: 4 * 1024 * 1024 // 4MB
+    maxSize: MAX_UPLOAD_MB * 1024 * 1024,
   });
 
   const handleUpload = async () => {
@@ -87,7 +102,7 @@ export default function UploadPage() {
       <AppPageHeader
         eyebrow="Upload Documents"
         title="Upload approved documents"
-        subtitle="Add PDF or TXT files your team can ask questions from."
+        subtitle={`Add approved documents your team can ask questions from. ${SUPPORTED_UPLOAD_COPY}.`}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
@@ -110,18 +125,18 @@ export default function UploadPage() {
         <div 
           {...getRootProps()} 
           className={cn(
-            "relative group flex min-h-[320px] cursor-pointer flex-col items-center justify-center gap-5 rounded-[2rem] border-2 border-dashed bg-white p-6 transition-all sm:min-h-[360px] sm:p-12",
+            "group relative flex min-h-[240px] cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed bg-white p-5 transition sm:min-h-[280px] sm:p-8",
             isDragActive ? "border-slate-400 bg-slate-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
           )}
         >
           <input {...getInputProps()} />
-          <div className="absolute inset-x-4 top-4 flex items-center justify-between text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:inset-x-10 sm:top-8 sm:text-[10px] sm:tracking-[0.18em]">
-            <span>PDF, TXT ONLY</span>
-            <span>MAX 4MB</span>
+          <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-3 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:inset-x-6 sm:top-6 sm:text-[10px] sm:tracking-[0.18em]">
+            <span>PDF · TXT · DOCX · CSV · XLSX · PPTX</span>
+            <span>MAX {MAX_UPLOAD_MB}MB</span>
           </div>
           
-          <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-slate-100 bg-slate-50 text-slate-400 transition-all group-hover:scale-105 group-hover:text-slate-600">
-            <Upload size={32} strokeWidth={1.5} />
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-400 transition group-hover:text-slate-600">
+            <Upload size={28} strokeWidth={1.5} />
           </div>
 
           <div className="text-center space-y-2">
@@ -129,7 +144,7 @@ export default function UploadPage() {
               {isDragActive ? 'Release to begin upload' : 'Click or drag a document here'}
             </p>
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
-              We&apos;ll prepare the document so your team can ask questions from it.
+              {SUPPORTED_UPLOAD_COPY}. We&apos;ll prepare the document so your team can ask questions from it.
             </p>
           </div>
         </div>
@@ -178,7 +193,7 @@ export default function UploadPage() {
             <CheckCircle2 className="text-emerald-600 mt-0.5" size={18} />
             <div className="space-y-1">
               <p className="text-sm font-bold text-emerald-900">Document uploaded successfully.</p>
-              <p className="text-xs text-emerald-700/80 leading-relaxed">Your team can now ask questions from this document in chat.</p>
+              <p className="text-xs text-emerald-700/80 leading-relaxed">Your document is processing in the background and will be ready for chat shortly.</p>
               <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:gap-5">
                 <Link href="/dashboard/chat" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">Open chat</Link>
                 <Link href="/dashboard/documents" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">View documents</Link>
@@ -198,7 +213,7 @@ export default function UploadPage() {
         )}
         </div>
 
-        <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8">
+        <div className="admin-shell-card border border-slate-200 bg-white p-5 sm:p-6">
           <div className="space-y-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Document preparation steps</p>
             <h2 className="text-xl font-bold tracking-tight text-slate-950">What happens after upload</h2>
@@ -207,7 +222,7 @@ export default function UploadPage() {
             </p>
           </div>
 
-          <div className="mt-8 space-y-6">
+          <div className="mt-6 space-y-5">
             {[
               { icon: Upload, title: 'Upload file', copy: 'Your document is stored securely for your workspace.' },
               { icon: FileSearch, title: 'Read document', copy: 'The system reads the text so it can be used in answers.' },

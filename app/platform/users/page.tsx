@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,7 @@ import { OverflowGuard } from "@/src/components/layout/OverflowGuard";
 import { ResponsiveToolbar } from "@/src/components/layout/ResponsiveToolbar";
 import { AppButton } from "@/src/components/ui/app-button";
 import { AppCard } from "@/src/components/ui/app-card";
+import { SearchBar } from "@/src/components/ui/search-bar";
 import {
   AppTable,
   AppTableBody,
@@ -143,11 +143,11 @@ export default function PlatformUsersPage() {
       />
 
       <ResponsiveToolbar className="xl:grid xl:grid-cols-4">
-        <Input
+        <SearchBar
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search by email or company"
-          className="h-12 rounded-xl border-slate-200 bg-white text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100"
+          className="h-12 px-4"
         />
         <Select value={roleFilter} onValueChange={setRoleFilter}>
           <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">

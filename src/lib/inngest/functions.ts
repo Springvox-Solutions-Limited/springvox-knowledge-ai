@@ -1,23 +1,21 @@
-import { createRequire } from 'module';
 import { v4 as uuidv4 } from 'uuid';
 import { inngest } from './client';
 import { getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { buildPreview, chunkDocumentText, getFileExtension } from '@/src/lib/documents';
+import { buildPreview, chunkDocumentText } from '@/src/lib/documents';
 import { getEmbedding } from '@/src/lib/gemini';
 import { COLLECTION_NAME, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
+import { parseDocument } from '@/src/lib/document-parsers';
 
 export const processDocument = inngest.createFunction(
   { id: "process-document", retries: 3, triggers: [{ event: "document/process.started" }] },
   async ({ event, step }) => {
-    const { documentId, workspaceId, storagePath, originalFilename, userId } = event.data as any;
+    const { documentId, workspaceId, storagePath, originalFilename, mimeType, userId } =
+      event.data as any;
 
     try {
       // Step 1: Download from Supabase
       const fileBuffer = await step.run("download-file", async () => {
-        const bucket = process.env.SUPABASE_STORAGE_BUCKET;
-        if (!bucket) {
-          throw new Error("Missing Supabase storage bucket env var");
-        }
+        const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'documents';
         if (!storagePath) {
           throw new Error("Missing document storage path");
         }
@@ -36,29 +34,23 @@ export const processDocument = inngest.createFunction(
       });
 
       // Step 2: Parse Content
-      const extractedText = await step.run("parse-content", async () => {
-        const extension = getFileExtension(originalFilename);
+      const parsedResult = await step.run("parse-content", async () => {
         const buffer = Buffer.from(fileBuffer, "base64");
-        
-        if (extension === '.pdf') {
-          const require = createRequire(import.meta.url);
-          const pdfParse = require("pdf-parse/lib/pdf-parse.js") as (
-            buffer: Buffer,
-          ) => Promise<{ text: string }>;
-          
-          const parsed = await pdfParse(buffer);
-          return parsed.text || '';
-        } else if (extension === '.txt') {
-          return buffer.toString("utf-8");
-        }
-        throw new Error("Unsupported file extension");
+        return parseDocument({
+          buffer,
+          filename: originalFilename,
+          mimeType,
+        });
       });
+
+      const extractedText = parsedResult.text;
+      const parserMetadata = parsedResult.metadata;
 
       // Step 3: Chunk Content
       const chunks = await step.run("chunk-content", async () => {
         const chunked = chunkDocumentText(extractedText);
         if (chunked.length === 0) {
-          throw new Error('No text could be extracted from the uploaded document');
+          throw new Error('No readable text could be extracted from this document.');
         }
         return chunked;
       });
@@ -123,6 +115,9 @@ export const processDocument = inngest.createFunction(
             status: 'ready',
             error_message: null,
             total_chunks: chunkRows.length,
+            parser: parserMetadata?.parser || null,
+            parser_metadata: parserMetadata || null,
+            word_count: parserMetadata?.wordCount || null,
           })
           .eq('id', documentId);
 

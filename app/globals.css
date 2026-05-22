@@ -74,7 +74,7 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: "Inter", var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   overflow-x: hidden;
 }
 
@@ -210,7 +210,7 @@ a {
 
 .markdown-container th,
 .markdown-container td {
-  @apply min-w-[8rem] border-b border-slate-200 px-3 py-2 text-left;
+  @apply min-w-32 border-b border-slate-200 px-3 py-2 text-left;
 }
 
 .markdown-container img,
@@ -224,11 +224,11 @@ a {
 }
 
 .admin-shell-card {
-  @apply rounded-[24px] border-0 bg-white shadow-[0_20px_50px_rgba(30,58,95,0.04)] hover:shadow-[0_24px_60px_rgba(30,58,95,0.07)] transition-all duration-300;
+  @apply rounded-2xl border border-slate-200 bg-white shadow-[0_14px_28px_rgba(15,23,42,0.05)];
 }
 
 .admin-shell-card-muted {
-  @apply rounded-[24px] border-0 bg-slate-50/50 shadow-[0_12px_30px_rgba(30,58,95,0.02)] transition-all duration-300;
+  @apply rounded-2xl border border-slate-200 bg-slate-50/90 shadow-[0_12px_28px_rgba(15,23,42,0.04)];
 }
 
 .admin-kpi-card {
@@ -236,7 +236,7 @@ a {
 }
 
 .admin-input {
-  @apply w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 transition duration-300 focus:border-[#1E3A5F] focus:bg-white focus:ring-4 focus:ring-[#22d3ee]/20 focus:ring-offset-0;
+  @apply w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-900 transition duration-300 focus:border-brand-navy focus:bg-white focus:ring-4 focus:ring-brand-cyan/20 focus:ring-offset-0;
 }
 
 .admin-hero-card {
@@ -335,8 +335,8 @@ a {
 }
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: var(--font-sans);
+  --font-heading: "Inter", var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Inter", var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

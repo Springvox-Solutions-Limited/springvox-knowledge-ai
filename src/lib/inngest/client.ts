@@ -8,6 +8,7 @@ export type Events = {
       workspaceId: string;
       storagePath: string;
       originalFilename: string;
+      mimeType?: string;
       userId: string;
     };
   };

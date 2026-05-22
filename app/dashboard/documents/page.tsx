@@ -29,11 +29,39 @@ import { StatusBadge } from "@/src/components/ui/status-badge";
 type DocumentRecord = {
   id: string;
   filename: string;
+  file_type?: string | null;
+  parser?: string | null;
   status: "ready" | "processing" | "failed";
   total_chunks: number | null;
   created_at: string;
   error_message?: string | null;
 };
+
+function getDisplayFileType(document: DocumentRecord) {
+  if (document.file_type) {
+    if (document.file_type.includes('/')) {
+      const subtype = document.file_type.split('/').pop() || document.file_type;
+      return subtype.split('.').pop()?.toUpperCase() || subtype.toUpperCase();
+    }
+
+    return document.file_type.replace('.', '').toUpperCase();
+  }
+
+  const extension = document.filename.split('.').pop();
+  return extension ? extension.toUpperCase() : 'File';
+}
+
+function getParserStatus(document: DocumentRecord) {
+  if (document.status === 'processing') {
+    return 'Processing';
+  }
+
+  if (document.status === 'failed') {
+    return document.error_message || 'Parsing failed';
+  }
+
+  return document.parser || 'Ready';
+}
 
 export default function DocumentsPage() {
   const PAGE_SIZE = 8;
@@ -133,7 +161,7 @@ export default function DocumentsPage() {
       <AppPageHeader
         eyebrow="Documents"
         title="Company documents"
-        subtitle="Upload and manage your knowledge base documents."
+        subtitle="Manage uploaded documents and processing status."
       />
 
       <ResponsiveToolbar className="lg:items-center">
@@ -178,6 +206,9 @@ export default function DocumentsPage() {
                   Status
                 </th>
                 <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
                   Sections
                 </th>
                 <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
@@ -192,7 +223,7 @@ export default function DocumentsPage() {
               {loading ? (
                 [1, 2, 3].map((i) => (
                   <tr key={i}>
-                    <td colSpan={5} className="px-6 py-16 text-center">
+                    <td colSpan={6} className="px-6 py-16 text-center">
                       <div className="flex items-center justify-center gap-3">
                         <Loader2
                           size={18}
@@ -207,7 +238,7 @@ export default function DocumentsPage() {
                 ))
               ) : filteredDocuments.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-24 text-center">
+                  <td colSpan={6} className="px-6 py-24 text-center">
                     <EmptyState
                       icon={FileText}
                       title={
@@ -253,6 +284,20 @@ export default function DocumentsPage() {
                           />
                         )}
                       </div>
+                      <p
+                        title={getParserStatus(doc)}
+                        className={cn(
+                          "mt-2 max-w-xs truncate text-[11px]",
+                          doc.status === "failed" ? "text-red-600" : "text-slate-500",
+                        )}
+                      >
+                        {getParserStatus(doc)}
+                      </p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="inline-flex rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                        {getDisplayFileType(doc)}
+                      </span>
                     </td>
                     <td className="px-6 py-5">
                       <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg inline-block">
@@ -317,7 +362,7 @@ export default function DocumentsPage() {
             pagedDocuments.map((doc) => (
               <div
                 key={doc.id}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="min-w-0 flex-1">
@@ -329,7 +374,16 @@ export default function DocumentsPage() {
                     </p>
                     <p className="mt-2 text-xs font-medium text-slate-500">
                       {new Date(doc.created_at).toLocaleDateString()} •{" "}
-                      {doc.total_chunks || 0} sections
+                      {getDisplayFileType(doc)} • {doc.total_chunks || 0} sections
+                    </p>
+                    <p
+                      title={getParserStatus(doc)}
+                      className={cn(
+                        "mt-1 line-clamp-2 text-xs",
+                        doc.status === "failed" ? "text-red-600" : "text-slate-500",
+                      )}
+                    >
+                      {getParserStatus(doc)}
                     </p>
                   </div>
                   <button

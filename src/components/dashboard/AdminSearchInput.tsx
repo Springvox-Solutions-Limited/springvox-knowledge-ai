@@ -1,10 +1,8 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { Search } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
-import { cn } from "@/src/lib/utils";
+import { SearchBar } from "@/src/components/ui/search-bar";
 
 type AdminSearchInputProps = {
   value: string;
@@ -22,25 +20,13 @@ export function AdminSearchInput({
   inputClassName,
 }: AdminSearchInputProps) {
   return (
-    <label
-      className={cn(
-        "flex h-12 w-full min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 text-slate-900 shadow-sm transition focus-within:border-cyan-400 focus-within:ring-4 focus-within:ring-cyan-100",
-        className,
-      )}
-    >
-      <div className="pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center text-slate-400">
-        <Search size={18} />
-      </div>
-      <Input
-        type="text"
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className={cn(
-          "min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 shadow-none ring-0 focus-visible:border-0 focus-visible:ring-0",
-          inputClassName,
-        )}
-      />
-    </label>
+    <SearchBar
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className={className}
+      inputClassName={inputClassName}
+      label={placeholder}
+    />
   );
 }

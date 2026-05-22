@@ -28,8 +28,12 @@ export function StatusBadge({ status }: { status: string | null | undefined }) {
     return <AppBadge tone="info">{label}</AppBadge>;
   }
 
-  if (value === "suspended" || value === "failed") {
+  if (value === "suspended") {
     return <AppBadge tone="warning">{label}</AppBadge>;
+  }
+
+  if (value === "failed") {
+    return <AppBadge tone="danger">{label}</AppBadge>;
   }
 
   if (value === "inactive") {

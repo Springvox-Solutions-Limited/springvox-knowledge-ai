@@ -19,7 +19,7 @@ export function AppTable({
   return (
     <Table
       className={cn(
-        "min-w-full text-left [&_th]:whitespace-nowrap [&_td]:whitespace-normal [&_td]:break-words",
+        "min-w-full text-left [&_th]:whitespace-nowrap [&_td]:whitespace-normal [&_td]:wrap-break-word",
         className,
       )}
       {...props}

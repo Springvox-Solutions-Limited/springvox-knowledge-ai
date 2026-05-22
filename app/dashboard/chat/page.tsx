@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import {
-  BrainCircuit,
   Check,
   ChevronDown,
   ChevronUp,
@@ -40,6 +39,7 @@ import {
 } from "@/src/lib/workspace";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 import { AppButton } from "@/src/components/ui/app-button";
+import { SpringVoxLogo } from "@/src/components/brand/SpringVoxLogo";
 import { ConfirmDialog } from "@/src/components/ui/confirm-dialog";
 import { EmptyState } from "@/src/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -932,11 +932,19 @@ export default function ChatPage() {
             ) : null}
 
             <div className={cn(
-              "flex min-w-0 flex-col",
+              "relative isolate flex min-w-0 flex-col overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94)_0%,rgba(255,255,255,0.98)_52%,rgba(248,250,252,0.96)_100%)] shadow-[0_22px_70px_rgba(15,23,42,0.07)]",
               isViewer
-                ? "mx-auto h-[calc(100dvh-170px)] max-w-5xl"
-                : "mx-auto h-[calc(100dvh-165px)] max-w-5xl lg:mx-0 lg:max-w-none sm:h-[calc(100dvh-170px)]"
+                ? "mx-auto h-[calc(100dvh-155px)] max-w-4xl"
+                : "mx-auto h-[calc(100dvh-165px)] max-w-4xl lg:mx-0 lg:max-w-none sm:h-[calc(100dvh-170px)]"
             )}>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(rgba(15,23,42,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.045)_1px,transparent_1px)] bg-[size:44px_44px]"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-0 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-200/30 blur-3xl"
+              />
               <div
                 ref={scrollRef}
                 role="log"
@@ -945,8 +953,8 @@ export default function ChatPage() {
                 className={cn(
                   "flex-1 overflow-y-auto scrollbar-hide",
                   isViewer
-                    ? "px-1 pb-32 pt-6 sm:px-4 sm:pb-36"
-                    : "px-0 pb-36 pt-6 sm:px-2 sm:pb-40"
+                    ? "px-1 pb-28 pt-4 sm:px-4 sm:pb-32"
+                    : "px-0 pb-32 pt-5 sm:px-2 sm:pb-36"
                 )}
               >
                 {historyLoading ? (
@@ -957,24 +965,34 @@ export default function ChatPage() {
                 ) : messages.length === 0 ? (
                   <div className={cn(
                     "flex h-full flex-col items-center justify-center text-center",
-                    isViewer ? "space-y-7 px-4 pt-8" : "space-y-7 px-4 pt-8"
+                    isViewer ? "space-y-5 px-4 pt-6" : "space-y-5 px-4 pt-6"
                   )}>
                     <div className={cn(
-                      "flex items-center justify-center border border-teal-200 bg-teal-50 text-teal-600 shadow-sm",
-                      isViewer ? "h-16 w-16 rounded-[1.75rem]" : "h-16 w-16 rounded-[1.75rem]"
+                      "flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur"
                     )}>
-                      <BrainCircuit size={30} />
+                      <SpringVoxLogo
+                        variant="mark"
+                        theme="dark"
+                        className="h-10 w-10 rounded-xl"
+                        imageClassName="h-10"
+                      />
                     </div>
                     <div className="space-y-3">
                       <h2 className={cn(
                         "font-semibold tracking-tight text-slate-900",
-                        isViewer ? "text-3xl sm:text-4xl" : "text-3xl sm:text-4xl"
+                        isViewer ? "text-2xl sm:text-3xl" : "text-2xl sm:text-3xl"
                       )}>
-                        {messages.length === 0 && !activeSessionId ? "How can I help?" : "Ask your first question"}
+                        {messages.length === 0 && !activeSessionId ? (
+                          <>
+                            Hi, I&apos;m <span className="text-teal-700">{assistantName}</span>.
+                          </>
+                        ) : (
+                          "Ask your first question"
+                        )}
                       </h2>
                       <p className={cn(
                         "max-w-xl leading-7 text-slate-500",
-                        isViewer ? "text-base sm:text-[1.05rem]" : "text-base sm:text-[1.05rem]"
+                        isViewer ? "text-sm sm:text-base" : "text-sm sm:text-base"
                       )}>
                         Ask questions from your organisation&apos;s approved documents.
                       </p>
@@ -990,7 +1008,7 @@ export default function ChatPage() {
                           onClick={() => setInput(prompt)}
                           className={cn(
                             "rounded-full border border-slate-200 bg-white text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50",
-                            isViewer ? "px-5 py-3 text-sm shadow-sm" : "px-5 py-3 text-sm shadow-sm"
+                            isViewer ? "px-4 py-2.5 text-sm shadow-sm" : "px-4 py-2.5 text-sm shadow-sm"
                           )}
                         >
                           {prompt}
@@ -1006,24 +1024,29 @@ export default function ChatPage() {
                     >
                       <div
                         className={cn(
-                          "space-y-3",
-                          message.role === "user"
-                            ? "ml-auto max-w-[92%] sm:max-w-[72%]"
+                      "space-y-3",
+                      message.role === "user"
+                            ? "ml-auto max-w-[92%] sm:max-w-[70%]"
                             : "max-w-full",
                         )}
                       >
                         {message.role === "user" ? (
                             <div className={cn(
-                              "rounded-[1.4rem] rounded-br-md bg-slate-900 text-white shadow-sm",
+                              "rounded-2xl rounded-br-md bg-slate-900 text-white shadow-sm",
                               isViewer ? "px-5 py-3.5 text-[15px] leading-7" : "px-5 py-3.5 text-[15px] leading-7"
                             )}>
-                            <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.content}</div>
+                            <div className="whitespace-pre-wrap wrap-anywhere">{message.content}</div>
                           </div>
                         ) : (
                           <div className="space-y-3">
                             <div className="flex items-center gap-3 text-xs text-slate-500">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-teal-200 bg-teal-50">
-                                <BrainCircuit size={13} className="text-teal-600" />
+                              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-1.5 shadow-sm">
+                                <SpringVoxLogo
+                                  variant="mark"
+                                  theme="dark"
+                                  className="h-5 w-5"
+                                  imageClassName="h-5"
+                                />
                               </div>
                               <span className="font-medium text-slate-600">
                                 {assistantName}
@@ -1151,7 +1174,7 @@ export default function ChatPage() {
               </div>
 
               <div className={cn(
-                "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(248,250,252,0)_0%,rgba(248,250,252,0.92)_22%,rgba(248,250,252,1)_100%)] pb-[max(1rem,env(safe-area-inset-bottom))] pt-8",
+                  "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(248,250,252,0)_0%,rgba(248,250,252,0.92)_24%,rgba(248,250,252,1)_100%)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6",
                 isViewer ? "px-1 pt-4 sm:px-4 sm:pb-6 sm:pt-5" : "px-0 pt-4 sm:px-2 sm:pb-5 sm:pt-5"
               )}>
                 <form onSubmit={handleSend} className={cn(
@@ -1160,12 +1183,11 @@ export default function ChatPage() {
                 )}>
                   <div
                     className={cn(
-                      "relative rounded-[28px] border bg-white/95 backdrop-blur-xl transition-all duration-500",
-                      isViewer ? "shadow-[0_24px_55px_rgba(30,58,95,0.06)]" : "shadow-[0_16px_40px_rgba(30,58,95,0.04)]",
+                      "relative rounded-2xl border bg-white/95 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl transition",
                       inputFocused
-                        ? "border-cyan-400/50 ring-4 ring-cyan-50 shadow-[0_0_30px_rgba(34,211,238,0.12)]"
+                        ? "border-cyan-400/50 ring-4 ring-cyan-50"
                         : isRecording
-                        ? "border-[#F97316]/50 ring-4 ring-orange-50 shadow-[0_0_30px_rgba(249,115,22,0.15)] animate-[pulse_2s_infinite]"
+                        ? "border-cyan-400/60 ring-4 ring-cyan-50"
                         : "border-slate-200/80",
                     )}
                   >
@@ -1176,9 +1198,9 @@ export default function ChatPage() {
                       aria-label={isRecording ? "Stop recording speech" : "Start recording speech"}
                       title={isRecording ? "Stop recording speech" : "Start recording speech"}
                       className={cn(
-                        "absolute left-3.5 bottom-2.5 rounded-full p-2.5 transition-all duration-300 outline-none z-10 active:scale-95",
+                        "absolute left-3.5 bottom-2.5 z-10 rounded-full p-2.5 outline-none transition active:scale-95",
                         isRecording
-                          ? "bg-[#F97316] text-white shadow-[0_0_15px_rgba(249,115,22,0.5)] hover:bg-[#ea580c] focus-visible:ring-2 focus-visible:ring-orange-300"
+                          ? "bg-cyan-700 text-white hover:bg-cyan-800 focus-visible:ring-4 focus-visible:ring-cyan-100"
                           : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-200",
                         !speechSupported && "opacity-50 cursor-not-allowed hover:bg-slate-50 hover:text-slate-400"
                       )}
@@ -1191,8 +1213,8 @@ export default function ChatPage() {
                       className={cn(
                         "max-h-48 w-full resize-none border-0 bg-transparent text-slate-900 shadow-none outline-none placeholder:text-slate-400 focus-visible:ring-0",
                         isViewer
-                          ? "min-h-[64px] py-4 text-[15px] leading-7 pl-14 pr-5 sm:pr-28"
-                          : "min-h-[60px] py-4 text-sm leading-7 pl-12 pr-4 sm:pl-14 sm:pr-28"
+                          ? "min-h-[58px] py-3.5 pl-14 pr-5 text-[15px] leading-7 sm:pr-28"
+                          : "min-h-[56px] py-3.5 pl-12 pr-4 text-sm leading-7 sm:pl-14 sm:pr-28"
                       )}
                       placeholder={
                         isRecording
@@ -1232,7 +1254,7 @@ export default function ChatPage() {
                         aria-label="Send message"
                         type="submit"
                         disabled={loading || !input.trim()}
-                        className="rounded-full bg-gradient-to-r from-[#1E3A5F] to-[#22d3ee] p-2.5 text-white shadow-[0_4px_12px_rgba(30,58,95,0.15)] hover:from-[#152a46] hover:to-[#06b6d4] hover:shadow-[0_6px_18px_rgba(34,211,238,0.25)] hover:ring-2 hover:ring-[#F97316]/50 active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:ring-0 transition-all duration-300"
+                        className="rounded-full bg-[#0d1f35] p-2.5 text-white shadow-[0_4px_12px_rgba(15,23,42,0.14)] transition hover:bg-[#132744] focus-visible:ring-4 focus-visible:ring-cyan-100 active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
                       >
                         <Send size={16} />
                       </button>
@@ -1438,7 +1460,7 @@ function getVisibleStatus(
   isActive: boolean,
 ) {
   if (isViewer && isActive) {
-    return "Searching approved knowledge...";
+    return "Searching approved documents...";
   }
 
   if (isViewer && !isActive) {
@@ -1663,7 +1685,7 @@ function SourceDrawer({
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
                   {managerView ? "Document Source" : "Source"}
                 </p>
-                <SheetTitle className="mt-1 break-words text-left text-lg font-semibold text-slate-900 [overflow-wrap:anywhere]">
+                <SheetTitle className="mt-1 wrap-anywhere text-left text-lg font-semibold text-slate-900">
                   {citation?.filename || "Source details"}
                 </SheetTitle>
                 <SheetDescription className="sr-only">
@@ -1723,7 +1745,7 @@ function SourceDrawer({
                     {copied ? "Copied" : "Copy excerpt"}
                   </button>
                 </div>
-                <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700 [overflow-wrap:anywhere]">
+                <p className="mt-3 whitespace-pre-wrap wrap-anywhere text-sm leading-7 text-slate-700">
                   {excerpt || "No excerpt available."}
                 </p>
               </div>
@@ -1732,7 +1754,7 @@ function SourceDrawer({
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
                   Preview
                 </p>
-                <p className="mt-3 break-words text-sm leading-7 text-slate-600 [overflow-wrap:anywhere]">
+                <p className="mt-3 wrap-anywhere text-sm leading-7 text-slate-600">
                   {citation?.preview || "No preview available."}
                 </p>
               </div>
@@ -1754,8 +1776,8 @@ function SourceDrawer({
                     Source metadata
                   </p>
                   <div className="mt-3 space-y-2 text-sm text-slate-600">
-                    <p className="break-words [overflow-wrap:anywhere]">Document ID: {citation?.document_id || "Unknown"}</p>
-                    <p className="break-words [overflow-wrap:anywhere]">Uploaded by: {citation?.uploaded_by || "Unknown"}</p>
+                    <p className="wrap-anywhere">Document ID: {citation?.document_id || "Unknown"}</p>
+                    <p className="wrap-anywhere">Uploaded by: {citation?.uploaded_by || "Unknown"}</p>
                     <p>Section: {citation?.chunk_index || 0}</p>
                   </div>
                 </div>

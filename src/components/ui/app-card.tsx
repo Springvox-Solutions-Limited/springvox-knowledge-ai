@@ -13,7 +13,7 @@ export function AppCard({
   return (
     <Card
       className={cn(
-        "rounded-[24px] border-0 bg-white shadow-[0_20px_50px_rgba(30,58,95,0.04)] hover:shadow-[0_24px_60px_rgba(30,58,95,0.07)] hover:translate-y-[-2px] transition-all duration-300",
+        "rounded-2xl border border-slate-200 bg-white shadow-[0_14px_28px_rgba(15,23,42,0.05)]",
         className,
       )}
       {...props}

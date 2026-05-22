@@ -18,14 +18,15 @@ export function SpringVoxLogo({
   fallbackClassName,
 }: SpringVoxLogoProps) {
   const logoSrc = theme === 'light' ? '/brand/springvox-logo-light.png' : '/brand/springvox-logo.png';
+  const markSrc = '/brand/springvox-mark.png';
 
   if (variant === 'mark') {
     return (
-      <div className={cn('flex items-center', className)}>
+      <div className={cn('flex items-center justify-center', className)}>
         <img
-          src={logoSrc}
+          src={markSrc}
           alt="SpringVox"
-          className={cn('h-10 w-10 rounded-2xl object-contain object-center', imageClassName)}
+          className={cn('h-full w-full object-contain', imageClassName)}
         />
       </div>
     );

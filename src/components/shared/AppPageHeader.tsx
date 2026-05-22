@@ -14,10 +14,10 @@ export function AppPageHeader({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 space-y-1.5">
           {eyebrow ? <p className="app-section-label">{eyebrow}</p> : null}
-          <h1 className="admin-hero-title break-words [overflow-wrap:anywhere]">
+          <h1 className="admin-hero-title wrap-anywhere">
             {title}
           </h1>
-          <p className="admin-hero-copy max-w-full break-words [overflow-wrap:anywhere]">
+          <p className="admin-hero-copy max-w-full wrap-anywhere">
             {subtitle}
           </p>
         </div>

@@ -179,7 +179,7 @@ Important tokens include:
 
 ### Typography
 
-The app currently uses an Inter-centered sans stack. Typography choices emphasize:
+The app uses Inter as the only named product font for a friendly product feel while preserving dashboard clarity. Typography choices emphasize:
 
 - strong page titles
 - compact uppercase labels for section identity

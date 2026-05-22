@@ -1,31 +1,20 @@
 import { getRequestErrorStatus } from '@/src/lib/api-errors';
-import { createRequire } from 'module';
-
 import {
-  buildPreview,
-  chunkDocumentText,
   getFileExtension,
+  getMaxUploadBytes,
+  getMaxUploadMb,
   isSupportedDocument,
-  MAX_FILE_SIZE_BYTES,
   sanitizeFilename,
 } from '@/src/lib/documents';
-import { getEmbedding } from '@/src/lib/gemini';
-import { COLLECTION_NAME, deleteDocumentVectors, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
+import { deleteDocumentVectors } from '@/src/lib/qdrant';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
-import { v4 as uuidv4 } from 'uuid';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  const require = createRequire(import.meta.url);
-  const pdfParse = require("pdf-parse/lib/pdf-parse.js") as (
-    buffer: Buffer,
-  ) => Promise<{
-    text: string;
-  }>;
 
   let authenticatedUserId: string | null = null;
   let authenticatedWorkspaceId: string | null = null;
@@ -42,15 +31,23 @@ export async function POST(req: Request) {
     const file = formData.get('file');
 
     if (!(file instanceof File)) {
-      return Response.json({ error: 'A PDF or TXT file is required' }, { status: 400 });
+      return Response.json({ error: 'A supported document file (PDF, TXT, DOCX, CSV, XLSX, PPTX) is required' }, { status: 400 });
     }
 
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      return Response.json({ error: 'File too large. Maximum size is 4MB.' }, { status: 400 });
+    const maxUploadMb = getMaxUploadMb();
+    const maxUploadBytes = getMaxUploadBytes();
+
+    if (file.size > maxUploadBytes) {
+      return Response.json(
+        {
+          error: `This file is too large. Please upload a supported document up to ${maxUploadMb}MB.`,
+        },
+        { status: 400 },
+      );
     }
 
     if (!isSupportedDocument(file)) {
-      return Response.json({ error: 'Unsupported file type. Only PDF and TXT are allowed.' }, { status: 400 });
+      return Response.json({ error: 'Unsupported file type. Supported formats are PDF, TXT, DOCX, CSV, XLSX, and PPTX.' }, { status: 400 });
     }
 
     const filename = sanitizeFilename(file.name);
@@ -61,10 +58,7 @@ export async function POST(req: Request) {
     documentId = crypto.randomUUID();
     uploadedFilePath = `${user.id}/${documentId}/${filename}`;
 
-    const bucket = process.env.SUPABASE_STORAGE_BUCKET;
-    if (!bucket) {
-      throw new Error("Missing Supabase storage bucket env var");
-    }
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'documents';
     if (!uploadedFilePath) {
       throw new Error("Missing document storage path");
     }
@@ -107,6 +101,7 @@ export async function POST(req: Request) {
         workspaceId: profile.workspace_id,
         storagePath: uploadedFilePath,
         originalFilename: filename,
+        mimeType: file.type || getFileExtension(filename),
         userId: user.id,
       },
     });

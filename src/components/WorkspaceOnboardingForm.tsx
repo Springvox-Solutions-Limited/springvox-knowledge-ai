@@ -525,10 +525,10 @@ export default function WorkspaceOnboardingForm() {
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
                   {inviteDetails ? (
                     <div className="space-y-2">
-                      <p className="break-words font-semibold text-slate-950 [overflow-wrap:anywhere]">
+                      <p className="wrap-anywhere font-semibold text-slate-950">
                         Joining {inviteDetails.workspace_name}
                       </p>
-                      <p className="break-words [overflow-wrap:anywhere]">
+                      <p className="wrap-anywhere">
                         Invited email: {inviteDetails.email}
                       </p>
                       <p>

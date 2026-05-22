@@ -116,8 +116,8 @@ export default function PlatformAnalyticsPage() {
           {(data?.workspacesByPlan || []).length === 0 ? (
             <EmptyState icon={BarChart3} title="No plan data yet" description="Workspace plan distribution will appear here." className="border-0 bg-transparent py-8" />
           ) : (
-            <div className="h-[260px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-65 min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <BarChart data={data?.workspacesByPlan || []}>
                   <CartesianGrid vertical={false} stroke="#eef2f7" />
                   <XAxis dataKey="plan" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
@@ -134,8 +134,8 @@ export default function PlatformAnalyticsPage() {
           {(data?.workspacesByStatus || []).length === 0 ? (
             <EmptyState icon={BarChart3} title="No status data yet" description="Workspace status distribution will appear here." className="border-0 bg-transparent py-8" />
           ) : (
-            <div className="h-[260px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-65 min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <BarChart data={data?.workspacesByStatus || []}>
                   <CartesianGrid vertical={false} stroke="#eef2f7" />
                   <XAxis dataKey="status" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />

@@ -14,14 +14,14 @@ export function PlatformPageHeader({
       </p>
       <div className="mt-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-950 break-words [overflow-wrap:anywhere] sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950 wrap-anywhere sm:text-3xl">
             {title}
           </h1>
-          <p className="mt-1 max-w-full break-words text-sm text-slate-700 [overflow-wrap:anywhere]">
+          <p className="mt-1 max-w-full wrap-anywhere text-sm text-slate-700">
             {subtitle}
           </p>
         </div>
-        <p className="max-w-xl break-words text-xs leading-6 text-slate-500 [overflow-wrap:anywhere] lg:text-right">
+        <p className="max-w-xl wrap-anywhere text-xs leading-6 text-slate-500 lg:text-right">
           {privacyNote}
         </p>
       </div>

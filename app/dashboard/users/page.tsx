@@ -76,7 +76,7 @@ function getRoleTone(role: AnyAppRole) {
     case "admin":
       return "border-cyan-200 bg-cyan-50 text-cyan-800";
     case "platform_admin":
-      return "border-violet-200 bg-violet-50 text-violet-700";
+      return "border-slate-300 bg-slate-100 text-slate-800";
     default:
       return "border-slate-200 bg-slate-50 text-slate-600";
   }
@@ -605,17 +605,17 @@ export default function UsersPage() {
         </div>
       ) : null}
 
-      <div className="admin-shell-card border border-slate-200 bg-white p-5 sm:p-6 lg:p-7">
+      <div className="admin-shell-card border border-slate-200 bg-white p-5 sm:p-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-950">
-              Active Invitations
+            <h2 className="text-lg font-bold tracking-tight text-slate-950">
+              Active invitations
             </h2>
-            <p className="text-sm text-slate-500 mt-2 font-medium">
+            <p className="mt-1 text-sm text-slate-500">
               Manage pending access requests and generated invite links.
             </p>
           </div>
-          <div className="flex h-10 items-center rounded-xl bg-slate-100 px-4 text-sm font-bold text-slate-700 border border-slate-200">
+          <div className="flex h-9 items-center rounded-xl border border-slate-200 bg-slate-100 px-3 text-xs font-bold text-slate-700">
             {invitations.filter((item) => item.status === "pending").length}{" "}
             pending
           </div>
@@ -638,7 +638,7 @@ export default function UsersPage() {
             invitations.slice(0, 12).map((invitation) => (
               <div
                 key={invitation.id}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-slate-300 hover:shadow-md group"
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex flex-col gap-4 h-full">
                   <div className="flex items-start justify-between gap-2">
@@ -796,7 +796,7 @@ export default function UsersPage() {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
                       Invitation link ready
                     </p>
-                    <p className="mt-2 rounded-lg border border-emerald-100 bg-white/50 p-3 font-mono text-xs text-emerald-800 [overflow-wrap:anywhere]">
+                    <p className="mt-2 rounded-lg border border-emerald-100 bg-white/50 p-3 font-mono text-xs text-emerald-800 wrap-anywhere">
                       {createdInviteUrl}
                     </p>
                   </div>

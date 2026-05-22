@@ -115,7 +115,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[320px] flex-col items-center justify-center gap-4 rounded-[32px] border border-slate-200 bg-white shadow-sm">
+      <div className="flex h-80 flex-col items-center justify-center gap-4 rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <Loader2 size={28} className="animate-spin text-slate-900" />
         <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-400">
           Loading analytics...
@@ -272,8 +272,8 @@ export default function AnalyticsPage() {
               className="border-0 bg-transparent py-8"
             />
           ) : (
-            <div className="h-[200px] w-full sm:h-[260px]">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <div className="h-50 min-w-0 w-full sm:h-65">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <AreaChart data={data.dailyQuestionCounts}>
                   <defs>
                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
@@ -342,8 +342,8 @@ export default function AnalyticsPage() {
               </p>
             </div>
 
-            <div className="relative h-[160px] w-full">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <div className="relative h-40 min-w-0 w-full">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -409,8 +409,8 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className="h-[160px]">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <div className="h-40 min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <BarChart data={userSummaryData}>
                   <CartesianGrid vertical={false} stroke="#eef2f7" />
                   <XAxis
@@ -464,7 +464,7 @@ export default function AnalyticsPage() {
           ) : (
             <>
               <OverflowGuard className="hidden md:block" mode="scroll">
-                <table className="app-table w-full min-w-[680px] border-collapse text-left">
+                <table className="app-table w-full min-w-170 border-collapse text-left">
                   <thead>
                     <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
                       <th className="pb-3 pr-4">Question</th>

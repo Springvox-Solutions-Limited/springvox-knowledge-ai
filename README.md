@@ -100,7 +100,9 @@ Run these in order:
 5. `sql/organisation_onboarding.sql`
 6. `sql/platform_admin_console.sql`
 7. `sql/chat_sessions.sql`
-8. any later slug/security hardening SQL if added
+8. `sql/inngest_document_status.sql`
+9. `sql/document_parser_metadata.sql`
+10. any later slug/security hardening SQL if added
 
 Migration files:
 
@@ -111,6 +113,8 @@ Migration files:
 - [organisation_onboarding.sql](/home/water/Downloads/springvox-knowledge-ai/sql/organisation_onboarding.sql)
 - [platform_admin_console.sql](/home/water/Downloads/springvox-knowledge-ai/sql/platform_admin_console.sql)
 - [chat_sessions.sql](/home/water/Downloads/springvox-knowledge-ai/sql/chat_sessions.sql)
+- [inngest_document_status.sql](/home/water/Downloads/springvox-knowledge-ai/sql/inngest_document_status.sql)
+- [document_parser_metadata.sql](/home/water/Downloads/springvox-knowledge-ai/sql/document_parser_metadata.sql)
 
 ## Manual Platform Admin Promotion
 
@@ -162,6 +166,70 @@ Platform admin privacy constraints:
 - `/dashboard/chat` supports `New Chat` and `Recent Chats`
 - chat history is visible only to the authenticated user who created it
 - platform admin does not see private tenant chat conversations through the platform console
+
+## Document Parsing
+
+SpringVox supports local document parsing for these upload formats:
+
+- PDF
+- TXT
+- DOCX
+- CSV
+- XLSX
+- PPTX
+
+Document ingestion remains asynchronous through Inngest:
+
+1. upload stores the file in the private Supabase Storage `documents` bucket
+2. upload creates a `documents` row with `processing` status
+3. upload sends the `document/process.started` Inngest event
+4. Inngest downloads the file
+5. the parser router selects a parser by extension and MIME type
+6. extracted text is chunked, embedded with Gemini, and indexed in Qdrant
+7. the document status becomes `ready`, or `failed` with an `error_message`
+
+Parser router files live under `src/lib/document-parsers/`.
+
+Current local parser strategy:
+
+- PDF uses the existing `pdf-parse` parser
+- TXT is decoded as UTF-8
+- DOCX uses `mammoth`
+- CSV uses `papaparse`
+- XLSX uses `xlsx`
+- PPTX uses `officeparser`
+
+Optional advanced parsing is available through LlamaParse and is disabled by default. Local parsers remain the normal path for PDF, TXT, DOCX, CSV, XLSX, and PPTX.
+
+LlamaParse is intended for:
+
+- scanned or image-heavy PDFs
+- complex tables and forms
+- difficult layouts where local extraction is weak
+- complex DOCX, XLSX, and PPTX files
+
+Environment variables:
+
+```env
+LLAMAPARSE_API_KEY=
+LLAMAPARSE_ENABLED=false
+LLAMAPARSE_MODE=fallback
+```
+
+Supported modes:
+
+- `off`: never use LlamaParse.
+- `fallback`: use the local parser first, then send supported files to LlamaParse only when local text is empty or weak.
+- `force`: try LlamaParse first for supported files, then fall back to the local parser if LlamaParse fails.
+
+LlamaParse is only considered for PDF, DOCX, XLSX, and PPTX. TXT and CSV stay local in normal operation.
+
+Privacy note: LlamaParse is an external document processor. When enabled, uploaded documents may be sent to LlamaParse for text extraction. Keep it disabled unless the customer has approved external processing. TODO before production enablement: update privacy and data handling notices for customers that use LlamaParse.
+
+Future advanced parsers still planned:
+
+- OCR for scanned PDFs and image-heavy documents
+- Google Drive and SharePoint file import parsers
 
 ## Workspace Signup And Invites
 
@@ -238,6 +306,10 @@ QDRANT_URL=
 QDRANT_API_KEY=
 QDRANT_COLLECTION=springvox_knowledge
 
+SUPABASE_STORAGE_BUCKET=documents
+MAX_UPLOAD_MB=20
+NEXT_PUBLIC_MAX_UPLOAD_MB=20
+
 GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash
 EMBEDDING_MODEL=gemini-embedding-001
@@ -247,6 +319,8 @@ RAG_SCORE_THRESHOLD=0.55
 
 NEXT_PUBLIC_APP_URL=
 ```
+
+`MAX_UPLOAD_MB` controls the server-side document upload limit. It defaults to `20` when omitted. `NEXT_PUBLIC_MAX_UPLOAD_MB` mirrors the same value in the upload UI copy and client-side dropzone validation. Larger values can help with image-heavy PDFs and advanced parsing, but they also increase parsing time, embedding work, Supabase Storage usage, and possible LlamaParse costs when advanced parsing is enabled.
 
 Do not expose these to the frontend:
 
@@ -375,9 +449,8 @@ If there is no data, the UI should show `0` or an empty state.
 - no custom domains yet
 - no automated email sending yet
 - invite links are manual
-- PDF and TXT support only for now
 - scanned PDFs and OCR are not yet supported
-- background processing is not yet added
+- complex PPTX layouts may need future parser upgrades for higher fidelity
 - no full platform admin dashboard yet
 - `platform_admin` is still assigned manually
 

@@ -114,7 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             imageClassName="h-10 w-auto max-w-[190px] object-contain object-left"
           />
           <div className={cn("mt-5 flex items-center gap-2 px-1", isViewerRole && "mt-6")}>
-            <div className="h-1.5 w-1.5 rounded-full bg-[#F97316] shadow-[0_0_10px_rgba(249,115,22,0.6)] animate-pulse" />
+            <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.45)]" />
             <span className="block truncate text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">
               {workspace?.name || 'Workspace'}
             </span>
@@ -136,7 +136,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 href="/platform"
                 onClick={() => setSidebarOpen(false)}
-                className="mt-3 flex items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition duration-300 hover:bg-[#F97316]/20 hover:border-[#F97316]/30"
+                className="mt-3 flex items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/15"
               >
                 <span>Platform Console</span>
                 <span>→</span>
@@ -151,13 +151,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "group flex items-center gap-3 rounded-xl border transition-all duration-300",
+                  "group flex items-center gap-3 rounded-xl border transition",
                   isViewerRole
                     ? isActive
-                      ? "border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-[#1E3A5F]/15 px-4 py-3.5 text-white shadow-[0_4px_20px_rgba(34,211,238,0.05)]"
+                      ? "border-cyan-400/25 bg-cyan-400/10 px-4 py-3.5 text-white"
                       : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
                     : isActive
-                      ? "border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 to-[#1E3A5F]/15 px-4 py-3.5 text-white shadow-[0_4px_20px_rgba(34,211,238,0.05)]"
+                      ? "border-cyan-400/25 bg-cyan-400/10 px-4 py-3.5 text-white"
                       : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
                 )}
               >

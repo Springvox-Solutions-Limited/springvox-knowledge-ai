@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,6 +17,7 @@ import { OverflowGuard } from "@/src/components/layout/OverflowGuard";
 import { ResponsiveToolbar } from "@/src/components/layout/ResponsiveToolbar";
 import { AppButton } from "@/src/components/ui/app-button";
 import { AppCard } from "@/src/components/ui/app-card";
+import { SearchBar } from "@/src/components/ui/search-bar";
 import {
   AppTable,
   AppTableBody,
@@ -106,18 +105,12 @@ export default function PlatformCompaniesPage() {
       />
 
       <ResponsiveToolbar className="lg:grid lg:grid-cols-[1.3fr_0.35fr_0.35fr]">
-        <label className="relative block">
-          <Search
-            size={16}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by company, slug, or tenant admin email"
-            className="h-12 rounded-xl border-slate-200 bg-white pl-11 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100"
-          />
-        </label>
+        <SearchBar
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search by company, slug, or workspace admin email"
+          className="h-12 px-4"
+        />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
             <SelectValue placeholder="All statuses" />
