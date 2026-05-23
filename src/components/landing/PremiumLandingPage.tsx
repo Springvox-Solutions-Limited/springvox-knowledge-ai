@@ -21,6 +21,7 @@ import {
   Layers3,
   LibraryBig,
   LockKeyhole,
+  Menu,
   MessageSquareText,
   Network,
   Search,
@@ -28,6 +29,7 @@ import {
   Sparkles,
   Users,
   Workflow,
+  X,
 } from "lucide-react";
 
 import { SpringVoxLogo } from "@/src/components/brand/SpringVoxLogo";
@@ -279,6 +281,7 @@ function AmbientGrid() {
 
 function PremiumNavbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -287,6 +290,17 @@ function PremiumNavbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileMenuOpen]);
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
       <nav
@@ -294,13 +308,13 @@ function PremiumNavbar() {
           "mx-auto flex max-w-7xl items-center justify-between rounded-2xl border px-3 py-3 transition-all duration-300 sm:px-4",
           scrolled
             ? "border-slate-200/70 bg-white/85 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur-2xl"
-            : "border-white/10 bg-white/[0.07] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl",
+            : "border-white/65 bg-white/88 shadow-[0_18px_45px_rgba(15,23,42,0.08)] backdrop-blur-2xl",
         )}
       >
         <Link href="/" className="flex min-w-0 items-center">
           <SpringVoxLogo
             variant="full"
-            theme={scrolled ? "light" : "dark"}
+            theme="light"
             imageClassName="h-9 w-auto max-w-[165px] object-contain"
           />
         </Link>
@@ -312,7 +326,7 @@ function PremiumNavbar() {
               href={item.href}
               className={cn(
                 "text-sm font-medium transition",
-                scrolled ? "text-slate-600 hover:text-slate-950" : "text-slate-300 hover:text-white",
+                scrolled ? "text-slate-600 hover:text-slate-950" : "text-slate-700 hover:text-slate-950",
               )}
             >
               {item.label}
@@ -325,20 +339,71 @@ function PremiumNavbar() {
             href="/login"
             className={cn(
               "hidden rounded-xl px-4 py-2 text-sm font-semibold transition md:inline-flex",
-              scrolled ? "text-slate-700 hover:bg-slate-100" : "text-slate-200 hover:bg-white/10",
+              scrolled ? "text-slate-700 hover:bg-slate-100" : "text-slate-700 hover:bg-white/70",
             )}
           >
             Login
           </Link>
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-950 shadow-[0_0_28px_rgba(34,211,238,0.18)] transition hover:-translate-y-0.5 hover:bg-cyan-50 sm:px-5"
+            className="hidden items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-950 shadow-[0_0_28px_rgba(34,211,238,0.18)] transition hover:-translate-y-0.5 hover:bg-cyan-50 sm:inline-flex sm:px-5"
           >
             Start Free
             <ArrowRight size={15} />
           </Link>
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="landing-mobile-menu"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/60 lg:hidden"
+          >
+            {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
+          </button>
         </div>
       </nav>
+
+      {mobileMenuOpen ? (
+        <motion.div
+          id="landing-mobile-menu"
+          initial={{ opacity: 0, y: -8, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.98 }}
+          transition={{ duration: 0.18 }}
+          className="mx-auto mt-2 max-w-7xl overflow-hidden rounded-2xl border border-white/70 bg-white/92 p-2 shadow-[0_22px_55px_rgba(15,23,42,0.14)] backdrop-blur-2xl lg:hidden"
+        >
+          <div className="grid gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-200/80 pt-2">
+            <Link
+              href="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+            >
+              Login
+            </Link>
+            <Link
+              href="/register"
+              onClick={() => setMobileMenuOpen(false)}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 text-sm font-bold text-white shadow-[0_12px_28px_rgba(15,23,42,0.16)] transition hover:bg-[#132744]"
+            >
+              Start Free
+              <ArrowRight size={15} />
+            </Link>
+          </div>
+        </motion.div>
+      ) : null}
     </header>
   );
 }

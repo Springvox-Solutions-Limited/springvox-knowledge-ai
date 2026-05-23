@@ -185,10 +185,37 @@ Document ingestion remains asynchronous through Inngest:
 3. upload sends the `document/process.started` Inngest event
 4. Inngest downloads the file
 5. the parser router selects a parser by extension and MIME type
-6. extracted text is chunked, embedded with Gemini, and indexed in Qdrant
+6. extracted text is chunked, embedded through the configured embedding provider, and indexed in Qdrant
 7. the document status becomes `ready`, or `failed` with an `error_message`
 
+Workspace admins can upload multiple documents at once from `/dashboard/upload`.
+Bulk upload uses the same single-file upload API for each file, with safe client-side
+concurrency instead of sending every file at once. Each file is tracked independently
+through waiting, uploading, processing, completed, or failed states. If one file fails,
+the rest of the queue continues and the failed file can be retried without restarting
+the whole batch.
+
 Parser router files live under `src/lib/document-parsers/`.
+
+## AI Providers
+
+SpringVox uses a small provider abstraction under `src/lib/ai/`.
+
+- Chat generation uses Gemini by default through `SPRINGVOX_CHAT_PROVIDER=gemini`.
+- Document and query embeddings use Voyage AI by default through `SPRINGVOX_EMBEDDING_PROVIDER=voyage`.
+- Gemini embedding support remains available by setting `SPRINGVOX_EMBEDDING_PROVIDER=gemini`, but changing embedding providers requires a fresh Qdrant collection or full document reindex.
+
+Voyage embeddings are batched for ingestion stability:
+
+- default batch size: 20 text chunks per request
+- maximum concurrent embedding requests: 2
+- delay between batches: 500ms
+- retry handling for HTTP 429 and temporary network failures
+- ingestion logs include provider, total chunks, total batches, retry count, and batch size
+
+Qdrant is still required because it stores and searches document chunk vectors with workspace metadata. This is what allows SpringVox to retrieve relevant company document sections while preserving workspace filtering and source citations.
+
+Embedding provider warning: Voyage and Gemini use different vector dimensions. Qdrant collections cannot safely mix dimensions. If you change `SPRINGVOX_EMBEDDING_PROVIDER`, `SPRINGVOX_EMBEDDING_DIMENSIONS`, or embedding models with different dimensions, create a new Qdrant collection or delete and reindex existing documents.
 
 Current local parser strategy:
 
@@ -304,29 +331,49 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 QDRANT_URL=
 QDRANT_API_KEY=
-QDRANT_COLLECTION=springvox_knowledge
+QDRANT_COLLECTION=springvox_knowledge_voyage
 
 SUPABASE_STORAGE_BUCKET=documents
 MAX_UPLOAD_MB=20
 NEXT_PUBLIC_MAX_UPLOAD_MB=20
 
+SPRINGVOX_CHAT_PROVIDER=gemini
+SPRINGVOX_EMBEDDING_PROVIDER=voyage
+SPRINGVOX_EMBEDDING_DIMENSIONS=1024
+
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-2.0-flash
 EMBEDDING_MODEL=gemini-embedding-001
 
-RAG_TOP_K=3
-RAG_SCORE_THRESHOLD=0.55
+VOYAGE_API_KEY=
+VOYAGE_EMBEDDING_MODEL=voyage-4-lite
+
+RAG_DEBUG=false
+RAG_MAX_CONTEXT_CHARACTERS=4500
 
 NEXT_PUBLIC_APP_URL=
 ```
 
-`MAX_UPLOAD_MB` controls the server-side document upload limit. It defaults to `20` when omitted. `NEXT_PUBLIC_MAX_UPLOAD_MB` mirrors the same value in the upload UI copy and client-side dropzone validation. Larger values can help with image-heavy PDFs and advanced parsing, but they also increase parsing time, embedding work, Supabase Storage usage, and possible LlamaParse costs when advanced parsing is enabled.
+`MAX_UPLOAD_MB` controls the server-side document upload limit per file. It defaults to `20` when omitted. `NEXT_PUBLIC_MAX_UPLOAD_MB` mirrors the same value in the upload UI copy and client-side dropzone validation. Bulk upload applies this limit to each selected file individually. Larger values can help with image-heavy PDFs and advanced parsing, but they also increase parsing time, embedding work, Supabase Storage usage, and possible LlamaParse costs when advanced parsing is enabled.
+
+### RAG retrieval settings
+
+SpringVox uses deterministic retrieval intelligence before calling Gemini:
+
+- Query intent is classified locally as factual lookup, summarization, comparison, troubleshooting, analytics, recommendation, cross-document reasoning, or unclear.
+- Retrieval settings adapt by intent, including top K, score threshold, final chunk count, and context size.
+- Retrieved excerpts are grouped by document before being sent to Gemini so unrelated documents are not silently merged.
+- Final context is compressed to `RAG_MAX_CONTEXT_CHARACTERS` characters by default to reduce latency and prompt size.
+- Follow-up suggestions are generated deterministically from the retrieved documents and answer intent, without an extra LLM call.
+
+`RAG_DEBUG=false` keeps detailed retrieval logs off by default. Set `RAG_DEBUG=true` locally when debugging retrieval. Detailed logs can include user questions and document metadata, so do not leave verbose debug logging enabled in production unless your logging policy allows it.
 
 Do not expose these to the frontend:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `QDRANT_API_KEY`
 - `GEMINI_API_KEY`
+- `VOYAGE_API_KEY`
 
 Do not use `NEXT_PUBLIC_GEMINI_API_KEY`.
 
@@ -485,7 +532,8 @@ This section is intentionally later in the README so the product can be understo
 - document search uses Qdrant with workspace filtering
 - answers stream from the server
 - chat remains workspace-scoped
-- the app uses Gemini for chat and document search embeddings
+- the app uses Gemini for chat generation
+- the app uses Voyage AI by default for batched document and query embeddings
 
 ## Verification
 

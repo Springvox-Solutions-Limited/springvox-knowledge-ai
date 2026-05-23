@@ -83,6 +83,7 @@ type Message = {
   role: "user" | "ai";
   content: string;
   citations?: Citation[];
+  followUps?: string[];
   statusMessage?: string;
   error?: boolean;
   chatMessageId?: string;
@@ -194,6 +195,7 @@ export default function ChatPage() {
     payload: {
       answer: string;
       citations: Citation[];
+      followUps: string[];
       chatMessageId?: string;
       statusMessage?: string;
     };
@@ -539,6 +541,7 @@ export default function ChatPage() {
       ...message,
       content: pending.payload.answer || message.content,
       citations: pending.payload.citations || [],
+      followUps: pending.payload.followUps || [],
       statusMessage: pending.payload.statusMessage || message.statusMessage,
       chatMessageId: pending.payload.chatMessageId,
     }));
@@ -702,6 +705,9 @@ export default function ChatPage() {
               answer: String(payload.answer || ""),
               citations: Array.isArray(payload.citations)
                 ? (payload.citations as Citation[])
+                : [],
+              followUps: Array.isArray(payload.followUps)
+                ? (payload.followUps as string[])
                 : [],
               chatMessageId:
                 typeof payload.chatMessageId === "string"
@@ -1143,6 +1149,14 @@ export default function ChatPage() {
                               />
                             )}
 
+                            {message.followUps && message.followUps.length > 0 && (
+                              <FollowUpChips
+                                followUps={message.followUps}
+                                disabled={loading}
+                                onSelect={(followUp) => void handleSend(undefined, followUp)}
+                              />
+                            )}
+
                             {message.chatMessageId && (
                               <FeedbackRow
                                 loading={feedbackLoadingMessageId === message.id}
@@ -1476,6 +1490,37 @@ function getVisibleStatus(
   }
 
   return statusMessage || "Thinking...";
+}
+
+function FollowUpChips({
+  followUps,
+  disabled,
+  onSelect,
+}: {
+  followUps: string[];
+  disabled: boolean;
+  onSelect: (followUp: string) => void;
+}) {
+  return (
+    <div className="pl-0 sm:pl-10">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+        Suggested follow-ups
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {followUps.slice(0, 5).map((followUp) => (
+          <button
+            key={followUp}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSelect(followUp)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-left text-xs font-medium text-slate-600 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {followUp}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function CitationList({

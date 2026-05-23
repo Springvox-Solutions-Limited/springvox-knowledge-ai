@@ -1,241 +1,502 @@
 "use client";
-import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { 
-  Upload, 
-  File, 
-  X, 
-  Loader2, 
-  CheckCircle2, 
+
+import React, { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
+import { useDropzone } from "react-dropzone";
+import {
   AlertCircle,
-  Zap,
+  CheckCircle2,
+  Clock,
+  File,
   FileSearch,
-  Braces,
-  Database
-} from 'lucide-react';
-import { getAccessToken } from '@/src/lib/auth-client';
-import { supabase } from '@/src/lib/supabase';
-import { cn } from '@/src/lib/utils';
-import Link from 'next/link';
-import { AppPageHeader } from '@/src/components/shared/AppPageHeader';
-import { AppButton } from '@/src/components/ui/app-button';
+  Loader2,
+  RotateCcw,
+  Trash2,
+  Upload,
+  X,
+  Zap,
+} from "lucide-react";
 
-const MAX_UPLOAD_MB = Number.parseInt(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || '20', 10) || 20;
+import { getAccessToken } from "@/src/lib/auth-client";
+import { supabase } from "@/src/lib/supabase";
+import { cn } from "@/src/lib/utils";
+import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
+import { AppButton } from "@/src/components/ui/app-button";
+
+const MAX_UPLOAD_MB = Number.parseInt(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || "20", 10) || 20;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+const SUPPORTED_EXTENSIONS = [".pdf", ".txt", ".docx", ".csv", ".xlsx", ".pptx"];
 const SUPPORTED_UPLOAD_COPY = `PDF, TXT, DOCX, CSV, XLSX, PPTX up to ${MAX_UPLOAD_MB}MB`;
+const UPLOAD_CONCURRENCY = 3;
+const PROCESSING_POLL_INTERVAL_MS = 3000;
+const PROCESSING_POLL_TIMEOUT_MS = 10 * 60 * 1000;
 
-export default function UploadPage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
+type QueueStatus = "queued" | "uploading" | "processing" | "completed" | "failed";
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      setFile(acceptedFiles[0]);
-      setStatus('idle');
-      setError(null);
-    }
-  }, []);
+type UploadQueueItem = {
+  id: string;
+  file: File;
+  status: QueueStatus;
+  message?: string;
+  documentId?: string;
+};
 
-  const onDropRejected = useCallback(() => {
-    setFile(null);
-    setStatus('error');
-    setError(`Please upload a supported document up to ${MAX_UPLOAD_MB}MB.`);
-  }, []);
+type DocumentStatusResponse = {
+  status: "ready" | "processing" | "failed";
+  error_message?: string | null;
+};
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    onDropRejected,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'text/plain': ['.txt'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'text/csv': ['.csv'],
-      'application/vnd.ms-excel': ['.csv'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-    },
-    maxFiles: 1,
-    maxSize: MAX_UPLOAD_MB * 1024 * 1024,
+const statusConfig: Record<
+  QueueStatus,
+  {
+    label: string;
+    className: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+  }
+> = {
+  queued: {
+    label: "Waiting",
+    className: "border-slate-200 bg-slate-50 text-slate-600",
+    icon: Clock,
+  },
+  uploading: {
+    label: "Uploading",
+    className: "border-cyan-200 bg-cyan-50 text-cyan-700",
+    icon: Loader2,
+  },
+  processing: {
+    label: "Processing",
+    className: "border-amber-200 bg-amber-50 text-amber-700",
+    icon: Loader2,
+  },
+  completed: {
+    label: "Completed",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    icon: CheckCircle2,
+  },
+  failed: {
+    label: "Failed",
+    className: "border-red-200 bg-red-50 text-red-700",
+    icon: AlertCircle,
+  },
+};
+
+function getFileExtension(filename: string) {
+  const normalized = filename.toLowerCase();
+  const dotIndex = normalized.lastIndexOf(".");
+  return dotIndex >= 0 ? normalized.slice(dotIndex) : "";
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(0)} KB`;
+  }
+
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function validateFile(file: File) {
+  const extension = getFileExtension(file.name);
+
+  if (!SUPPORTED_EXTENSIONS.includes(extension)) {
+    return "Unsupported file type. Supported formats are PDF, TXT, DOCX, CSV, XLSX, and PPTX.";
+  }
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return `This file is too large. Please upload a supported document up to ${MAX_UPLOAD_MB}MB.`;
+  }
+
+  return null;
+}
+
+function getDuplicateNames(files: File[]) {
+  const counts = new Map<string, number>();
+
+  files.forEach((file) => {
+    const name = file.name.trim().toLowerCase();
+    counts.set(name, (counts.get(name) || 0) + 1);
   });
 
-  const handleUpload = async () => {
-    if (!file) return;
-    setUploading(true);
-    setStatus('idle');
-    setError(null);
+  return Array.from(counts.entries())
+    .filter(([, count]) => count > 1)
+    .map(([name]) => name);
+}
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      const accessToken = await getAccessToken();
-      if (!accessToken) throw new Error('Authentication session expired');
+export default function UploadPage() {
+  const [queue, setQueue] = useState<UploadQueueItem[]>([]);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [queueMessage, setQueueMessage] = useState<string | null>(null);
+  const [isUploadingQueue, setIsUploadingQueue] = useState(false);
 
-      const formData = new FormData();
-      formData.append('file', file);
+  const queuedCount = queue.filter((item) => item.status === "queued").length;
+  const activeCount = queue.filter((item) => item.status === "uploading" || item.status === "processing").length;
+  const completedCount = queue.filter((item) => item.status === "completed").length;
+  const failedCount = queue.filter((item) => item.status === "failed").length;
 
-      const res = await fetch('/api/documents/upload', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: formData
-      });
+  const queueSummary = useMemo(
+    () => [
+      { label: "Waiting", value: queuedCount },
+      { label: "Active", value: activeCount },
+      { label: "Completed", value: completedCount },
+      { label: "Failed", value: failedCount },
+    ],
+    [activeCount, completedCount, failedCount, queuedCount],
+  );
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Upload failed');
+  const updateQueueItem = useCallback((id: string, update: Partial<UploadQueueItem>) => {
+    setQueue((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...update } : item)),
+    );
+  }, []);
+
+  const addFilesToQueue = useCallback((files: File[]) => {
+    if (files.length === 0) return;
+
+    const duplicateNames = getDuplicateNames(files);
+    setDuplicateWarning(
+      duplicateNames.length > 0
+        ? "Some selected files have the same filename. They can still upload, but you may want to rename them for easier tracking."
+        : null,
+    );
+
+    const items = files.map((file) => {
+      const validationError = validateFile(file);
+
+      return {
+        id: crypto.randomUUID(),
+        file,
+        status: validationError ? "failed" : "queued",
+        message: validationError || "Ready to upload.",
+      } satisfies UploadQueueItem;
+    });
+
+    setQueue((current) => [...items, ...current]);
+    setQueueMessage(null);
+  }, []);
+
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      addFilesToQueue(acceptedFiles);
+    },
+    [addFilesToQueue],
+  );
+
+  const onDropRejected = useCallback(() => {
+    setQueueMessage(`Some files could not be added. Please choose ${SUPPORTED_UPLOAD_COPY}.`);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+    onDrop,
+    onDropRejected,
+    multiple: true,
+    noClick: true,
+  });
+
+  const pollDocumentUntilFinished = useCallback(
+    async (queueItemId: string, documentId: string) => {
+      const startedAt = Date.now();
+
+      while (Date.now() - startedAt < PROCESSING_POLL_TIMEOUT_MS) {
+        const { data, error } = await supabase
+          .from("documents")
+          .select("status,error_message")
+          .eq("id", documentId)
+          .single<DocumentStatusResponse>();
+
+        if (error) {
+          throw new Error("Upload succeeded, but the processing status could not be checked.");
+        }
+
+        if (data.status === "ready") {
+          updateQueueItem(queueItemId, {
+            status: "completed",
+            message: "Ready for questions.",
+          });
+          return;
+        }
+
+        if (data.status === "failed") {
+          updateQueueItem(queueItemId, {
+            status: "failed",
+            message: data.error_message || "Processing failed. Please try another copy of this document.",
+          });
+          return;
+        }
+
+        await sleep(PROCESSING_POLL_INTERVAL_MS);
       }
 
-      setStatus('success');
-      setFile(null);
-    } catch (err: any) {
-      setStatus('error');
-      setError(err.message);
-    } finally {
-      setUploading(false);
-    }
-  };
+      updateQueueItem(queueItemId, {
+        status: "processing",
+        message: "Still processing. You can check the documents page for the latest status.",
+      });
+    },
+    [updateQueueItem],
+  );
+
+  const uploadQueueItem = useCallback(
+    async (item: UploadQueueItem) => {
+      const validationError = validateFile(item.file);
+
+      if (validationError) {
+        updateQueueItem(item.id, { status: "failed", message: validationError });
+        return;
+      }
+
+      updateQueueItem(item.id, { status: "uploading", message: "Uploading file..." });
+
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) throw new Error("Authentication session expired. Please sign in again.");
+
+        const formData = new FormData();
+        formData.append("file", item.file);
+
+        const response = await fetch("/api/documents/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: formData,
+        });
+
+        const payload = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(payload?.error || "Upload failed. Please try again.");
+        }
+
+        const documentId = payload?.documentId as string | undefined;
+        if (!documentId) throw new Error("Upload succeeded, but processing could not be tracked.");
+
+        updateQueueItem(item.id, {
+          documentId,
+          status: "processing",
+          message: "Uploaded. Preparing document for questions...",
+        });
+
+        await pollDocumentUntilFinished(item.id, documentId);
+      } catch (error) {
+        updateQueueItem(item.id, {
+          status: "failed",
+          message: error instanceof Error ? error.message : "Upload failed. Please try again.",
+        });
+      }
+    },
+    [pollDocumentUntilFinished, updateQueueItem],
+  );
+
+  const runQueue = useCallback(
+    async (items: UploadQueueItem[]) => {
+      if (items.length === 0) return;
+
+      setIsUploadingQueue(true);
+      setQueueMessage(null);
+
+      try {
+        let nextIndex = 0;
+        const workerCount = Math.min(UPLOAD_CONCURRENCY, items.length);
+
+        await Promise.all(
+          Array.from({ length: workerCount }, async () => {
+            while (nextIndex < items.length) {
+              const item = items[nextIndex];
+              nextIndex += 1;
+              await uploadQueueItem(item);
+            }
+          }),
+        );
+      } finally {
+        setIsUploadingQueue(false);
+      }
+    },
+    [uploadQueueItem],
+  );
+
+  const startUpload = useCallback(async () => {
+    const items = queue.filter((item) => item.status === "queued");
+    await runQueue(items);
+  }, [queue, runQueue]);
+
+  const retryUpload = useCallback(
+    async (item: UploadQueueItem) => {
+      updateQueueItem(item.id, { status: "queued", message: "Waiting to retry..." });
+      await runQueue([{ ...item, status: "queued", message: "Waiting to retry..." }]);
+    },
+    [runQueue, updateQueueItem],
+  );
+
+  const removeItem = useCallback((id: string) => {
+    setQueue((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  const clearCompleted = useCallback(() => {
+    setQueue((current) => current.filter((item) => item.status !== "completed"));
+  }, []);
 
   return (
     <div className="admin-page">
       <AppPageHeader
         eyebrow="Upload Documents"
         title="Upload approved documents"
-        subtitle={`Add approved documents your team can ask questions from. ${SUPPORTED_UPLOAD_COPY}.`}
+        subtitle={`Add one or many approved documents your team can ask questions from. ${SUPPORTED_UPLOAD_COPY}.`}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-         {[
-           { icon: Upload, text: 'Upload file', color: 'text-slate-400' },
-            { icon: FileSearch, text: 'Read document', color: 'text-slate-400' },
-            { icon: Braces, text: 'Prepare sections', color: 'text-slate-400' },
-           { icon: Zap, text: 'Make it searchable', color: 'text-slate-400' },
-           { icon: Database, text: 'Ready for questions', color: 'text-slate-400' }
-         ].map((item, i) => (
-          <div key={i} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm/5">
-              <item.icon size={16} className={item.color} />
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">{item.text}</span>
-           </div>
-         ))}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {queueSummary.map((item) => (
+          <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+            <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{item.value}</p>
+          </div>
+        ))}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:gap-8">
-        <div className="space-y-6">
-        <div 
-          {...getRootProps()} 
-          className={cn(
-            "group relative flex min-h-[240px] cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed bg-white p-5 transition sm:min-h-[280px] sm:p-8",
-            isDragActive ? "border-slate-400 bg-slate-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
-          )}
-        >
-          <input {...getInputProps()} />
-          <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-3 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:inset-x-6 sm:top-6 sm:text-[10px] sm:tracking-[0.18em]">
-            <span>PDF · TXT · DOCX · CSV · XLSX · PPTX</span>
-            <span>MAX {MAX_UPLOAD_MB}MB</span>
-          </div>
-          
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-400 transition group-hover:text-slate-600">
-            <Upload size={28} strokeWidth={1.5} />
-          </div>
-
-          <div className="text-center space-y-2">
-            <p className="text-base font-semibold text-slate-900">
-              {isDragActive ? 'Release to begin upload' : 'Click or drag a document here'}
-            </p>
-            <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
-              {SUPPORTED_UPLOAD_COPY}. We&apos;ll prepare the document so your team can ask questions from it.
-            </p>
-          </div>
-        </div>
-
-        {file && (
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-in zoom-in-95 duration-200 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
-                <File size={18} className="text-slate-500" />
-              </div>
-              <div className="min-w-0 space-y-0.5">
-                <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-              </div>
+        <div className="space-y-5">
+          <div
+            {...getRootProps()}
+            className={cn(
+              "group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed bg-white p-5 text-center transition sm:min-h-[250px] sm:p-8",
+              isDragActive ? "border-cyan-300 bg-cyan-50/40" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50",
+            )}
+          >
+            <input {...getInputProps()} aria-label="Select documents to upload" />
+            <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-3 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:inset-x-6 sm:top-6 sm:text-[10px] sm:tracking-[0.18em]">
+              <span>PDF · TXT · DOCX · CSV · XLSX · PPTX</span>
+              <span>MAX {MAX_UPLOAD_MB}MB each</span>
             </div>
-            <button 
-              onClick={() => setFile(null)}
-              aria-label="Remove selected file"
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-            >
-              <X size={18} />
-            </button>
+
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-400 transition group-hover:text-slate-600">
+              <Upload size={28} strokeWidth={1.5} />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-base font-semibold text-slate-900">
+                {isDragActive ? "Release to add documents" : "Drag documents here"}
+              </p>
+              <p className="mx-auto max-w-sm text-xs leading-relaxed text-slate-500">
+                Select multiple files at once. Uploads run in small batches, and each document continues processing in the background.
+              </p>
+            </div>
+
+            <AppButton type="button" tone="secondary" onClick={open} className="mt-1">
+              <Upload size={16} />
+              Choose files
+            </AppButton>
           </div>
-        )}
 
-        <AppButton
-          onClick={handleUpload}
-          disabled={!file || uploading}
-          className="flex w-full"
-        >
-          {uploading ? (
-            <>
-              <Loader2 className="animate-spin" size={18} />
-              Uploading document...
-            </>
-          ) : (
-            <>
-              <Zap size={18} />
-              Upload document
-            </>
-          )}
-        </AppButton>
+          {duplicateWarning ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <AlertCircle size={17} className="mt-0.5 shrink-0" />
+              <p>{duplicateWarning}</p>
+            </div>
+          ) : null}
 
-        {status === 'success' && (
-          <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-4">
-            <CheckCircle2 className="text-emerald-600 mt-0.5" size={18} />
-            <div className="space-y-1">
-              <p className="text-sm font-bold text-emerald-900">Document uploaded successfully.</p>
-              <p className="text-xs text-emerald-700/80 leading-relaxed">Your document is processing in the background and will be ready for chat shortly.</p>
-              <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:gap-5">
-                <Link href="/dashboard/chat" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">Open chat</Link>
-                <Link href="/dashboard/documents" className="text-xs font-bold text-emerald-900 underline underline-offset-4 decoration-emerald-300">View documents</Link>
+          {queueMessage ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <AlertCircle size={17} className="mt-0.5 shrink-0" />
+              <p>{queueMessage}</p>
+            </div>
+          ) : null}
+
+          <div className="admin-shell-card overflow-hidden border border-slate-200 bg-white">
+            <div className="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-bold text-slate-950">Upload queue</p>
+                <p className="mt-1 text-xs text-slate-500">Each file uploads and processes independently.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:flex">
+                {completedCount > 0 ? (
+                  <AppButton type="button" tone="secondary" onClick={clearCompleted} className="h-10 px-3 text-xs">
+                    Clear completed
+                  </AppButton>
+                ) : null}
+                <AppButton
+                  type="button"
+                  onClick={startUpload}
+                  disabled={queuedCount === 0 || isUploadingQueue}
+                  className="h-10 px-3 text-xs"
+                >
+                  {isUploadingQueue ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
+                  Upload queue
+                </AppButton>
               </div>
             </div>
-          </div>
-        )}
 
-        {status === 'error' && (
-          <div className="p-6 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-4">
-            <AlertCircle className="text-red-600 mt-0.5" size={18} />
-            <div className="space-y-1">
-              <p className="text-sm font-bold text-red-900">Upload failed.</p>
-              <p className="text-xs text-red-700/80 leading-relaxed">{error}</p>
-            </div>
+            {queue.length === 0 ? (
+              <div className="p-8 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50">
+                  <File size={20} className="text-slate-400" />
+                </div>
+                <p className="mt-3 text-sm font-semibold text-slate-900">No files selected</p>
+                <p className="mt-1 text-xs text-slate-500">Choose or drag files to build an upload queue.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {queue.map((item) => (
+                  <QueueRow
+                    key={item.id}
+                    item={item}
+                    onRemove={() => removeItem(item.id)}
+                    onRetry={() => retryUpload(item)}
+                    disableActions={item.status === "uploading" || item.status === "processing"}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {completedCount > 0 ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 text-emerald-600" size={18} />
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-emerald-900">
+                    {completedCount} {completedCount === 1 ? "document is" : "documents are"} ready.
+                  </p>
+                  <p className="text-xs leading-relaxed text-emerald-700/80">
+                    Your team can ask questions from completed documents.
+                  </p>
+                  <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:gap-5">
+                    <Link href="/dashboard/chat" className="text-xs font-bold text-emerald-900 underline decoration-emerald-300 underline-offset-4">
+                      Open chat
+                    </Link>
+                    <Link href="/dashboard/documents" className="text-xs font-bold text-emerald-900 underline decoration-emerald-300 underline-offset-4">
+                      View documents
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="admin-shell-card border border-slate-200 bg-white p-5 sm:p-6">
           <div className="space-y-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Document preparation steps</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Bulk upload flow</p>
             <h2 className="text-xl font-bold tracking-tight text-slate-950">What happens after upload</h2>
             <p className="text-xs leading-6 text-slate-500">
-              Each file is prepared so answers can be based on the uploaded document.
+              Each file is handled separately, so one failed document will not stop the rest of the queue.
             </p>
           </div>
 
           <div className="mt-6 space-y-5">
             {[
-              { icon: Upload, title: 'Upload file', copy: 'Your document is stored securely for your workspace.' },
-              { icon: FileSearch, title: 'Read document', copy: 'The system reads the text so it can be used in answers.' },
-              { icon: Braces, title: 'Prepare sections', copy: 'The document is split into smaller readable sections.' },
-              { icon: Zap, title: 'Make it searchable', copy: 'The system prepares the document so matching answers can be found quickly.' },
-              { icon: Database, title: 'Ready for questions', copy: 'The document becomes available in your company chat experience.' },
+              { icon: Upload, title: "Upload files", copy: "Files are uploaded in small batches to keep the workspace responsive." },
+              { icon: FileSearch, title: "Prepare documents", copy: "Each document is read and prepared for secure company search." },
+              { icon: Clock, title: "Track status", copy: "The queue shows waiting, uploading, processing, completed, and failed states." },
+              { icon: RotateCcw, title: "Retry failures", copy: "If one file fails, retry that file without restarting the whole queue." },
             ].map((step, index) => (
               <div key={step.title} className="flex gap-4">
                 <div className="flex flex-col items-center">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
                     <step.icon size={14} className="text-slate-500" />
                   </div>
-                  {index < 4 && <div className="mt-2 h-6 w-px bg-slate-100" />}
+                  {index < 3 && <div className="mt-2 h-6 w-px bg-slate-100" />}
                 </div>
                 <div className="pt-0.5">
                   <p className="text-xs font-bold text-slate-900">{step.title}</p>
@@ -245,6 +506,84 @@ export default function UploadPage() {
             ))}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function QueueRow({
+  item,
+  onRemove,
+  onRetry,
+  disableActions,
+}: {
+  item: UploadQueueItem;
+  onRemove: () => void;
+  onRetry: () => void;
+  disableActions: boolean;
+}) {
+  const config = statusConfig[item.status];
+  const StatusIcon = config.icon;
+  const canRetry = item.status === "failed";
+  const canRemove = item.status === "queued" || item.status === "failed" || item.status === "completed";
+
+  return (
+    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
+          <File size={18} className="text-slate-500" />
+        </div>
+        <div className="min-w-0 space-y-1">
+          <p title={item.file.name} className="truncate text-sm font-semibold text-slate-900">
+            {item.file.name}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            {formatFileSize(item.file.size)} · {getFileExtension(item.file.name).replace(".", "").toUpperCase() || "FILE"}
+          </p>
+          {item.message ? (
+            <p
+              title={item.message}
+              className={cn(
+                "line-clamp-2 text-xs leading-5",
+                item.status === "failed" ? "text-red-600" : "text-slate-500",
+              )}
+            >
+              {item.message}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center justify-between gap-2 sm:justify-end">
+        <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold", config.className)}>
+          <StatusIcon
+            size={13}
+            className={item.status === "uploading" || item.status === "processing" ? "animate-spin" : undefined}
+          />
+          {config.label}
+        </span>
+
+        {canRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            disabled={disableActions}
+            aria-label={`Retry upload for ${item.file.name}`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-cyan-50 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <RotateCcw size={15} />
+          </button>
+        ) : null}
+
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={!canRemove}
+          aria-label={`Remove ${item.file.name} from upload queue`}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          {canRemove ? <X size={16} /> : <Trash2 size={15} />}
+        </button>
       </div>
     </div>
   );
