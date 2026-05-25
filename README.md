@@ -563,3 +563,39 @@ If `npm run build` fails only because of the known local Turbopack sandbox issue
 13. Confirm the source drawer uses section/source language instead of chunk language.
 14. Confirm viewers cannot access admin routes directly.
 15. Confirm analytics remain workspace-scoped.
+
+## Recent Changes
+
+### Blog Page (May 2026)
+- Added `/blog` — blog listing page with responsive grid (3col → 2col → 1col)
+- Added `/blog/[slug]` — individual blog post page with prose-styled content
+- 5 initial posts covering RAG, AI search, workspace security, onboarding, and Voyage embeddings
+- `src/lib/blog.ts` — blog data layer with types and getter functions
+- `src/components/blog/BlogCard.tsx` — reusable card component
+- Blog link added to `LandingNavbar`, `PremiumNavbar`, and `LandingFooter`
+
+### Landing Page Improvements
+- **Hero**: Title "Your Company Knowledge. AI-Powered Answers.", benefit-focused subheading, pain points with metrics (3+ hrs/week, 30% slower, compliance risk), trust badge "Trusted by 200+ enterprise teams"
+- **Features**: Smart Document Parsing, Never Wait, Complete Privacy — described as benefits
+- **Pricing**: Shows amounts ($0/month, $299/month, Custom) with supporting CTA text
+- **StatsSection**: 250+ Customers, 5M+ Questions, 98% Uptime, 4.8/5 Rating — responsive 2col/4col grid
+- **FAQSection**: 5 accordion Q&As with smooth open/close animation
+- **Testimonials**: 35% faster response time, 100% source transparency, 5000+ questions answered
+- **Pricing comparison table**: 6 features × 3 tiers (Free, Business, Enterprise)
+- **Mobile responsiveness**: Hamburger menu <768px, CTAs stack vertically, all grids collapse properly, no horizontal scroll
+- **Section anchor IDs**: Added `#how-it-works`, `#features`, `#use-cases` for cross-page navigation
+
+### Navigation Fixes
+- LandingNavbar hash links updated with `/` prefix (e.g. `/#features`) so they work from blog and legal pages
+- LandingFooter hash links updated with `/` prefix
+- PremiumNavbar "Workflow" link now scrolls to correct section
+
+### SEO
+- Enhanced meta description
+- OpenGraph tags with title, description, URL
+- Schema.org JSON-LD (SoftwareApplication with Free/Business pricing)
+- Per-page metadata for blog and legal pages
+
+### Code Quality
+- Removed unused `AudioLines` import
+- All TypeScript checks pass (`npx tsc --noEmit`)
