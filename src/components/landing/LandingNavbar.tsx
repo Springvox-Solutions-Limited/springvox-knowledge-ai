@@ -14,9 +14,10 @@ import { useState } from 'react';
 export function LandingNavbar() {
   const [open, setOpen] = useState(false);
   const navLinks = [
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Features', href: '#features' },
-    { label: 'Who It Is For', href: '#use-cases' },
+    { label: 'How It Works', href: '/#how-it-works' },
+    { label: 'Features', href: '/#features' },
+    { label: 'Who It Is For', href: '/#use-cases' },
+    { label: 'Blog', href: '/blog' },
   ];
 
   return (

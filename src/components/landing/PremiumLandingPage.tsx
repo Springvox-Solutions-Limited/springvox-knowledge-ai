@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowRight,
-  AudioLines,
   BarChart3,
   Building2,
   Check,
@@ -34,6 +33,8 @@ import {
 
 import { SpringVoxLogo } from "@/src/components/brand/SpringVoxLogo";
 import { cn } from "@/src/lib/utils";
+import { StatsSection } from "./StatsSection";
+import { FAQSection } from "./FAQSection";
 
 const reveal = {
   initial: { opacity: 0, y: 24 },
@@ -47,6 +48,7 @@ const navItems = [
   { label: "Workflow", href: "#workflow" },
   { label: "Security", href: "#security" },
   { label: "Pricing", href: "#pricing" },
+  { label: "Blog", href: "/blog" },
 ];
 
 const securityStats = [
@@ -57,10 +59,10 @@ const securityStats = [
 ];
 
 const problems = [
-  "Policies scattered across drives, inboxes, and old folders — costing 3+ hours/week in searching",
-  "New hires asking the same onboarding questions repeatedly — slowing adoption by 30%",
-  "Teams relying on memory instead of approved information — creating compliance risk",
-  "Leaders unable to see which questions documents fail to answer — hidden knowledge gaps",
+  "Teams waste 3+ hours/week hunting for scattered policies across drives and inboxes",
+  "New hires ask the same onboarding questions repeatedly, slowing ramp-up by 30%",
+  "Staff rely on memory instead of approved information, creating compliance risk",
+  "Leaders have no visibility into which questions their documents fail to answer",
 ];
 
 const workflow = [
@@ -87,12 +89,12 @@ const workflow = [
 ];
 
 const capabilities = [
-  { title: "Smart Document Parsing (supports all file types)", copy: "Retrieve answers from approved company documents in seconds.", icon: Search },
+  { title: "Smart Document Parsing", copy: "Extract text from PDFs, DOCX, XLSX, CSV, and PPTX with high accuracy.", icon: Layers3 },
+  { title: "Never Wait", copy: "Background processing keeps your team productive while documents index.", icon: Database },
+  { title: "Complete Privacy", copy: "Workspace isolation and source-grounded answers keep data secure.", icon: ShieldCheck },
+  { title: "AI search", copy: "Retrieve answers from approved company documents in seconds.", icon: Search },
   { title: "Source citations", copy: "Show supporting files and sections beside each AI answer.", icon: FileText },
   { title: "Analytics", copy: "Track usage, coverage, unanswered questions, and team activity.", icon: BarChart3 },
-  { title: "Speech-to-text", copy: "Let teams ask questions naturally with voice-enabled workflows.", icon: AudioLines },
-  { title: "Never Wait for Processing (uploads happen instantly)", copy: "Keep uploads asynchronous with durable document processing.", icon: Database },
-  { title: "Complete Workspace Privacy (your data never mixes)", copy: "Invite admins and staff into controlled company workspaces.", icon: Users },
   { title: "Multi-user workspaces", copy: "Invite admins and staff into controlled company workspaces.", icon: Users },
   { title: "Chat history", copy: "Keep recent chats organized so teams can continue context quickly.", icon: MessageSquareText },
 ];
@@ -121,46 +123,49 @@ const testimonials = [
     quote: "SpringVox turns our approved documents into answers staff can trust. It feels controlled without feeling complicated.",
     name: "Maya O.",
     role: "Operations Director",
-    metric: "Reduced onboarding time by 35%",
+    metric: "35% faster response time",
   },
   {
     quote: "The source-first experience is the difference. Our team can ask quickly and still verify where answers came from.",
     name: "Daniel K.",
     role: "Head of Compliance",
-    metric: "100% compliance coverage on policy questions",
+    metric: "100% source transparency",
   },
   {
     quote: "It reduces repetitive onboarding questions and shows us exactly where our documentation needs improvement.",
     name: "Priya S.",
     role: "People Ops Lead",
-    metric: "Handled 5000+ questions in first month",
+    metric: "5000+ questions answered",
   },
 ];
 
 const pricing = [
   {
-    name: "Pilot",
-    price: "Free",
-    copy: "Up to 500 questions/month",
-    fullPrice: "Pilot — Free • Up to 500 questions/month",
+    name: "Free",
+    price: "$0/month",
+    copy: "For teams validating document AI with a controlled workspace. No credit card required.",
     features: ["Workspace setup", "Document uploads", "Chat with sources", "Admin dashboard"],
     highlighted: false,
+    cta: "Start Free",
+    ctaHref: "/register",
   },
   {
     name: "Business",
-    price: "Starting at $299/month",
-    copy: "Unlimited everything",
-    fullPrice: "Business — Starting at $299/month • Unlimited everything",
-    features: ["Everything in Pilot", "Advanced parsing", "Analytics", "Users and invitations", "Knowledge gaps"],
+    price: "$299/month",
+    copy: "For organisations rolling out SpringVox across departments.",
+    features: ["Everything in Free", "Advanced parsing", "Analytics", "Users and invitations", "Knowledge gaps"],
     highlighted: true,
+    cta: "Start Free Trial",
+    ctaHref: "/register",
   },
   {
     name: "Enterprise",
-    price: "Custom pricing",
-    copy: "Dedicated support",
-    fullPrice: "Enterprise — Custom pricing • Dedicated support",
+    price: "Custom",
+    copy: "For regulated teams needing rollout guidance and advanced controls.",
     features: ["Platform admin controls", "Privacy reviews", "Custom workflows", "Priority support"],
     highlighted: false,
+    cta: "Book a 15-min call",
+    ctaHref: "/get-started",
   },
 ];
 
@@ -325,7 +330,7 @@ function PremiumNavbar() {
           />
         </Link>
 
-        <div className="hidden items-center gap-7 lg:flex">
+        <div className="hidden items-center gap-7 md:flex">
           {navItems.map((item) => (
             <Link
               key={item.label}
@@ -363,7 +368,7 @@ function PremiumNavbar() {
             aria-expanded={mobileMenuOpen}
             aria-controls="landing-mobile-menu"
             onClick={() => setMobileMenuOpen((open) => !open)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/60 lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/60 md:hidden"
           >
             {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
           </button>
@@ -377,7 +382,7 @@ function PremiumNavbar() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
           transition={{ duration: 0.18 }}
-          className="mx-auto mt-2 max-w-7xl overflow-hidden rounded-2xl border border-white/70 bg-white/92 p-2 shadow-[0_22px_55px_rgba(15,23,42,0.14)] backdrop-blur-2xl lg:hidden"
+          className="mx-auto mt-2 max-w-7xl overflow-hidden rounded-2xl border border-white/70 bg-white/92 p-2 shadow-[0_22px_55px_rgba(15,23,42,0.14)] backdrop-blur-2xl md:hidden"
         >
           <div className="grid gap-1">
             {navItems.map((item) => (
@@ -563,28 +568,26 @@ function HeroSection() {
             <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.9)]" />
             Enterprise AI grounded in your documents
           </div>
+          <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/10 bg-white/[0.06] px-4 py-1.5 text-xs font-medium text-cyan-200/90 backdrop-blur">
+            Trusted by 200+ enterprise teams
+          </div>
           <h1 className="mt-7 text-4xl font-semibold tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl lg:leading-[0.94]">
             Your Company Knowledge. AI-Powered Answers.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-            Upload your documents once. Let your entire team ask questions and get instant, source-grounded answers without hunting through folders or emails.
+            Stop wasting hours searching for policies. SpringVox gives every team member a secure AI assistant that answers instantly from approved company documents.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <div className="flex flex-col items-center gap-2">
-              <Link href="/register" className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_38px_rgba(34,211,238,0.28)] transition hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto">
-                Start Free
-                <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
-              </Link>
-              <p className="text-xs text-slate-400">No credit card required • 7-day free trial</p>
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <Link href="/get-started" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/12 sm:w-auto">
-                Book Demo
-                <ChevronRight size={16} />
-              </Link>
-              <p className="text-xs text-slate-400">15-min call with product expert</p>
-            </div>
+            <Link href="/register" className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_38px_rgba(34,211,238,0.28)] transition hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto">
+              Start Free
+              <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
+            </Link>
+            <Link href="/get-started" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/12 sm:w-auto">
+              Book a 15-min call
+              <ChevronRight size={16} />
+            </Link>
           </div>
+          <p className="mt-3 text-center text-xs text-slate-500">No credit card required to start</p>
         </motion.div>
         <HeroDashboard />
         <div className="mx-auto mt-8 grid max-w-6xl divide-y divide-white/10 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur md:grid-cols-4 md:divide-x md:divide-y-0">
@@ -631,6 +634,7 @@ function ProblemSection() {
 function WorkflowSection() {
   return (
     <section id="workflow" className="relative overflow-hidden bg-white py-20 sm:py-28">
+      <div id="how-it-works" />
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
@@ -638,7 +642,7 @@ function WorkflowSection() {
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">Upload, ask, verify, improve.</h2>
           <p className="mt-5 text-base leading-8 text-slate-600">A premium AI workflow that still feels simple enough for everyday teams.</p>
         </motion.div>
-        <div className="mt-14 grid gap-4 lg:grid-cols-4">
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {workflow.map((step, index) => (
             <motion.div key={step.title} {...reveal} transition={{ ...reveal.transition, delay: index * 0.08 }} className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-cyan-200">
               <div className="absolute -right-3 top-10 hidden h-px w-6 bg-cyan-200 lg:block" />
@@ -659,6 +663,7 @@ function WorkflowSection() {
 function CapabilitiesSection() {
   return (
     <section id="platform" className="relative overflow-hidden bg-[#07111f] py-20 text-white sm:py-28">
+      <div id="features" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(34,211,238,0.16),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent)]" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...reveal} className="max-w-3xl">
@@ -756,7 +761,8 @@ function KnowledgeGraphSection() {
 
 function IndustriesSection() {
   return (
-    <section className="bg-white py-20 sm:py-28">
+    <section id="industries" className="bg-white py-20 sm:py-28">
+      <div id="use-cases" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-700">Industries</p>
@@ -807,43 +813,30 @@ function SecuritySection() {
 
 function TestimonialsPricingSection() {
   return (
-    <section className="bg-white py-20 sm:py-28">
+    <section id="pricing" className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-700">What teams feel</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">Premium AI without losing control.</h2>
         </motion.div>
-        <div className="mt-8 flex justify-center">
-          <p className="text-sm font-medium text-slate-600">Trusted by 200+ enterprise teams</p>
-        </div>
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((item) => (
             <motion.div key={item.name} {...reveal} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+              <div className="mb-4 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-700">
+                {item.metric}
+              </div>
               <p className="text-sm leading-7 text-slate-700">"{item.quote}"</p>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-cyan-700">{item.metric}</p>
-              <p className="mt-4 font-semibold text-slate-950">{item.name}</p>
+              <p className="mt-6 font-semibold text-slate-950">{item.name}</p>
               <p className="text-sm text-slate-500">{item.role}</p>
             </motion.div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function PricingCardsSection() {
-  return (
-    <section id="pricing" className="bg-white py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <motion.div {...reveal} className="mx-auto max-w-3xl text-center mb-12">
-          <h2 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">Simple, transparent pricing.</h2>
-        </motion.div>
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+        <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {pricing.map((plan) => (
             <motion.div key={plan.name} {...reveal} className={cn("rounded-3xl border p-6 transition hover:-translate-y-1", plan.highlighted ? "border-cyan-300 bg-slate-950 text-white shadow-[0_30px_90px_rgba(34,211,238,0.16)]" : "border-slate-200 bg-white")}>
               <p className={cn("text-sm font-semibold", plan.highlighted ? "text-cyan-200" : "text-cyan-700")}>{plan.name}</p>
-              <h3 className="mt-4 text-xl font-semibold tracking-tight">{plan.price}</h3>
-              <p className={cn("mt-1 text-xs leading-6", plan.highlighted ? "text-slate-400" : "text-slate-500")}>{plan.copy}</p>
+              <h3 className="mt-4 text-3xl font-semibold tracking-tight">{plan.price}</h3>
+              <p className={cn("mt-3 text-sm leading-6", plan.highlighted ? "text-slate-300" : "text-slate-600")}>{plan.copy}</p>
               <div className="mt-6 space-y-3">
                 {plan.features.map((feature) => (
                   <div key={feature} className="flex items-center gap-3 text-sm">
@@ -852,11 +845,52 @@ function PricingCardsSection() {
                   </div>
                 ))}
               </div>
+              <Link
+                href={plan.ctaHref}
+                className={cn(
+                  "mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition",
+                  plan.highlighted
+                    ? "bg-cyan-300 text-slate-950 hover:bg-cyan-200"
+                    : "border border-slate-200 bg-white text-slate-950 hover:bg-slate-50",
+                )}
+              >
+                {plan.cta}
+                <ArrowRight size={15} />
+              </Link>
             </motion.div>
           ))}
         </div>
-        <div className="mt-6 text-center">
-          <p className="text-xs text-slate-500">*Billed annually, save 20%</p>
+
+        <div className="mt-16 overflow-hidden rounded-3xl border border-slate-200">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="p-4 font-semibold text-slate-700 sm:p-5">Feature</th>
+                  <th className="p-4 text-center font-semibold text-slate-700 sm:p-5">Free</th>
+                  <th className="p-4 text-center font-semibold text-cyan-700 sm:p-5">Business</th>
+                  <th className="p-4 text-center font-semibold text-slate-700 sm:p-5">Enterprise</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {[
+                  ["Workspace setup", "✓", "✓", "✓"],
+                  ["Document uploads", "✓", "✓", "✓"],
+                  ["Chat with sources", "✓", "✓", "✓"],
+                  ["Advanced parsing", "—", "✓", "✓"],
+                  ["Analytics & knowledge gaps", "—", "✓", "✓"],
+                  ["Platform admin controls", "—", "—", "✓"],
+                ].map(([feature, free, business, enterprise]) => (
+                  <tr key={feature} className="transition hover:bg-slate-50/50">
+                    <td className="p-4 font-medium text-slate-700 sm:p-5">{feature}</td>
+                    <td className="p-4 text-center text-slate-500 sm:p-5">{free}</td>
+                    <td className="p-4 text-center font-medium text-emerald-600 sm:p-5">{business}</td>
+                    <td className="p-4 text-center text-slate-500 sm:p-5">{enterprise}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -877,145 +911,11 @@ function FinalCTA() {
             <ArrowRight size={16} />
           </Link>
           <Link href="/get-started" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/12">
-            Book Demo
+            Book a 15-min call
           </Link>
         </div>
+        <p className="mt-4 text-center text-xs text-slate-500">No credit card required. Free plan includes full workspace features.</p>
       </motion.div>
-    </section>
-  );
-}
-
-function StatsSection() {
-  return (
-    <section className="bg-slate-50 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-[0_18px_55px_rgba(15,23,42,0.05)] sm:p-12">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-slate-950 sm:text-4xl">250+</p>
-              <p className="mt-2 text-sm font-medium text-slate-600">Enterprise Customers</p>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="hidden h-12 w-px bg-slate-200 lg:block" />
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-slate-950 sm:text-4xl">5M+</p>
-              <p className="mt-2 text-sm font-medium text-slate-600">Questions Answered</p>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="hidden h-12 w-px bg-slate-200 lg:block" />
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-slate-950 sm:text-4xl">98%</p>
-              <p className="mt-2 text-sm font-medium text-slate-600">Uptime</p>
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="hidden h-12 w-px bg-slate-200 lg:block" />
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-slate-950 sm:text-4xl">4.8/5</p>
-              <p className="mt-2 text-sm font-medium text-slate-600">Rating</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FAQSection() {
-  const faqs = [
-    {
-      question: "How is SpringVox different from ChatGPT or Claude?",
-      answer: "SpringVox uses ONLY your approved documents — not the public internet. Your answers stay grounded in company sources with full citations. No hallucinations, no external data leakage.",
-    },
-    {
-      question: "How long does document processing take?",
-      answer: "Most documents process in 2-5 minutes. Large batches process in background while you continue working. You'll see processing status in your admin dashboard.",
-    },
-    {
-      question: "Can I control what questions get answered?",
-      answer: "Yes. Only documents you upload are used. Staff can only ask questions — they can't access, download, or modify documents. Admins control everything.",
-    },
-    {
-      question: "Is my data stored securely?",
-      answer: "Your data never leaves your private workspace. We use enterprise-grade encryption, role-based access, and SOC 2 compliance. Full details in our Security Overview.",
-    },
-    {
-      question: "What file types do you support?",
-      answer: "PDFs, Word (DOCX), Excel (XLSX), PowerPoint (PPTX), CSV, TXT, and more via LlamaParse. No file size limits.",
-    },
-  ];
-
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  return (
-    <section className="bg-white py-20 sm:py-28">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <motion.div {...reveal} className="text-center">
-          <h2 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">Frequently Asked Questions</h2>
-          <p className="mt-4 text-base leading-8 text-slate-600">Everything you need to know about SpringVox.</p>
-        </motion.div>
-        <div className="mt-12 space-y-3">
-          {faqs.map((faq, index) => (
-            <motion.div key={index} {...reveal} transition={{ ...reveal.transition, delay: index * 0.05 }} className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-cyan-200">
-              <button
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="flex w-full items-center justify-between p-6 text-left hover:bg-slate-50"
-              >
-                <h3 className="text-base font-semibold text-slate-950">{faq.question}</h3>
-                <ChevronRight
-                  size={20}
-                  className={cn("shrink-0 text-slate-400 transition", openIndex === index && "rotate-90")}
-                />
-              </button>
-              {openIndex === index && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="border-t border-slate-200 bg-slate-50 px-6 py-4">
-                  <p className="text-sm leading-6 text-slate-600">{faq.answer}</p>
-                </motion.div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function PricingComparisonTable() {
-  return (
-    <section className="bg-white py-8 sm:py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.05)]">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-950">Feature</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-slate-950">Pilot</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-slate-950">Business</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-slate-950">Enterprise</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {[
-                { label: "Documents", pilot: "10", business: "Unlimited", enterprise: "Unlimited" },
-                { label: "Active Users", pilot: "3", business: "Unlimited", enterprise: "Unlimited" },
-                { label: "Analytics", pilot: "Basic", business: "Advanced", enterprise: "Custom" },
-                { label: "API Access", pilot: "—", business: "✓", enterprise: "✓" },
-                { label: "Priority Support", pilot: "—", business: "✓", enterprise: "✓" },
-                { label: "SLA Guarantee", pilot: "—", business: "99.5%", enterprise: "99.9%" },
-              ].map((row) => (
-                <tr key={row.label} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 text-sm font-medium text-slate-950">{row.label}</td>
-                  <td className="px-6 py-4 text-center text-sm text-slate-600">{row.pilot}</td>
-                  <td className="px-6 py-4 text-center text-sm text-slate-600">{row.business}</td>
-                  <td className="px-6 py-4 text-center text-sm text-slate-600">{row.enterprise}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </section>
   );
 }
@@ -1026,6 +926,7 @@ export function PremiumLandingPage() {
       <PremiumNavbar />
       <main>
         <HeroSection />
+        <StatsSection />
         <ProblemSection />
         <WorkflowSection />
         <CapabilitiesSection />
@@ -1034,10 +935,7 @@ export function PremiumLandingPage() {
         <IndustriesSection />
         <SecuritySection />
         <TestimonialsPricingSection />
-        <StatsSection />
         <FAQSection />
-        <PricingCardsSection />
-        <PricingComparisonTable />
         <FinalCTA />
       </main>
     </div>
