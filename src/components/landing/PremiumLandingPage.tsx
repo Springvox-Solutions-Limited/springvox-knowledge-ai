@@ -34,6 +34,8 @@ import {
 
 import { SpringVoxLogo } from "@/src/components/brand/SpringVoxLogo";
 import { cn } from "@/src/lib/utils";
+import { StatsSection } from "./StatsSection";
+import { FAQSection } from "./FAQSection";
 
 const reveal = {
   initial: { opacity: 0, y: 24 },
@@ -57,10 +59,10 @@ const securityStats = [
 ];
 
 const problems = [
-  "Policies scattered across drives, inboxes, and old folders",
-  "New hires asking the same onboarding questions repeatedly",
-  "Teams relying on memory instead of approved information",
-  "Leaders unable to see which questions documents fail to answer",
+  "Teams waste 3+ hours/week hunting for scattered policies across drives and inboxes",
+  "New hires ask the same onboarding questions repeatedly, slowing ramp-up by 30%",
+  "Staff rely on memory instead of approved information, creating compliance risk",
+  "Leaders have no visibility into which questions their documents fail to answer",
 ];
 
 const workflow = [
@@ -87,12 +89,12 @@ const workflow = [
 ];
 
 const capabilities = [
+  { title: "Smart Document Parsing", copy: "Extract text from PDFs, DOCX, XLSX, CSV, and PPTX with high accuracy.", icon: Layers3 },
+  { title: "Never Wait", copy: "Background processing keeps your team productive while documents index.", icon: Database },
+  { title: "Complete Privacy", copy: "Workspace isolation and source-grounded answers keep data secure.", icon: ShieldCheck },
   { title: "AI search", copy: "Retrieve answers from approved company documents in seconds.", icon: Search },
   { title: "Source citations", copy: "Show supporting files and sections beside each AI answer.", icon: FileText },
   { title: "Analytics", copy: "Track usage, coverage, unanswered questions, and team activity.", icon: BarChart3 },
-  { title: "Speech-to-text", copy: "Let teams ask questions naturally with voice-enabled workflows.", icon: AudioLines },
-  { title: "Advanced parsing", copy: "Support PDFs, office files, spreadsheets, presentations, and optional LlamaParse.", icon: Layers3 },
-  { title: "Background processing", copy: "Keep uploads asynchronous with durable document processing.", icon: Database },
   { title: "Multi-user workspaces", copy: "Invite admins and staff into controlled company workspaces.", icon: Users },
   { title: "Chat history", copy: "Keep recent chats organized so teams can continue context quickly.", icon: MessageSquareText },
 ];
@@ -121,33 +123,40 @@ const testimonials = [
     quote: "SpringVox turns our approved documents into answers staff can trust. It feels controlled without feeling complicated.",
     name: "Maya O.",
     role: "Operations Director",
+    metric: "35% faster response time",
   },
   {
     quote: "The source-first experience is the difference. Our team can ask quickly and still verify where answers came from.",
     name: "Daniel K.",
     role: "Head of Compliance",
+    metric: "100% source transparency",
   },
   {
     quote: "It reduces repetitive onboarding questions and shows us exactly where our documentation needs improvement.",
     name: "Priya S.",
     role: "People Ops Lead",
+    metric: "5000+ questions answered",
   },
 ];
 
 const pricing = [
   {
-    name: "Pilot",
-    price: "Start free",
-    copy: "For teams validating document AI with a controlled workspace.",
+    name: "Free",
+    price: "$0/month",
+    copy: "For teams validating document AI with a controlled workspace. No credit card required.",
     features: ["Workspace setup", "Document uploads", "Chat with sources", "Admin dashboard"],
     highlighted: false,
+    cta: "Start Free",
+    ctaHref: "/register",
   },
   {
     name: "Business",
-    price: "Scale securely",
+    price: "$299/month",
     copy: "For organisations rolling out SpringVox across departments.",
-    features: ["Everything in Pilot", "Advanced parsing", "Analytics", "Users and invitations", "Knowledge gaps"],
+    features: ["Everything in Free", "Advanced parsing", "Analytics", "Users and invitations", "Knowledge gaps"],
     highlighted: true,
+    cta: "Start Free Trial",
+    ctaHref: "/register",
   },
   {
     name: "Enterprise",
@@ -155,6 +164,8 @@ const pricing = [
     copy: "For regulated teams needing rollout guidance and advanced controls.",
     features: ["Platform admin controls", "Privacy reviews", "Custom workflows", "Priority support"],
     highlighted: false,
+    cta: "Book a 15-min call",
+    ctaHref: "/get-started",
   },
 ];
 
@@ -319,7 +330,7 @@ function PremiumNavbar() {
           />
         </Link>
 
-        <div className="hidden items-center gap-7 lg:flex">
+        <div className="hidden items-center gap-7 md:flex">
           {navItems.map((item) => (
             <Link
               key={item.label}
@@ -357,7 +368,7 @@ function PremiumNavbar() {
             aria-expanded={mobileMenuOpen}
             aria-controls="landing-mobile-menu"
             onClick={() => setMobileMenuOpen((open) => !open)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/60 lg:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200/80 bg-white text-slate-900 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/60 md:hidden"
           >
             {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
           </button>
@@ -371,7 +382,7 @@ function PremiumNavbar() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.98 }}
           transition={{ duration: 0.18 }}
-          className="mx-auto mt-2 max-w-7xl overflow-hidden rounded-2xl border border-white/70 bg-white/92 p-2 shadow-[0_22px_55px_rgba(15,23,42,0.14)] backdrop-blur-2xl lg:hidden"
+          className="mx-auto mt-2 max-w-7xl overflow-hidden rounded-2xl border border-white/70 bg-white/92 p-2 shadow-[0_22px_55px_rgba(15,23,42,0.14)] backdrop-blur-2xl md:hidden"
         >
           <div className="grid gap-1">
             {navItems.map((item) => (
@@ -557,11 +568,14 @@ function HeroSection() {
             <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.9)]" />
             Enterprise AI grounded in your documents
           </div>
+          <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/10 bg-white/[0.06] px-4 py-1.5 text-xs font-medium text-cyan-200/90 backdrop-blur">
+            Trusted by 200+ enterprise teams
+          </div>
           <h1 className="mt-7 text-4xl font-semibold tracking-[-0.055em] text-white sm:text-6xl lg:text-7xl lg:leading-[0.94]">
-            Your company knowledge, powered by AI.
+            Your Company Knowledge. AI-Powered Answers.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-            SpringVox lets organisations upload approved documents and give every team member a secure AI assistant that answers with sources from company knowledge.
+            Stop wasting hours searching for policies. SpringVox gives every team member a secure AI assistant that answers instantly from approved company documents.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/register" className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_38px_rgba(34,211,238,0.28)] transition hover:-translate-y-0.5 hover:bg-cyan-200 sm:w-auto">
@@ -569,10 +583,11 @@ function HeroSection() {
               <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
             </Link>
             <Link href="/get-started" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/12 sm:w-auto">
-              Book Demo
+              Book a 15-min call
               <ChevronRight size={16} />
             </Link>
           </div>
+          <p className="mt-3 text-center text-xs text-slate-500">No credit card required to start</p>
         </motion.div>
         <HeroDashboard />
         <div className="mx-auto mt-8 grid max-w-6xl divide-y divide-white/10 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur md:grid-cols-4 md:divide-x md:divide-y-0">
@@ -626,7 +641,7 @@ function WorkflowSection() {
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">Upload, ask, verify, improve.</h2>
           <p className="mt-5 text-base leading-8 text-slate-600">A premium AI workflow that still feels simple enough for everyday teams.</p>
         </motion.div>
-        <div className="mt-14 grid gap-4 lg:grid-cols-4">
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {workflow.map((step, index) => (
             <motion.div key={step.title} {...reveal} transition={{ ...reveal.transition, delay: index * 0.08 }} className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-cyan-200">
               <div className="absolute -right-3 top-10 hidden h-px w-6 bg-cyan-200 lg:block" />
@@ -801,16 +816,19 @@ function TestimonialsPricingSection() {
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-700">What teams feel</p>
           <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">Premium AI without losing control.</h2>
         </motion.div>
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((item) => (
             <motion.div key={item.name} {...reveal} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+              <div className="mb-4 inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-700">
+                {item.metric}
+              </div>
               <p className="text-sm leading-7 text-slate-700">"{item.quote}"</p>
               <p className="mt-6 font-semibold text-slate-950">{item.name}</p>
               <p className="text-sm text-slate-500">{item.role}</p>
             </motion.div>
           ))}
         </div>
-        <div className="mt-16 grid gap-4 lg:grid-cols-3">
+        <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {pricing.map((plan) => (
             <motion.div key={plan.name} {...reveal} className={cn("rounded-3xl border p-6 transition hover:-translate-y-1", plan.highlighted ? "border-cyan-300 bg-slate-950 text-white shadow-[0_30px_90px_rgba(34,211,238,0.16)]" : "border-slate-200 bg-white")}>
               <p className={cn("text-sm font-semibold", plan.highlighted ? "text-cyan-200" : "text-cyan-700")}>{plan.name}</p>
@@ -824,8 +842,52 @@ function TestimonialsPricingSection() {
                   </div>
                 ))}
               </div>
+              <Link
+                href={plan.ctaHref}
+                className={cn(
+                  "mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition",
+                  plan.highlighted
+                    ? "bg-cyan-300 text-slate-950 hover:bg-cyan-200"
+                    : "border border-slate-200 bg-white text-slate-950 hover:bg-slate-50",
+                )}
+              >
+                {plan.cta}
+                <ArrowRight size={15} />
+              </Link>
             </motion.div>
           ))}
+        </div>
+
+        <div className="mt-16 overflow-hidden rounded-3xl border border-slate-200">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="p-4 font-semibold text-slate-700 sm:p-5">Feature</th>
+                  <th className="p-4 text-center font-semibold text-slate-700 sm:p-5">Free</th>
+                  <th className="p-4 text-center font-semibold text-cyan-700 sm:p-5">Business</th>
+                  <th className="p-4 text-center font-semibold text-slate-700 sm:p-5">Enterprise</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {[
+                  ["Workspace setup", "✓", "✓", "✓"],
+                  ["Document uploads", "✓", "✓", "✓"],
+                  ["Chat with sources", "✓", "✓", "✓"],
+                  ["Advanced parsing", "—", "✓", "✓"],
+                  ["Analytics & knowledge gaps", "—", "✓", "✓"],
+                  ["Platform admin controls", "—", "—", "✓"],
+                ].map(([feature, free, business, enterprise]) => (
+                  <tr key={feature} className="transition hover:bg-slate-50/50">
+                    <td className="p-4 font-medium text-slate-700 sm:p-5">{feature}</td>
+                    <td className="p-4 text-center text-slate-500 sm:p-5">{free}</td>
+                    <td className="p-4 text-center font-medium text-emerald-600 sm:p-5">{business}</td>
+                    <td className="p-4 text-center text-slate-500 sm:p-5">{enterprise}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -846,9 +908,10 @@ function FinalCTA() {
             <ArrowRight size={16} />
           </Link>
           <Link href="/get-started" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/12">
-            Book Demo
+            Book a 15-min call
           </Link>
         </div>
+        <p className="mt-4 text-center text-xs text-slate-500">No credit card required. Free plan includes full workspace features.</p>
       </motion.div>
     </section>
   );
@@ -860,6 +923,7 @@ export function PremiumLandingPage() {
       <PremiumNavbar />
       <main>
         <HeroSection />
+        <StatsSection />
         <ProblemSection />
         <WorkflowSection />
         <CapabilitiesSection />
@@ -868,6 +932,7 @@ export function PremiumLandingPage() {
         <IndustriesSection />
         <SecuritySection />
         <TestimonialsPricingSection />
+        <FAQSection />
         <FinalCTA />
       </main>
     </div>
