@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   ArrowRight,
-  AudioLines,
   BarChart3,
   Building2,
   Check,
@@ -49,6 +48,7 @@ const navItems = [
   { label: "Workflow", href: "#workflow" },
   { label: "Security", href: "#security" },
   { label: "Pricing", href: "#pricing" },
+  { label: "Blog", href: "/blog" },
 ];
 
 const securityStats = [
@@ -634,6 +634,7 @@ function ProblemSection() {
 function WorkflowSection() {
   return (
     <section id="workflow" className="relative overflow-hidden bg-white py-20 sm:py-28">
+      <div id="how-it-works" />
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
@@ -662,6 +663,7 @@ function WorkflowSection() {
 function CapabilitiesSection() {
   return (
     <section id="platform" className="relative overflow-hidden bg-[#07111f] py-20 text-white sm:py-28">
+      <div id="features" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(34,211,238,0.16),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent)]" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...reveal} className="max-w-3xl">
@@ -759,7 +761,8 @@ function KnowledgeGraphSection() {
 
 function IndustriesSection() {
   return (
-    <section className="bg-white py-20 sm:py-28">
+    <section id="industries" className="bg-white py-20 sm:py-28">
+      <div id="use-cases" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-700">Industries</p>

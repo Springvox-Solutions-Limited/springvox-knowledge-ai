@@ -1,0 +1,87 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { getBlogPosts, getBlogCategories } from "@/src/lib/blog";
+import { BlogCard } from "@/src/components/blog/BlogCard";
+import { LandingNavbar } from "@/src/components/landing/LandingNavbar";
+import { LandingFooter } from "@/src/components/landing/LandingFooter";
+
+export const metadata: Metadata = {
+  title: "Blog | SpringVox Knowledge AI",
+  description:
+    "Insights on enterprise AI, document search, RAG architecture, workspace security, and making company knowledge useful for every team.",
+};
+
+export default function BlogIndexPage() {
+  const posts = getBlogPosts();
+  const categories = getBlogCategories();
+
+  return (
+    <div className="min-h-screen bg-slate-50/50 selection:bg-slate-900 selection:text-white flex flex-col font-sans">
+      <LandingNavbar />
+
+      <main className="flex-grow pt-24 pb-16 sm:pt-28 lg:pb-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="border-b border-slate-200 pb-8 mb-10">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-600 mb-2">
+              Resources
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              Blog
+            </h1>
+            <p className="mt-3 text-lg text-slate-600 max-w-3xl leading-relaxed">
+              Insights on enterprise AI, document search, RAG architecture,
+              workspace security, and making company knowledge useful for every
+              team.
+            </p>
+          </div>
+
+          <div className="mb-8 flex flex-wrap gap-2">
+            <span className="inline-flex rounded-full border border-slate-300 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700">
+              All
+            </span>
+            {categories.map((category) => (
+              <span
+                key={category}
+                className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-600 hover:border-cyan-200 hover:text-cyan-700 transition cursor-pointer"
+              >
+                {category}
+              </span>
+            ))}
+          </div>
+
+          {posts.length === 0 ? (
+            <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center">
+              <p className="text-slate-500 text-sm">No posts yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {posts.map((post) => (
+                <BlogCard key={post.slug} post={post} />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-16 rounded-3xl border border-slate-200 bg-gradient-to-br from-cyan-50/80 to-white p-8 sm:p-10 text-center">
+            <h2 className="text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+              Want to see SpringVox in action?
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600 max-w-lg mx-auto">
+              Create a workspace, upload a document, and ask your first
+              question. No credit card required.
+            </p>
+            <Link
+              href="/register"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)] transition hover:bg-[#132744]"
+            >
+              Get Started Free
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
+      </main>
+
+      <LandingFooter />
+    </div>
+  );
+}
