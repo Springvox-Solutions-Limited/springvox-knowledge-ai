@@ -1,8 +1,11 @@
 export type AppRole = 'platform_admin' | 'tenant_admin' | 'viewer';
 export type LegacyAppRole = 'admin' | 'content_manager';
 export type AnyAppRole = AppRole | LegacyAppRole;
-export type WorkspaceStatus = 'active' | 'suspended' | 'trial' | 'inactive';
+export type WorkspaceStatus = 'active' | 'suspended' | 'trial' | 'inactive' | 'past_due' | 'expired';
 export type WorkspacePlan = 'pilot' | 'starter' | 'business' | 'enterprise';
+export type UserStatus = 'active' | 'suspended' | 'invited' | 'disabled';
+export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'expired' | 'suspended';
+export type BillingStatus = 'trialing' | 'active' | 'past_due' | 'expired' | 'suspended';
 
 export type UserProfile = {
   id: string;
@@ -10,6 +13,7 @@ export type UserProfile = {
   full_name: string | null;
   role: AnyAppRole;
   workspace_id: string | null;
+  status?: UserStatus;
 };
 
 export type WorkspaceSettings = {
@@ -18,6 +22,13 @@ export type WorkspaceSettings = {
   slug: string;
   status: WorkspaceStatus;
   plan: WorkspacePlan;
+  subscription_status?: SubscriptionStatus | null;
+  subscription_plan?: string | null;
+  billing_status?: BillingStatus | null;
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
+  payment_required_at?: string | null;
+  suspended_reason?: string | null;
   logo_url: string | null;
   primary_color: string | null;
   welcome_message: string | null;
@@ -40,12 +51,19 @@ export type FeedbackRating = (typeof FEEDBACK_RATINGS)[number];
 
 export const ASSIGNABLE_ROLES: AppRole[] = ['tenant_admin', 'viewer'];
 export const WORKSPACE_ACTIVE_STATUSES: WorkspaceStatus[] = ['active', 'trial'];
-export const WORKSPACE_RESTRICTED_STATUSES: WorkspaceStatus[] = ['suspended', 'inactive'];
+export const WORKSPACE_RESTRICTED_STATUSES: WorkspaceStatus[] = [
+  'suspended',
+  'inactive',
+  'past_due',
+  'expired',
+];
 export const WORKSPACE_STATUSES: WorkspaceStatus[] = [
   'active',
   'suspended',
   'trial',
   'inactive',
+  'past_due',
+  'expired',
 ];
 export const WORKSPACE_PLANS: WorkspacePlan[] = [
   'pilot',
@@ -59,6 +77,14 @@ export const ALL_ROLES: AnyAppRole[] = [
   'viewer',
   'admin',
   'content_manager',
+];
+export const USER_STATUSES: UserStatus[] = ['active', 'suspended', 'invited', 'disabled'];
+export const SUBSCRIPTION_STATUSES: SubscriptionStatus[] = [
+  'trial',
+  'active',
+  'past_due',
+  'expired',
+  'suspended',
 ];
 export const WORKSPACE_ADMIN_ROLES: AnyAppRole[] = [
   'platform_admin',
@@ -92,8 +118,28 @@ export function getWorkspaceStatusMessage(status: WorkspaceStatus) {
     return 'This workspace is currently suspended. Please contact SpringVox support.';
   }
 
+  if (status === 'expired') {
+    return 'Your 14-day trial has ended. Please upgrade to continue using SpringVox.';
+  }
+
+  if (status === 'past_due') {
+    return 'Payment is required to continue using SpringVox.';
+  }
+
   if (status === 'inactive') {
     return 'This workspace is currently inactive.';
+  }
+
+  return null;
+}
+
+export function getUserStatusMessage(status: UserStatus | null | undefined) {
+  if (status === 'suspended') {
+    return 'Your account has been suspended. Contact your workspace administrator.';
+  }
+
+  if (status === 'disabled') {
+    return 'Your account is disabled. Contact your workspace administrator.';
   }
 
   return null;

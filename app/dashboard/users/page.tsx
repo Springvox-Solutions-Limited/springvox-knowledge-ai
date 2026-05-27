@@ -51,6 +51,7 @@ type ManagedUser = {
   email: string | null;
   full_name: string | null;
   role: AnyAppRole;
+  status: "active" | "suspended" | "invited" | "disabled";
   workspace_id: string | null;
   workspace_name: string;
   created_at: string;
@@ -82,6 +83,26 @@ function getRoleTone(role: AnyAppRole) {
   }
 }
 
+function UserStatusBadge({ status }: { status: ManagedUser["status"] }) {
+  const className =
+    status === "active"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : status === "suspended" || status === "disabled"
+        ? "border-red-200 bg-red-50 text-red-700"
+        : "border-amber-200 bg-amber-50 text-amber-700";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex max-w-full truncate rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]",
+        className,
+      )}
+    >
+      {status}
+    </span>
+  );
+}
+
 export default function UsersPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -91,6 +112,7 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | AnyAppRole>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | ManagedUser["status"]>("all");
   const [error, setError] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<{
     user: ManagedUser;
@@ -160,19 +182,20 @@ export default function UsersPage() {
       (user.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       (user.full_name || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
+    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
 
-    return matchesSearch && matchesRole;
+    return matchesSearch && matchesRole && matchesStatus;
   });
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const pagedUsers = filteredUsers.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE,
   );
-  const hasFilters = Boolean(searchQuery) || roleFilter !== "all";
+  const hasFilters = Boolean(searchQuery) || roleFilter !== "all" || statusFilter !== "all";
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, roleFilter]);
+  }, [searchQuery, roleFilter, statusFilter]);
 
   const updateRole = async (
     user: ManagedUser,
@@ -255,6 +278,43 @@ export default function UsersPage() {
         inviteError instanceof Error
           ? inviteError.message
           : "Failed to create invitation",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateUserStatus = async (targetUser: ManagedUser, status: "active" | "suspended") => {
+    try {
+      setSaving(true);
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error("Authentication session expired");
+      }
+
+      const response = await fetch("/api/users/status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          userId: targetUser.id,
+          status,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update user status");
+      }
+
+      await loadUsers();
+    } catch (statusError) {
+      setError(
+        statusError instanceof Error
+          ? statusError.message
+          : "Failed to update user status",
       );
     } finally {
       setSaving(false);
@@ -373,6 +433,20 @@ export default function UsersPage() {
             <SelectItem value="tenant_admin">Workspace Admin</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as "all" | ManagedUser["status"])}
+        >
+          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm lg:w-[13rem]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-slate-200">
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+            <SelectItem value="disabled">Disabled</SelectItem>
+          </SelectContent>
+        </Select>
         {hasFilters ? (
           <AppButton
             tone="secondary"
@@ -380,6 +454,7 @@ export default function UsersPage() {
             onClick={() => {
               setSearchQuery("");
               setRoleFilter("all");
+              setStatusFilter("all");
             }}
           >
             Clear filters
@@ -422,8 +497,9 @@ export default function UsersPage() {
               <AppTableRow>
                 <AppTableHead className="w-[32%]">User</AppTableHead>
                 <AppTableHead className="w-[16%]">Role</AppTableHead>
-                <AppTableHead className="w-[16%]">Added</AppTableHead>
-                <AppTableHead className="w-[16%]">Updated</AppTableHead>
+                <AppTableHead className="w-[14%]">Status</AppTableHead>
+                <AppTableHead className="w-[14%]">Added</AppTableHead>
+                <AppTableHead className="w-[14%]">Updated</AppTableHead>
                 <AppTableHead className="w-[20%] text-right">
                   Actions
                 </AppTableHead>
@@ -464,6 +540,9 @@ export default function UsersPage() {
                       {getRoleLabel(user.role)}
                     </span>
                   </AppTableCell>
+                  <AppTableCell>
+                    <UserStatusBadge status={user.status} />
+                  </AppTableCell>
                   <AppTableCell className="text-xs text-slate-500">
                     {new Date(user.created_at).toLocaleDateString()}
                   </AppTableCell>
@@ -493,6 +572,27 @@ export default function UsersPage() {
                             : "Make viewer"}
                         </AppButton>
                       ))}
+                      {user.status === "active" ? (
+                        <AppButton
+                          type="button"
+                          disabled={saving}
+                          onClick={() => updateUserStatus(user, "suspended")}
+                          tone="destructive"
+                          className="h-8 rounded-lg px-2.5 text-[11px]"
+                        >
+                          Suspend
+                        </AppButton>
+                      ) : (
+                        <AppButton
+                          type="button"
+                          disabled={saving}
+                          onClick={() => updateUserStatus(user, "active")}
+                          tone="secondary"
+                          className="h-8 rounded-lg px-2.5 text-[11px]"
+                        >
+                          Activate
+                        </AppButton>
+                      )}
                     </div>
                   </AppTableCell>
                 </AppTableRow>
@@ -542,6 +642,7 @@ export default function UsersPage() {
                     {getRoleLabel(user.role)}
                   </span>
                 </div>
+                <UserStatusBadge status={user.status} />
                 <div className="grid gap-2 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 text-xs text-slate-500">
                   <p>Added: {new Date(user.created_at).toLocaleDateString()}</p>
                   <p>
@@ -568,6 +669,27 @@ export default function UsersPage() {
                         : "Make Viewer"}
                     </AppButton>
                   ))}
+                  {user.status === "active" ? (
+                    <AppButton
+                      type="button"
+                      disabled={saving}
+                      onClick={() => updateUserStatus(user, "suspended")}
+                      tone="destructive"
+                      className="h-9 px-3 text-xs"
+                    >
+                      Suspend
+                    </AppButton>
+                  ) : (
+                    <AppButton
+                      type="button"
+                      disabled={saving}
+                      onClick={() => updateUserStatus(user, "active")}
+                      tone="secondary"
+                      className="h-9 px-3 text-xs"
+                    >
+                      Activate
+                    </AppButton>
+                  )}
                 </div>
               </div>
             </div>

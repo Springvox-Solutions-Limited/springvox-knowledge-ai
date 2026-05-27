@@ -5,6 +5,12 @@ import { buildPreview, chunkDocumentText } from '@/src/lib/documents';
 import { embedMany, getEmbeddingProvider } from '@/src/lib/ai';
 import { COLLECTION_NAME, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
 import { parseDocument } from '@/src/lib/document-parsers';
+import { sendEmail } from '@/src/lib/email';
+import { buildTrialExpiredEmail } from '@/src/lib/email/templates/trial-expired';
+import { buildTrialReminderEmail } from '@/src/lib/email/templates/trial-reminder';
+import { buildTrialStartedEmail } from '@/src/lib/email/templates/trial-started';
+import { buildWelcomeEmail } from '@/src/lib/email/templates/welcome';
+import { buildPlatformNotificationEmail } from '@/src/lib/email/templates/platform-notification';
 
 type SerializedError = {
   message: string;
@@ -346,4 +352,321 @@ export const processDocument = inngest.createFunction(
       throw toOperationError('process-document', error);
     }
   }
+);
+
+function getAppUrl() {
+  return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
+
+function daysBefore(dateValue: string, days: number) {
+  const date = new Date(dateValue);
+  date.setDate(date.getDate() - days);
+  return date;
+}
+
+async function loadWorkspaceTrialRecipient(workspaceId: string) {
+  const supabase = getSupabaseAdmin();
+  const { data: workspace, error: workspaceError } = await supabase
+    .from('workspaces')
+    .select('id, name, trial_ends_at, subscription_status')
+    .eq('id', workspaceId)
+    .maybeSingle();
+
+  if (workspaceError || !workspace) {
+    throw workspaceError || new Error('Workspace not found');
+  }
+
+  const { data: admin, error: adminError } = await supabase
+    .from('profiles')
+    .select('id, email, full_name')
+    .eq('workspace_id', workspaceId)
+    .eq('role', 'tenant_admin')
+    .eq('status', 'active')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (adminError) {
+    throw adminError;
+  }
+
+  if (!admin?.email) {
+    throw new Error('No active workspace admin email found');
+  }
+
+  return { workspace, admin };
+}
+
+export const sendTrialLifecycleEmails = inngest.createFunction(
+  { id: 'send-trial-lifecycle-emails', retries: 2, triggers: [{ event: 'workspace/trial.started' }] },
+  async ({ event, step }) => {
+    const { workspaceId, workspaceName, adminEmail, adminName, trialEndsAt } = event.data;
+    const appUrl = getAppUrl();
+
+    await step.run('send-welcome-email', async () => {
+      const email = buildWelcomeEmail({ name: adminName, workspaceName, appUrl });
+      await sendEmail({ to: adminEmail, ...email });
+    });
+
+    await step.run('send-trial-started-email', async () => {
+      const email = buildTrialStartedEmail({ workspaceName, trialEndsAt, appUrl });
+      await sendEmail({ to: adminEmail, ...email });
+    });
+
+    const threeDayReminderAt = daysBefore(trialEndsAt, 3);
+    const oneDayReminderAt = daysBefore(trialEndsAt, 1);
+
+    if (threeDayReminderAt.getTime() > Date.now()) {
+      await step.sleepUntil('wait-until-3-day-reminder', threeDayReminderAt);
+      await step.sendEvent('send-3-day-trial-reminder', {
+        name: 'workspace/trial.reminder',
+        data: { workspaceId, daysRemaining: 3 },
+      });
+    }
+
+    if (oneDayReminderAt.getTime() > Date.now()) {
+      await step.sleepUntil('wait-until-1-day-reminder', oneDayReminderAt);
+      await step.sendEvent('send-1-day-trial-reminder', {
+        name: 'workspace/trial.reminder',
+        data: { workspaceId, daysRemaining: 1 },
+      });
+    }
+
+    const expiresAt = new Date(trialEndsAt);
+    if (expiresAt.getTime() > Date.now()) {
+      await step.sleepUntil('wait-until-trial-expired', expiresAt);
+    }
+
+    await step.sendEvent('send-trial-expired-email', {
+      name: 'workspace/trial.expired',
+      data: { workspaceId },
+    });
+
+    return { success: true, workspaceId };
+  },
+);
+
+export const sendTrialReminderEmail = inngest.createFunction(
+  { id: 'send-trial-reminder-email', retries: 2, triggers: [{ event: 'workspace/trial.reminder' }] },
+  async ({ event, step }) => {
+    const { workspaceId, daysRemaining } = event.data;
+
+    return step.run('send-trial-reminder-email', async () => {
+      const { workspace, admin } = await loadWorkspaceTrialRecipient(workspaceId);
+      if (workspace.subscription_status !== 'trial') {
+        return { skipped: true, reason: 'workspace is no longer trialing' };
+      }
+
+      const email = buildTrialReminderEmail({
+        workspaceName: workspace.name,
+        daysRemaining,
+        appUrl: getAppUrl(),
+      });
+      await sendEmail({ to: admin.email!, ...email });
+      return { skipped: false };
+    });
+  },
+);
+
+export const sendTrialExpiredEmail = inngest.createFunction(
+  { id: 'send-trial-expired-email', retries: 2, triggers: [{ event: 'workspace/trial.expired' }] },
+  async ({ event, step }) => {
+    const { workspaceId } = event.data;
+
+    return step.run('expire-trial-and-send-email', async () => {
+      const { workspace, admin } = await loadWorkspaceTrialRecipient(workspaceId);
+      const supabase = getSupabaseAdmin();
+
+      if (workspace.subscription_status === 'trial') {
+        const { error } = await supabase
+          .from('workspaces')
+          .update({
+            status: 'expired',
+            subscription_status: 'expired',
+            billing_status: 'expired',
+            payment_required_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', workspaceId)
+          .eq('subscription_status', 'trial');
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      const email = buildTrialExpiredEmail({
+        workspaceName: workspace.name,
+        appUrl: getAppUrl(),
+      });
+      await sendEmail({ to: admin.email!, ...email });
+      return { success: true };
+    });
+  },
+);
+
+export const dailyTrialExpiryCheck = inngest.createFunction(
+  { id: 'daily-trial-expiry-check', retries: 2, triggers: [{ cron: '0 9 * * *' }] },
+  async ({ step }) => {
+    return step.run('expire-overdue-trials', async () => {
+      const supabase = getSupabaseAdmin();
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('subscription_status', 'trial')
+        .lte('trial_ends_at', now);
+
+      if (error) {
+        throw error;
+      }
+
+      const workspaceIds = (data || []).map((item) => item.id);
+      if (workspaceIds.length === 0) {
+        return { expired: 0 };
+      }
+
+      const { error: updateError } = await supabase
+        .from('workspaces')
+        .update({
+          status: 'expired',
+          subscription_status: 'expired',
+          billing_status: 'expired',
+          payment_required_at: now,
+          updated_at: now,
+        })
+        .in('id', workspaceIds);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return { expired: workspaceIds.length };
+    });
+  },
+);
+
+export const sendPlatformNotification = inngest.createFunction(
+  { id: 'send-platform-notification', retries: 2, triggers: [{ event: 'platform/notification.send' }] },
+  async ({ event, step }) => {
+    const { notificationId } = event.data;
+
+    return step.run('send-platform-notification', async () => {
+      const supabase = getSupabaseAdmin();
+      const { data: notification, error } = await supabase
+        .from('platform_notifications')
+        .select('id, workspace_id, type, title, message, channel, status')
+        .eq('id', notificationId)
+        .maybeSingle();
+
+      if (error || !notification) {
+        throw error || new Error('Notification not found');
+      }
+
+      if (notification.status === 'cancelled') {
+        return { skipped: true, reason: 'notification cancelled' };
+      }
+
+      if (notification.channel === 'in_app') {
+        const { error: updateError } = await supabase
+          .from('platform_notifications')
+          .update({ status: 'sent', sent_at: new Date().toISOString() })
+          .eq('id', notificationId);
+
+        if (updateError) throw updateError;
+        return { sent: 'in_app' };
+      }
+
+      if (!process.env.RESEND_API_KEY) {
+        const shouldSendInApp = notification.channel === 'both';
+        const { error: updateError } = await supabase
+          .from('platform_notifications')
+          .update({
+            status: shouldSendInApp ? 'sent' : 'queued',
+            sent_at: shouldSendInApp ? new Date().toISOString() : null,
+            metadata: { email_delivery: 'skipped_no_provider' },
+          })
+          .eq('id', notificationId);
+
+        if (updateError) throw updateError;
+        console.warn('[Email] Platform notification email skipped; RESEND_API_KEY is not configured.');
+        return { skipped: true, reason: 'email provider not configured' };
+      }
+
+      let recipientsQuery = supabase
+        .from('profiles')
+        .select('email, full_name, workspace_id')
+        .eq('role', 'tenant_admin')
+        .eq('status', 'active');
+
+      if (notification.workspace_id) {
+        recipientsQuery = recipientsQuery.eq('workspace_id', notification.workspace_id);
+      }
+
+      const { data: recipients, error: recipientsError } = await recipientsQuery;
+      if (recipientsError) throw recipientsError;
+
+      const workspaceIds = Array.from(new Set((recipients || []).map((item) => item.workspace_id).filter(Boolean)));
+      const { data: workspaces } = workspaceIds.length
+        ? await supabase.from('workspaces').select('id, name').in('id', workspaceIds)
+        : { data: [] };
+      const workspaceNameById = new Map((workspaces || []).map((item) => [item.id, item.name]));
+
+      for (const recipient of recipients || []) {
+        if (!recipient.email) continue;
+        const email = buildPlatformNotificationEmail({
+          title: notification.title,
+          message: notification.message,
+          workspaceName: recipient.workspace_id ? workspaceNameById.get(recipient.workspace_id) : null,
+          appUrl: getAppUrl(),
+        });
+        await sendEmail({ to: recipient.email, ...email });
+      }
+
+      const { error: updateError } = await supabase
+        .from('platform_notifications')
+        .update({ status: 'sent', sent_at: new Date().toISOString() })
+        .eq('id', notificationId);
+
+      if (updateError) throw updateError;
+      return { sent: recipients?.length || 0 };
+    });
+  },
+);
+
+export const scheduledPlatformNotificationCheck = inngest.createFunction(
+  { id: 'scheduled-platform-notification-check', retries: 2, triggers: [{ cron: '*/15 * * * *' }] },
+  async ({ step }) => {
+    return step.run('queue-due-platform-notifications', async () => {
+      const supabase = getSupabaseAdmin();
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('platform_notifications')
+        .select('id')
+        .eq('status', 'queued')
+        .not('scheduled_for', 'is', null)
+        .lte('scheduled_for', now)
+        .limit(50);
+
+      if (error) {
+        throw error;
+      }
+
+      const notificationIds = (data || []).map((item) => item.id);
+      if (notificationIds.length === 0) {
+        return { queued: 0 };
+      }
+
+      await Promise.all(
+        notificationIds.map((notificationId) =>
+          inngest.send({
+            name: 'platform/notification.send',
+            data: { notificationId },
+          }),
+        ),
+      );
+
+      return { queued: notificationIds.length };
+    });
+  },
 );

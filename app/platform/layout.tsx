@@ -6,11 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChart3,
   Building2,
+  Bell,
   LayoutGrid,
   LogOut,
   Menu,
   Monitor,
   ReceiptText,
+  ScrollText,
   Users,
 } from 'lucide-react';
 
@@ -18,7 +20,7 @@ import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 import { getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
-import { getDefaultRouteForRole, getRoleLabel, isPlatformAdminRole, type UserProfile, type WorkspaceSettings } from '@/src/lib/workspace';
+import { getDefaultRouteForRole, getRoleLabel, getUserStatusMessage, isPlatformAdminRole, type UserProfile, type WorkspaceSettings } from '@/src/lib/workspace';
 import {
   Sheet,
   SheetContent,
@@ -29,7 +31,10 @@ import {
 const platformNavItems = [
   { name: 'Overview', href: '/platform', icon: LayoutGrid },
   { name: 'Companies', href: '/platform/companies', icon: Building2 },
+  { name: 'Workspaces', href: '/platform/workspaces', icon: Building2 },
   { name: 'Users', href: '/platform/users', icon: Users },
+  { name: 'Notifications', href: '/platform/notifications', icon: Bell },
+  { name: 'Audit Logs', href: '/platform/audit-logs', icon: ScrollText },
   { name: 'Analytics', href: '/platform/analytics', icon: BarChart3 },
   { name: 'Plans', href: '/platform/plans', icon: ReceiptText },
 ];
@@ -64,6 +69,11 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
         if (!currentProfile) {
           router.replace('/login');
+          return;
+        }
+
+        if (getUserStatusMessage(currentProfile.status)) {
+          router.replace('/dashboard');
           return;
         }
 

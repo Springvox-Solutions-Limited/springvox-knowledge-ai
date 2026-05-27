@@ -51,6 +51,7 @@ export default function WorkspaceOnboardingForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [inviteDetails, setInviteDetails] = useState<InviteDetails | null>(
     null,
   );
@@ -157,6 +158,20 @@ export default function WorkspaceOnboardingForm() {
 
   async function handleCreateWorkspace(event: React.FormEvent) {
     event.preventDefault();
+    const nextErrors: Record<string, string> = {};
+    if (!companyName.trim()) nextErrors.companyName = "Company name is required.";
+    if (!workspaceSlug.trim()) nextErrors.workspaceSlug = "Workspace slug is required.";
+    if (!fullName.trim()) nextErrors.fullName = "Admin name is required.";
+    if (!email.trim()) nextErrors.email = "Admin email is required.";
+    if (!password) nextErrors.password = "Password is required.";
+    if (password && password.length < 8) nextErrors.password = "Password must be at least 8 characters.";
+    if (slugStatus.available === false) nextErrors.workspaceSlug = slugStatus.message || "Workspace slug is unavailable.";
+
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -211,6 +226,16 @@ export default function WorkspaceOnboardingForm() {
 
   async function handleJoinInvite(event: React.FormEvent) {
     event.preventDefault();
+    const nextErrors: Record<string, string> = {};
+    if (inviteToken && !fullName.trim()) nextErrors.fullName = "Full name is required.";
+    if (inviteToken && !password) nextErrors.password = "Password is required.";
+    if (password && password.length < 8) nextErrors.password = "Password must be at least 8 characters.";
+    setFieldErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -392,7 +417,7 @@ export default function WorkspaceOnboardingForm() {
                 description="Set the organisation name your team will recognize."
               >
                 <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
-                  <Field label="Company Name">
+                  <Field label="Company Name" required error={fieldErrors.companyName}>
                     <Input
                       value={companyName}
                       onChange={(event) => {
@@ -403,11 +428,12 @@ export default function WorkspaceOnboardingForm() {
                         }
                       }}
                       className="admin-input"
+                      aria-invalid={Boolean(fieldErrors.companyName)}
                       placeholder="Acme Corporation"
                       required
                     />
                   </Field>
-                  <Field label="Workspace Slug">
+                  <Field label="Workspace Slug" required error={fieldErrors.workspaceSlug}>
                     <Input
                       value={workspaceSlug}
                       onChange={(event) => {
@@ -418,6 +444,7 @@ export default function WorkspaceOnboardingForm() {
                         void checkSlug(nextSlug);
                       }}
                       className="admin-input"
+                      aria-invalid={Boolean(fieldErrors.workspaceSlug)}
                       placeholder="acme-corp"
                       required
                     />
@@ -445,32 +472,35 @@ export default function WorkspaceOnboardingForm() {
                 description="Create the first admin account for your company workspace."
               >
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Full Name">
+                  <Field label="Full Name" required error={fieldErrors.fullName}>
                     <Input
                       value={fullName}
                       onChange={(event) => setFullName(event.target.value)}
                       className="admin-input"
+                      aria-invalid={Boolean(fieldErrors.fullName)}
                       placeholder="Jane Doe"
                       required
                     />
                   </Field>
-                  <Field label="Work Email">
+                  <Field label="Work Email" required error={fieldErrors.email}>
                     <Input
                       type="email"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       className="admin-input"
+                      aria-invalid={Boolean(fieldErrors.email)}
                       placeholder="jane@company.com"
                       required
                     />
                   </Field>
                 </div>
-                <Field label="Password">
+                <Field label="Password" required error={fieldErrors.password}>
                   <Input
                     type="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     className="admin-input"
+                    aria-invalid={Boolean(fieldErrors.password)}
                     placeholder="Minimum 8 characters"
                     required
                   />
@@ -576,21 +606,23 @@ export default function WorkspaceOnboardingForm() {
                   description="Set the name and password you will use inside this workspace."
                 >
                   <div className="space-y-4">
-                    <Field label="Full Name">
+                    <Field label="Full Name" required error={fieldErrors.fullName}>
                       <Input
                         value={fullName}
                         onChange={(event) => setFullName(event.target.value)}
                         className="admin-input"
+                        aria-invalid={Boolean(fieldErrors.fullName)}
                         placeholder="Jane Doe"
                         required
                       />
                     </Field>
-                    <Field label="Password">
+                    <Field label="Password" required error={fieldErrors.password}>
                       <Input
                         type="password"
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         className="admin-input"
+                        aria-invalid={Boolean(fieldErrors.password)}
                         placeholder="Minimum 8 characters"
                         required
                       />
@@ -740,16 +772,24 @@ function FormSection({
 function Field({
   label,
   children,
+  required,
+  error,
 }: {
   label: string;
   children: React.ReactNode;
+  required?: boolean;
+  error?: string;
 }) {
   return (
     <label className="block space-y-2">
       <span className="ml-1 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
         {label}
+        {required ? <span className="ml-1 text-red-600">*</span> : null}
       </span>
       {children}
+      {error ? (
+        <span className="ml-1 block text-xs font-medium text-red-600">{error}</span>
+      ) : null}
     </label>
   );
 }

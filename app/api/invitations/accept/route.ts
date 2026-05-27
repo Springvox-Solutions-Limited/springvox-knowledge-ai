@@ -57,6 +57,7 @@ export async function POST(req: Request) {
         email: user.email,
         workspace_id: invitation.workspace_id,
         role: invitation.role,
+        status: 'active',
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id);

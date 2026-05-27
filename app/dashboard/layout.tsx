@@ -12,11 +12,12 @@ import {
   CircleAlert,
   Settings,
   LogOut, 
-  PanelLeftOpen
+  PanelLeftOpen,
+  Bell
 } from 'lucide-react';
 import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 import { ViewerChatSidebarHistory } from '@/src/components/dashboard/ViewerChatSidebarHistory';
-import { getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
+import { getAccessToken, getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
 import {
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/sheet';
 import {
   getWorkspaceStatusMessage,
+  getUserStatusMessage,
   getRoleLabel,
   isPlatformAdminRole,
   isWorkspaceRestrictedStatus,
@@ -34,6 +36,14 @@ import {
   type UserProfile,
   type WorkspaceSettings,
 } from '@/src/lib/workspace';
+
+type DashboardNotification = {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  created_at: string;
+};
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -43,6 +53,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [workspace, setWorkspace] = useState<WorkspaceSettings | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
 
   useEffect(() => {
     async function loadAuthContext() {
@@ -70,6 +81,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           router.replace(getDefaultPathForRole(currentProfile.role));
           return;
         }
+
+        try {
+          const token = await getAccessToken();
+          if (token) {
+            const response = await fetch('/api/notifications', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              setNotifications(result.notifications || []);
+            }
+          }
+        } catch {
+          setNotifications([]);
+        }
       } finally {
         setAuthLoading(false);
       }
@@ -94,8 +121,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const workspaceStatusMessage = workspace ? getWorkspaceStatusMessage(workspace.status) : null;
+  const userStatusMessage = getUserStatusMessage(profile.status);
+  const trialExpired =
+    workspace?.subscription_status === 'trial' &&
+    workspace.trial_ends_at &&
+    new Date(workspace.trial_ends_at).getTime() <= Date.now();
   const workspaceBlocked =
-    Boolean(workspace && isWorkspaceRestrictedStatus(workspace.status)) &&
+    Boolean(
+      userStatusMessage ||
+        trialExpired ||
+        (workspace && isWorkspaceRestrictedStatus(workspace.status)) ||
+        (workspace?.subscription_status &&
+          ['past_due', 'expired', 'suspended'].includes(workspace.subscription_status)),
+    ) &&
     !isPlatformAdminRole(profile.role);
   const isViewerRole = !isWorkspaceAdminRole(profile.role);
   const currentPageTitle =
@@ -277,6 +315,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
             </div>
         </header>
+
+        {notifications.length > 0 ? (
+          <section className="border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-xl md:px-8">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                <Bell size={14} className="text-cyan-600" />
+                Notices
+              </div>
+              <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex min-w-[16rem] max-w-full items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm shadow-sm sm:min-w-0 sm:max-w-[28rem]"
+                  >
+                    <span className={cn(
+                      "mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em]",
+                      getNotificationTypeClass(notification.type),
+                    )}>
+                      {formatNotificationType(notification.type)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-slate-950">
+                        {notification.title}
+                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-slate-600">
+                        {notification.message}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null}
         
         <div className={cn(
           "hidden overflow-hidden border-b border-slate-200 bg-white px-4 py-3 sm:block lg:hidden",
@@ -313,14 +385,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         Workspace Access Restricted
                       </p>
                       <h1 className="admin-hero-title text-slate-950">
-                        {workspace?.name} is currently {workspace?.status}.
+                        {userStatusMessage
+                          ? 'Account access is suspended.'
+                          : trialExpired
+                            ? 'Your 14-day trial has ended.'
+                            : `${workspace?.name} is currently ${workspace?.status}.`}
                       </h1>
                       <p className="max-w-2xl text-sm font-medium leading-7 text-slate-600 sm:text-base">
-                        {workspaceStatusMessage}
+                        {userStatusMessage ||
+                          (trialExpired
+                            ? 'Your 14-day trial has ended. Please upgrade to continue using SpringVox.'
+                            : workspaceStatusMessage)}
                       </p>
                       <p className="text-xs font-medium text-slate-500">
                         Tenant uploads, chat, invites, settings updates, and document management are blocked until SpringVox reactivates this workspace.
                       </p>
+                      {trialExpired ? (
+                        <Link
+                          href="/billing-required"
+                          className="inline-flex h-11 items-center justify-center rounded-xl bg-[#0d1f35] px-5 text-sm font-semibold text-white transition hover:bg-[#132744]"
+                        >
+                          View payment required details
+                        </Link>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -332,6 +419,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </main>
     </div>
   );
+}
+
+function formatNotificationType(type: string) {
+  return type.replace(/_/g, ' ');
+}
+
+function getNotificationTypeClass(type: string) {
+  if (type === 'maintenance') {
+    return 'border-amber-200 bg-amber-50 text-amber-700';
+  }
+
+  if (type === 'billing_reminder' || type === 'trial_notice') {
+    return 'border-cyan-200 bg-cyan-50 text-cyan-700';
+  }
+
+  if (type === 'security_notice') {
+    return 'border-red-200 bg-red-50 text-red-700';
+  }
+
+  return 'border-slate-200 bg-white text-slate-600';
 }
 
 function getDefaultPathForRole(role: UserProfile['role']) {

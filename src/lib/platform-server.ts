@@ -27,6 +27,7 @@ type ProfileRow = {
   email: string | null;
   full_name: string | null;
   role: string;
+  status: string;
   workspace_id: string | null;
   created_at: string;
   updated_at: string;
@@ -208,7 +209,7 @@ async function loadPlatformBaseData() {
       .order('created_at', { ascending: false }),
     supabase
       .from('profiles')
-      .select('id, email, full_name, role, workspace_id, created_at, updated_at')
+      .select('id, email, full_name, role, status, workspace_id, created_at, updated_at')
       .order('created_at', { ascending: false }),
     supabase
       .from('documents')
@@ -466,6 +467,21 @@ export async function getPlatformUsers(filters?: {
 }) {
   const data = await loadPlatformBaseData();
   const search = filters?.search?.trim().toLowerCase() || '';
+  const supabase = getSupabaseAdmin();
+  const lastSignInByUserId = new Map<string, string | null>();
+
+  try {
+    const { data: authUsers } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+
+    for (const user of authUsers.users || []) {
+      lastSignInByUserId.set(user.id, user.last_sign_in_at || null);
+    }
+  } catch {
+    // Last sign-in is helpful operational metadata, but the users page should still load if Auth Admin is unavailable.
+  }
 
   return data.profiles
     .filter((profile) => {
@@ -479,7 +495,7 @@ export async function getPlatformUsers(filters?: {
         return false;
       }
 
-      if (filters?.status && filters.status !== 'all' && workspace?.status !== filters.status) {
+      if (filters?.status && filters.status !== 'all' && profile.status !== filters.status) {
         return false;
       }
 
@@ -500,11 +516,13 @@ export async function getPlatformUsers(filters?: {
         email: profile.email,
         full_name: profile.full_name,
         role: profile.role,
+        status: profile.status || 'active',
         workspace_id: profile.workspace_id,
         workspace_name: workspace?.name || 'No workspace',
         workspace_status: workspace?.status || null,
         created_at: profile.created_at,
         updated_at: profile.updated_at,
+        last_sign_in_at: lastSignInByUserId.get(profile.id) || null,
       };
     });
 }

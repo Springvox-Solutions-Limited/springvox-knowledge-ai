@@ -1,6 +1,6 @@
 import { requirePlatformAdminRequest, createPlatformErrorResponse } from '@/src/lib/platform-api';
 import { getSupabaseAdmin } from '@/src/lib/supabase-server';
-import { WORKSPACE_STATUSES } from '@/src/lib/workspace';
+import { SUBSCRIPTION_STATUSES, WORKSPACE_STATUSES } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,9 +22,24 @@ export async function PATCH(
 
     const supabase = getSupabaseAdmin();
     const now = new Date().toISOString();
+    const subscriptionStatus = SUBSCRIPTION_STATUSES.includes(status as any)
+      ? status
+      : status === 'inactive'
+        ? 'suspended'
+        : 'active';
     const payload = {
       status,
+      subscription_status: subscriptionStatus,
+      billing_status:
+        status === 'trial'
+          ? 'trialing'
+          : subscriptionStatus === 'active'
+            ? 'active'
+            : subscriptionStatus,
+      subscription_plan: status === 'trial' ? 'trial' : undefined,
+      payment_required_at: status === 'expired' || status === 'past_due' ? now : null,
       suspension_reason: status === 'suspended' ? suspensionReason || null : null,
+      suspended_reason: status === 'suspended' ? suspensionReason || null : null,
       suspended_at: status === 'suspended' ? now : null,
       suspended_by: status === 'suspended' ? user.id : null,
       updated_at: now,

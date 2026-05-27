@@ -1,8 +1,13 @@
-import { getWorkspaceStatusMessage } from '@/src/lib/workspace';
+import { getUserStatusMessage, getWorkspaceStatusMessage } from '@/src/lib/workspace';
 
 const restrictedMessages = new Set([
   getWorkspaceStatusMessage('suspended'),
   getWorkspaceStatusMessage('inactive'),
+  getWorkspaceStatusMessage('expired'),
+  getWorkspaceStatusMessage('past_due'),
+  getUserStatusMessage('suspended'),
+  getUserStatusMessage('disabled'),
+  'Your 14-day trial has ended. Please upgrade to continue using SpringVox.',
 ]);
 
 export function getRequestErrorStatus(message: string) {

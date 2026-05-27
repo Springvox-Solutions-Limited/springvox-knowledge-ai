@@ -63,8 +63,6 @@ export async function POST(req: Request) {
       throw new Error("Missing document storage path");
     }
 
-    console.log(`[Upload] Uploading document to bucket: ${bucket}, path: ${uploadedFilePath}`);
-
     const { error: documentError } = await supabase
       .from('documents')
       .insert({

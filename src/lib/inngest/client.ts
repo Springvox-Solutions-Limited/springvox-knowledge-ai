@@ -12,6 +12,32 @@ export type Events = {
       userId: string;
     };
   };
+  "workspace/trial.started": {
+    data: {
+      workspaceId: string;
+      workspaceName: string;
+      adminUserId: string;
+      adminEmail: string;
+      adminName?: string;
+      trialEndsAt: string;
+    };
+  };
+  "workspace/trial.reminder": {
+    data: {
+      workspaceId: string;
+      daysRemaining: 1 | 3;
+    };
+  };
+  "workspace/trial.expired": {
+    data: {
+      workspaceId: string;
+    };
+  };
+  "platform/notification.send": {
+    data: {
+      notificationId: string;
+    };
+  };
 };
 
 // Create a client to send and receive events

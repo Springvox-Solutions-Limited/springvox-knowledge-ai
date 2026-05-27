@@ -25,7 +25,6 @@ import {
   AppTableHeader,
   AppTableRow,
 } from "@/src/components/ui/app-table";
-import { StatusBadge } from "@/src/components/platform/PlatformBadges";
 import { PlatformPageHeader } from "@/src/components/platform/PlatformPageHeader";
 import { getRoleLabel } from "@/src/lib/workspace";
 
@@ -34,17 +33,36 @@ type PlatformUser = {
   email: string | null;
   full_name: string | null;
   role: string;
+  status: string;
   workspace_id: string | null;
   workspace_name: string;
   workspace_status: string | null;
   created_at: string;
   updated_at: string;
+  last_sign_in_at: string | null;
 };
 
 type WorkspaceOption = {
   id: string;
   name: string;
 };
+
+function UserStatusBadge({ status }: { status: string }) {
+  const className =
+    status === "active"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : status === "suspended" || status === "disabled"
+        ? "border-red-200 bg-red-50 text-red-700"
+        : "border-amber-200 bg-amber-50 text-amber-700";
+
+  return (
+    <span
+      className={`inline-flex max-w-full truncate rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${className}`}
+    >
+      {status || "active"}
+    </span>
+  );
+}
 
 export default function PlatformUsersPage() {
   const PAGE_SIZE = 8;
@@ -134,6 +152,31 @@ export default function PlatformUsersPage() {
     }
   };
 
+  const updateUserStatus = async (
+    user: PlatformUser,
+    status: "active" | "suspended" | "disabled",
+  ) => {
+    try {
+      setSavingId(user.id);
+      await fetchPlatformJson(`/api/platform/users/${user.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status,
+          workspaceId: user.workspace_id,
+        }),
+      });
+      await loadUsers();
+    } catch (statusError) {
+      setError(
+        statusError instanceof Error
+          ? statusError.message
+          : "Failed to update user status",
+      );
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <div className="admin-page">
       <PlatformPageHeader
@@ -179,10 +222,9 @@ export default function PlatformUsersPage() {
           </SelectTrigger>
           <SelectContent className="rounded-xl border-slate-200">
             <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="active">active</SelectItem>
-            <SelectItem value="trial">trial</SelectItem>
-            <SelectItem value="suspended">suspended</SelectItem>
-            <SelectItem value="inactive">inactive</SelectItem>
+            <SelectItem value="active">Active users</SelectItem>
+            <SelectItem value="suspended">Suspended users</SelectItem>
+            <SelectItem value="disabled">Disabled users</SelectItem>
           </SelectContent>
         </Select>
       </ResponsiveToolbar>
@@ -220,6 +262,7 @@ export default function PlatformUsersPage() {
                   "Workspace",
                   "Status",
                   "Created",
+                  "Last sign-in",
                   "Actions",
                 ].map((column) => (
                   <AppTableHead key={column}>{column}</AppTableHead>
@@ -230,7 +273,7 @@ export default function PlatformUsersPage() {
               {loading ? (
                 <AppTableRow>
                   <AppTableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="py-12 text-center text-sm text-slate-500"
                   >
                     Loading users...
@@ -239,7 +282,7 @@ export default function PlatformUsersPage() {
               ) : users.length === 0 ? (
                 <AppTableRow>
                   <AppTableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="py-12 text-center text-sm text-slate-500"
                   >
                     No users found.
@@ -272,12 +315,15 @@ export default function PlatformUsersPage() {
                       {user.workspace_name}
                     </AppTableCell>
                     <AppTableCell>
-                      <StatusBadge status={user.workspace_status} />
+                      <UserStatusBadge status={user.status} />
                     </AppTableCell>
-                    <AppTableCell className="text-sm text-slate-600">
-                      {formatDate(user.created_at)}
-                    </AppTableCell>
-                    <AppTableCell>
+                  <AppTableCell className="text-sm text-slate-600">
+                    {formatDate(user.created_at)}
+                  </AppTableCell>
+                  <AppTableCell className="text-sm text-slate-600">
+                    {user.last_sign_in_at ? formatDate(user.last_sign_in_at) : "Not seen yet"}
+                  </AppTableCell>
+                  <AppTableCell>
                       {user.role === "platform_admin" ? (
                         <span className="text-xs font-semibold text-slate-400">
                           Managed separately
@@ -300,6 +346,35 @@ export default function PlatformUsersPage() {
                           >
                             Make Viewer
                           </AppButton>
+                          {user.status === "active" ? (
+                            <>
+                              <AppButton
+                                onClick={() => updateUserStatus(user, "suspended")}
+                                disabled={savingId === user.id}
+                                tone="destructive"
+                                className="h-9 rounded-lg px-3 text-xs"
+                              >
+                                Suspend
+                              </AppButton>
+                              <AppButton
+                                onClick={() => updateUserStatus(user, "disabled")}
+                                disabled={savingId === user.id}
+                                tone="destructive"
+                                className="h-9 rounded-lg px-3 text-xs"
+                              >
+                                Disable
+                              </AppButton>
+                            </>
+                          ) : (
+                            <AppButton
+                              onClick={() => updateUserStatus(user, "active")}
+                              disabled={savingId === user.id}
+                              tone="secondary"
+                              className="h-9 rounded-lg px-3 text-xs"
+                            >
+                              Activate
+                            </AppButton>
+                          )}
                         </div>
                       )}
                     </AppTableCell>
@@ -331,12 +406,16 @@ export default function PlatformUsersPage() {
                       {user.workspace_name}
                     </p>
                   </div>
-                  <StatusBadge status={user.workspace_status} />
+                  <UserStatusBadge status={user.status} />
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span>{getRoleLabel(user.role as any)}</span>
                   <span>•</span>
                   <span>Created {formatDate(user.created_at)}</span>
+                  <span>•</span>
+                  <span>
+                    Last sign-in {user.last_sign_in_at ? formatDate(user.last_sign_in_at) : "not seen yet"}
+                  </span>
                 </div>
                 {user.role === "platform_admin" ? (
                   <p className="text-xs text-slate-400">Managed separately</p>
@@ -358,6 +437,35 @@ export default function PlatformUsersPage() {
                     >
                       Make Viewer
                     </AppButton>
+                    {user.status === "active" ? (
+                      <>
+                        <AppButton
+                          onClick={() => updateUserStatus(user, "suspended")}
+                          disabled={savingId === user.id}
+                          tone="destructive"
+                          className="h-10 px-3 text-xs"
+                        >
+                          Suspend
+                        </AppButton>
+                        <AppButton
+                          onClick={() => updateUserStatus(user, "disabled")}
+                          disabled={savingId === user.id}
+                          tone="destructive"
+                          className="h-10 px-3 text-xs"
+                        >
+                          Disable
+                        </AppButton>
+                      </>
+                    ) : (
+                      <AppButton
+                        onClick={() => updateUserStatus(user, "active")}
+                        disabled={savingId === user.id}
+                        tone="secondary"
+                        className="h-10 px-3 text-xs"
+                      >
+                        Activate
+                      </AppButton>
+                    )}
                   </div>
                 )}
               </div>

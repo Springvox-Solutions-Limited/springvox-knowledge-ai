@@ -102,7 +102,9 @@ Run these in order:
 7. `sql/chat_sessions.sql`
 8. `sql/inngest_document_status.sql`
 9. `sql/document_parser_metadata.sql`
-10. any later slug/security hardening SQL if added
+10. `sql/phase4_trial_user_status.sql`
+11. `sql/phase4g_platform_notifications.sql`
+12. any later slug/security hardening SQL if added
 
 Migration files:
 
@@ -115,6 +117,8 @@ Migration files:
 - [chat_sessions.sql](/home/water/Downloads/springvox-knowledge-ai/sql/chat_sessions.sql)
 - [inngest_document_status.sql](/home/water/Downloads/springvox-knowledge-ai/sql/inngest_document_status.sql)
 - [document_parser_metadata.sql](/home/water/Downloads/springvox-knowledge-ai/sql/document_parser_metadata.sql)
+- [phase4_trial_user_status.sql](/home/water/Downloads/springvox-knowledge-ai/sql/phase4_trial_user_status.sql)
+- [phase4g_platform_notifications.sql](/home/water/Downloads/springvox-knowledge-ai/sql/phase4g_platform_notifications.sql)
 
 ## Manual Platform Admin Promotion
 
@@ -137,7 +141,10 @@ Routes:
 - `/platform`
 - `/platform/companies`
 - `/platform/companies/[id]`
+- `/platform/workspaces`
 - `/platform/users`
+- `/platform/audit-logs`
+- `/platform/notifications`
 - `/platform/analytics`
 - `/platform/plans`
 
@@ -146,10 +153,17 @@ Platform admin capabilities:
 - view all companies and workspaces
 - view platform-wide analytics and company usage summaries
 - review user lists per workspace
-- suspend, reactivate, or mark a workspace as trial or inactive
+- suspend, reactivate, expire, extend trial, mark past due, or convert a workspace to paid/active
+- suspend, activate, or disable users
 - manually assign or change demo plans
 - add platform-only internal notes
 - review document metadata only
+- review audit logs for platform actions
+- send in-app or email notifications to one workspace or all workspaces
+
+All workspace, billing, user status, and notification actions run server-side, require `platform_admin`, and write audit log entries. Platform APIs may use the Supabase service role on the server only; service-role keys must never be exposed to the browser.
+
+Platform notifications are stored in `platform_notifications`. In-app notifications appear in tenant dashboards for the target workspace, or globally when `workspace_id` is null. Email delivery uses the existing email abstraction and Inngest. If `RESEND_API_KEY` is missing, notification creation still succeeds and email delivery is marked as skipped or left queued without crashing the app.
 
 Platform admin privacy constraints:
 
@@ -348,6 +362,10 @@ EMBEDDING_MODEL=gemini-embedding-001
 VOYAGE_API_KEY=
 VOYAGE_EMBEDDING_MODEL=voyage-4-lite
 
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=
+EMAIL_FROM="SpringVox <no-reply@yourdomain.com>"
+
 RAG_DEBUG=false
 RAG_MAX_CONTEXT_CHARACTERS=4500
 
@@ -368,12 +386,27 @@ SpringVox uses deterministic retrieval intelligence before calling Gemini:
 
 `RAG_DEBUG=false` keeps detailed retrieval logs off by default. Set `RAG_DEBUG=true` locally when debugging retrieval. Detailed logs can include user questions and document metadata, so do not leave verbose debug logging enabled in production unless your logging policy allows it.
 
+### Trials and lifecycle email
+
+New workspaces start on a 14-day trial. Workspace access is blocked after the trial expires unless the workspace is activated by a platform admin.
+
+Trial lifecycle emails use the email provider abstraction in `src/lib/email/`:
+
+- `EMAIL_PROVIDER=resend`
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+
+Email jobs are queued through Inngest after workspace creation. Missing `RESEND_API_KEY` does not block workspace creation; the email sender logs a warning and skips delivery.
+
+Platform notification emails use the same provider settings. Workspace-specific notifications are sent to active workspace admins. Global notifications are sent to active admins across workspaces. Scheduled platform notifications are checked by Inngest and dispatched when due.
+
 Do not expose these to the frontend:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `QDRANT_API_KEY`
 - `GEMINI_API_KEY`
 - `VOYAGE_API_KEY`
+- `RESEND_API_KEY`
 
 Do not use `NEXT_PUBLIC_GEMINI_API_KEY`.
 
@@ -494,11 +527,9 @@ If there is no data, the UI should show `0` or an empty state.
 - no billing yet
 - no subdomains yet
 - no custom domains yet
-- no automated email sending yet
 - invite links are manual
 - scanned PDFs and OCR are not yet supported
 - complex PPTX layouts may need future parser upgrades for higher fidelity
-- no full platform admin dashboard yet
 - `platform_admin` is still assigned manually
 
 ## Technical Architecture

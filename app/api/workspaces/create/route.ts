@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { inngest } from '@/src/lib/inngest/client';
 import { isValidEmail, isValidUrl, validateWorkspaceSlug } from '@/src/lib/onboarding';
 
 export const dynamic = 'force-dynamic';
@@ -83,6 +84,13 @@ export async function POST(req: Request) {
       .insert({
         name: companyName,
         slug: slugValidation.normalized,
+        status: 'trial',
+        plan: 'pilot',
+        trial_started_at: new Date().toISOString(),
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        subscription_status: 'trial',
+        subscription_plan: 'trial',
+        billing_status: 'trialing',
         assistant_name: `${companyName} AI Assistant`,
         welcome_message: `Ask questions from ${companyName}'s approved documents.`,
         industry: industry || null,
@@ -104,12 +112,29 @@ export async function POST(req: Request) {
         email,
         full_name: fullName,
         role: 'tenant_admin',
+        status: 'active',
         workspace_id: workspace.id,
         updated_at: new Date().toISOString(),
       });
 
     if (profileError) {
       throw profileError;
+    }
+
+    try {
+      await inngest.send({
+        name: 'workspace/trial.started',
+        data: {
+          workspaceId: workspace.id,
+          workspaceName: companyName,
+          adminUserId: createdUserId,
+          adminEmail: email,
+          adminName: fullName,
+          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+      });
+    } catch (emailEventError) {
+      console.warn('Workspace created, but trial email event could not be queued:', emailEventError);
     }
 
     return Response.json({

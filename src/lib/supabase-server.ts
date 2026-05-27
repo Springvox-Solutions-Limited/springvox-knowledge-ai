@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createClient, type User } from '@supabase/supabase-js';
-import type { AnyAppRole, UserProfile } from '@/src/lib/workspace';
+import { getUserStatusMessage, type AnyAppRole, type UserProfile } from '@/src/lib/workspace';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -66,6 +66,11 @@ export async function getAuthenticatedUserWithProfile(
     throw new Error('Workspace not assigned');
   }
 
+  const statusMessage = getUserStatusMessage(profile.status);
+  if (statusMessage) {
+    throw new Error(statusMessage);
+  }
+
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
     throw new Error('Forbidden');
   }
@@ -78,7 +83,7 @@ export async function getUserProfileById(userId: string): Promise<UserProfile> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, workspace_id')
+    .select('id, email, full_name, role, workspace_id, status')
     .eq('id', userId)
     .maybeSingle();
 
@@ -95,6 +100,11 @@ export async function getAuthenticatedUserWithAnyProfile(
 ): Promise<{ user: User; profile: UserProfile }> {
   const user = await getAuthenticatedUser(request);
   const profile = await getUserProfileById(user.id);
+
+  const statusMessage = getUserStatusMessage(profile.status);
+  if (statusMessage) {
+    throw new Error(statusMessage);
+  }
 
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
     throw new Error('Forbidden');

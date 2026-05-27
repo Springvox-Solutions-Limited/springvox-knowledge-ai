@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, email, full_name, role, workspace_id, created_at, updated_at')
+      .select('id, email, full_name, role, status, workspace_id, created_at, updated_at')
       .eq('workspace_id', profile.workspace_id)
       .order('created_at', { ascending: true });
 

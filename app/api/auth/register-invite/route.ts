@@ -79,6 +79,7 @@ export async function POST(req: Request) {
       .update({
         email: invitation.email,
         full_name: fullName,
+        status: 'active',
         updated_at: new Date().toISOString(),
       })
       .eq('id', createdUserId);
