@@ -13,9 +13,19 @@ import {
 } from '@/src/lib/ai';
 import { upsertKnowledgeGap } from '@/src/lib/knowledge-gaps';
 import { COLLECTION_NAME, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
+import { buildAnswerIntelligenceInstructions } from '@/src/lib/rag/answer-intelligence';
 import { compressSearchResults } from '@/src/lib/rag/context';
+import { calculateAnswerConfidence, sourceConfidenceFromScore, type AnswerConfidence } from '@/src/lib/rag/confidence';
 import { buildNoAnswerMessage, generateFollowUps } from '@/src/lib/rag/followups';
 import { getRetrievalSettings } from '@/src/lib/rag/intent';
+import {
+  getQdrantFetchK,
+  getRerankTopK,
+  mergeRetrievalCandidates,
+  rerankCandidates,
+  searchQdrantVector,
+  type RetrievalCandidate,
+} from '@/src/lib/rag/retrieval';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { ALL_ROLES, isWorkspaceAdminRole, type AnyAppRole } from '@/src/lib/workspace';
@@ -30,6 +40,9 @@ type Citation = {
   chunk_text: string;
   uploaded_at: string | null;
   uploaded_by: string | null;
+  document_category?: string | null;
+  relevance_score?: number;
+  confidence?: AnswerConfidence;
 };
 
 type ChatCompletePayload = {
@@ -40,6 +53,7 @@ type ChatCompletePayload = {
   statusMessage: string;
   noAnswer: boolean;
   followUps: string[];
+  confidence: AnswerConfidence;
 };
 
 function dedupeCitations(citations: Citation[]) {
@@ -99,6 +113,107 @@ function logRetrievalDebug(label: string, payload: Record<string, unknown>) {
   console.info(`[RAG Debug] ${label}`, payload);
 }
 
+type AnswerMode = 'summary' | 'detailed' | 'executive' | 'technical';
+
+function normalizeAnswerMode(value: unknown): AnswerMode {
+  return value === 'summary' || value === 'executive' || value === 'technical'
+    ? value
+    : 'detailed';
+}
+
+function extractKeywordTerms(question: string) {
+  const quoted = Array.from(question.matchAll(/"([^"]{2,80})"/g)).map((match) => match[1]);
+  const tokens = question
+    .split(/\s+/)
+    .map((token) => token.replace(/[^\w.-]/g, '').trim())
+    .filter((token) => {
+      if (token.length < 3) return false;
+      return /\d/.test(token) || /[A-Z]{2,}/.test(token) || token.includes('-') || token.includes('.');
+    });
+
+  return Array.from(new Set([...quoted, ...tokens])).slice(0, 8);
+}
+
+function escapeIlikeTerm(term: string) {
+  return term.replace(/[%_]/g, '').replace(/[^\w.\- ]/g, '').slice(0, 80);
+}
+
+async function keywordSearch({
+  supabase,
+  workspaceId,
+  question,
+  limit,
+}: {
+  supabase: ReturnType<typeof getSupabaseAdmin>;
+  workspaceId: string;
+  question: string;
+  limit: number;
+}): Promise<RetrievalCandidate[]> {
+  const terms = extractKeywordTerms(question).map(escapeIlikeTerm).filter(Boolean);
+
+  if (terms.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('document_chunks')
+    .select('document_id, chunk_index, chunk_text, table_metadata, documents!inner(filename, document_category, document_keywords, document_summary)')
+    .eq('workspace_id', workspaceId)
+    .or(terms.map((term) => `chunk_text.ilike.%${term}%`).join(','))
+    .limit(limit);
+
+  if (error) {
+    console.warn('[RAG] keyword search skipped', error);
+  }
+
+  const chunkRows = error ? [] : data || [];
+  const { data: matchingDocuments } = await supabase
+    .from('documents')
+    .select('id, filename, document_category, document_keywords, document_summary')
+    .eq('workspace_id', workspaceId)
+    .or(
+      terms
+        .map((term) => `filename.ilike.%${term}%,document_category.ilike.%${term}%,document_summary.ilike.%${term}%`)
+        .join(','),
+    )
+    .limit(6);
+  const matchingDocumentIds = (matchingDocuments || []).map((document: any) => document.id);
+  const { data: documentChunkRows } = matchingDocumentIds.length
+    ? await supabase
+        .from('document_chunks')
+        .select('document_id, chunk_index, chunk_text, table_metadata, documents!inner(filename, document_category, document_keywords, document_summary)')
+        .eq('workspace_id', workspaceId)
+        .in('document_id', matchingDocumentIds)
+        .limit(Math.max(1, Math.floor(limit / 2)))
+    : { data: [] };
+
+  return ([...chunkRows, ...(documentChunkRows || [])] as any[]).map((row: any, index: number) => {
+    const document = Array.isArray(row.documents) ? row.documents[0] : row.documents;
+    const chunkText = String(row.chunk_text || '');
+    const matchCount = terms.filter((term) => chunkText.toLowerCase().includes(term.toLowerCase())).length;
+    const score = Math.min(0.72, 0.42 + matchCount * 0.08);
+
+    return {
+      id: `keyword-${row.document_id}-${row.chunk_index}-${index}`,
+      version: 0,
+      score,
+      hybrid_source: 'keyword',
+      payload: {
+        workspace_id: workspaceId,
+        document_id: row.document_id,
+        filename: document?.filename || 'Unknown file',
+        document_category: document?.document_category || null,
+        document_keywords: document?.document_keywords || [],
+        document_summary: document?.document_summary || null,
+        table_metadata: row.table_metadata || {},
+        chunk_index: row.chunk_index,
+        chunk_text: chunkText,
+        preview: chunkText.slice(0, 180),
+      },
+    } as RetrievalCandidate;
+  });
+}
+
 async function streamTextFallback(
   text: string,
   onChunk: (delta: string) => void,
@@ -119,7 +234,7 @@ async function streamTextFallback(
 export async function POST(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req, ALL_ROLES);
-    const { question, session_id } = await req.json();
+    const { question, session_id, answer_mode } = await req.json();
     await assertWorkspaceOperational(profile.workspace_id!);
 
     if (typeof question !== 'string' || !question.trim()) {
@@ -131,6 +246,7 @@ export async function POST(req: Request) {
     }
 
     const normalizedQuestion = question.trim();
+    const answerMode = normalizeAnswerMode(answer_mode);
     const supabase = getSupabaseAdmin();
     const chatSession = await resolveOwnedChatSession(supabase, {
       sessionId: session_id,
@@ -171,6 +287,7 @@ export async function POST(req: Request) {
         };
 
         try {
+          const totalStartedAt = Date.now();
           const statuses = buildStatusMessages(profile.role);
           const retrievalSettings = getRetrievalSettings(normalizedQuestion);
 
@@ -178,9 +295,8 @@ export async function POST(req: Request) {
           await ensureQdrantCollection();
 
           const queryVector = await embedOne(normalizedQuestion, 'query');
-          const workspaceFilter = {
-            must: [{ key: 'workspace_id', match: { value: profile.workspace_id } }],
-          };
+          const fetchK = Math.max(getQdrantFetchK(), retrievalSettings.topK);
+          const rerankTopK = Math.max(getRerankTopK(), retrievalSettings.maxFinalChunks);
 
           logRetrievalDebug('query', {
             workspace_id: profile.workspace_id,
@@ -191,43 +307,74 @@ export async function POST(req: Request) {
             query: normalizedQuestion,
             query_vector_length: queryVector.length,
             intent: retrievalSettings.intent,
-            top_k: retrievalSettings.topK,
+            qdrant_fetch_k: fetchK,
+            rerank_top_k: rerankTopK,
             score_threshold: retrievalSettings.scoreThreshold,
             max_final_chunks: retrievalSettings.maxFinalChunks,
             max_context_characters: retrievalSettings.maxContextCharacters,
+            answer_mode: answerMode,
           });
 
-          let searchResults = await qdrant.search(COLLECTION_NAME, {
+          const retrievalStartedAt = Date.now();
+          let vectorResults = await searchQdrantVector({
             vector: queryVector,
-            filter: workspaceFilter,
-            limit: retrievalSettings.topK,
-            score_threshold: retrievalSettings.scoreThreshold,
-            with_payload: true,
+            workspaceId: profile.workspace_id!,
+            limit: fetchK,
+            scoreThreshold: retrievalSettings.scoreThreshold,
           });
+          const keywordResults = await keywordSearch({
+            supabase,
+            workspaceId: profile.workspace_id!,
+            question: normalizedQuestion,
+            limit: 12,
+          });
+          let searchResults = mergeRetrievalCandidates(vectorResults, keywordResults);
+          const retrievalMs = Date.now() - retrievalStartedAt;
 
           logRetrievalDebug('qdrant-search', {
-            result_count: searchResults.length,
-            top_results: summarizeSearchResults(searchResults),
+            vector_result_count: vectorResults.length,
+            keyword_result_count: keywordResults.length,
+            merged_result_count: searchResults.length,
+            retrieval_ms: retrievalMs,
+            top_results: summarizeSearchResults(searchResults as Awaited<ReturnType<typeof qdrant.search>>),
           });
 
-          if (searchResults.length === 0 && retrievalSettings.scoreThreshold > 0) {
+          if (vectorResults.length === 0 && searchResults.length === 0 && retrievalSettings.scoreThreshold > 0) {
             logRetrievalDebug('qdrant-search-retry-no-threshold', {
               reason: 'No results passed score threshold; retrying once without score_threshold while preserving workspace filter.',
               previous_score_threshold: retrievalSettings.scoreThreshold,
             });
 
-            searchResults = await qdrant.search(COLLECTION_NAME, {
+            vectorResults = await searchQdrantVector({
               vector: queryVector,
-              filter: workspaceFilter,
-              limit: retrievalSettings.topK,
-              with_payload: true,
+              workspaceId: profile.workspace_id!,
+              limit: fetchK,
             });
+            searchResults = mergeRetrievalCandidates(vectorResults, keywordResults);
 
             logRetrievalDebug('qdrant-search-no-threshold', {
               result_count: searchResults.length,
-              top_results: summarizeSearchResults(searchResults),
+              top_results: summarizeSearchResults(searchResults as Awaited<ReturnType<typeof qdrant.search>>),
             });
           }
+
+          const rerankStartedAt = Date.now();
+          const rerankResult = await rerankCandidates({
+            query: normalizedQuestion,
+            candidates: searchResults,
+          });
+          searchResults = rerankResult.candidates.slice(0, rerankTopK);
+          const rerankMs = Date.now() - rerankStartedAt;
+
+          console.info('[RAG] retrieval', {
+            provider: rerankResult.provider,
+            workspace_id: profile.workspace_id,
+            documents_retrieved: new Set(searchResults.map((result) => result.payload?.document_id).filter(Boolean)).size,
+            candidates_retrieved: vectorResults.length + keywordResults.length,
+            candidates_reranked: rerankResult.rerankedCount,
+            retrieval_ms: retrievalMs,
+            rerank_ms: rerankMs,
+          });
 
           if (clientAborted) {
             closeStream();
@@ -244,13 +391,19 @@ export async function POST(req: Request) {
 
           const documentMetaById = new Map<
             string,
-            { created_at: string | null; user_id: string | null }
+            {
+              created_at: string | null;
+              user_id: string | null;
+              document_category: string | null;
+              document_keywords: string[];
+              document_summary: string | null;
+            }
           >();
 
           if (documentIds.length > 0) {
             const { data: documentMeta, error: documentMetaError } = await supabase
               .from('documents')
-              .select('id, created_at, user_id')
+              .select('id, created_at, user_id, document_category, document_keywords, document_summary')
               .in('id', documentIds)
               .eq('workspace_id', profile.workspace_id);
 
@@ -262,6 +415,9 @@ export async function POST(req: Request) {
               documentMetaById.set(item.id, {
                 created_at: item.created_at || null,
                 user_id: item.user_id || null,
+                document_category: item.document_category || null,
+                document_keywords: item.document_keywords || [],
+                document_summary: item.document_summary || null,
               });
             }
           }
@@ -279,15 +435,23 @@ export async function POST(req: Request) {
                 chunk_text: String(result.payload?.chunk_text || ''),
                 uploaded_at: documentMeta?.created_at || null,
                 uploaded_by: documentMeta?.user_id || null,
+                document_category:
+                  documentMeta?.document_category ||
+                  String(result.payload?.document_category || '') ||
+                  null,
+                relevance_score: Number((result as RetrievalCandidate).rerank_score || result.score || 0),
+                confidence: sourceConfidenceFromScore(Number((result as RetrievalCandidate).rerank_score || result.score || 0)),
               };
             }),
           );
 
           let answer = STRICT_NO_ANSWER;
           let followUps: string[] = [];
+          let confidence: AnswerConfidence = 'low';
           const retrievedFilenames = Array.from(
             new Set(searchResults.map((result) => String(result.payload?.filename || '')).filter(Boolean)),
           );
+          const generationStartedAt = Date.now();
 
           if (searchResults.length > 0) {
             const compressedContext = compressSearchResults({
@@ -295,17 +459,56 @@ export async function POST(req: Request) {
               maxFinalChunks: retrievalSettings.maxFinalChunks,
               maxContextCharacters: retrievalSettings.maxContextCharacters,
             });
+            const preliminaryConfidence = calculateAnswerConfidence({
+              retrievalScores: searchResults.map((result) => Number(result.score || 0)),
+              rerankScores: searchResults
+                .map((result) => Number((result as RetrievalCandidate).rerank_score || 0))
+                .filter((score) => score > 0),
+              documentCount: compressedContext.documentCount,
+              contextChunkCount: compressedContext.chunks.length,
+              noAnswer: false,
+            });
+            const documentCategories = Array.from(
+              new Set(compressedContext.chunks.map((chunk) => chunk.documentCategory || '').filter(Boolean)),
+            );
+            const sourceTypes = Array.from(
+              new Set(
+                compressedContext.chunks
+                  .map((chunk) => chunk.filename.split('.').pop()?.toLowerCase() || '')
+                  .filter(Boolean),
+              ),
+            );
+            const hasTableMetadata = compressedContext.chunks.some(
+              (chunk) => chunk.tableMetadata && Object.keys(chunk.tableMetadata).length > 0,
+            );
+            const answerIntelligenceInstructions = buildAnswerIntelligenceInstructions({
+              intent: retrievalSettings.intent,
+              answerMode,
+              confidence: preliminaryConfidence,
+              documentCategories,
+              sourceTypes,
+              hasTableMetadata,
+            });
             logRetrievalDebug('context', {
               qdrant_result_count: searchResults.length,
               context_chunk_count: compressedContext.chunks.length,
               context_document_count: compressedContext.documentCount,
               context_character_count: compressedContext.characterCount,
+              preliminary_confidence: preliminaryConfidence,
+              document_categories: documentCategories,
+              source_types: sourceTypes,
+              has_table_metadata: hasTableMetadata,
             });
 
             sendEvent('status', { message: statuses.matching });
             sendEvent('status', { message: statuses.preparing });
 
-            const streamResult = await streamStrictAnswer(normalizedQuestion, compressedContext.context);
+            const streamResult = await streamStrictAnswer(
+              normalizedQuestion,
+              compressedContext.context,
+              answerMode,
+              answerIntelligenceInstructions,
+            );
             let generatedAnswer = '';
 
             for await (const chunk of streamResult.stream) {
@@ -346,12 +549,36 @@ export async function POST(req: Request) {
           }
 
           const noAnswer = answer.startsWith("I couldn't find support");
+          confidence = calculateAnswerConfidence({
+            retrievalScores: searchResults.map((result) => Number(result.score || 0)),
+            rerankScores: searchResults
+              .map((result) => Number((result as RetrievalCandidate).rerank_score || 0))
+              .filter((score) => score > 0),
+            documentCount: new Set(searchResults.map((result) => result.payload?.document_id).filter(Boolean)).size,
+            contextChunkCount: searchResults.length,
+            noAnswer,
+          });
           followUps = generateFollowUps({
             question: normalizedQuestion,
             answer,
             intent: retrievalSettings.intent,
             filenames: retrievedFilenames,
+            documentCategories: citations.map((citation) => citation.document_category || '').filter(Boolean),
+            hasTableMetadata: searchResults.some(
+              (result) =>
+                result.payload?.table_metadata &&
+                typeof result.payload.table_metadata === 'object' &&
+                Object.keys(result.payload.table_metadata).length > 0,
+            ),
             noAnswer,
+          });
+
+          const generationMs = Date.now() - generationStartedAt;
+          console.info('[RAG] timings', {
+            retrieval_ms: retrievalMs,
+            rerank_ms: rerankMs,
+            generation_ms: generationMs,
+            total_ms: Date.now() - totalStartedAt,
           });
 
           if (noAnswer) {
@@ -404,6 +631,7 @@ export async function POST(req: Request) {
                 : 'Answer generated from verified sources',
             noAnswer,
             followUps,
+            confidence,
           };
 
           sendEvent('complete', completePayload);

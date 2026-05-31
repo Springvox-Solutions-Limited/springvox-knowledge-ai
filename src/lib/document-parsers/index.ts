@@ -6,7 +6,14 @@ import { CsvParser } from './csv';
 import { XlsxParser } from './xlsx';
 import { PptxParser } from './pptx';
 import { LlamaParseParser } from './llamaparse';
-import { isWeakParsedText, toNodeBuffer, type DocumentParser, type DocumentParserInput, type ParsedDocument } from './types';
+import {
+  assessExtractionQuality,
+  isWeakParsedText,
+  toNodeBuffer,
+  type DocumentParser,
+  type DocumentParserInput,
+  type ParsedDocument,
+} from './types';
 
 export * from './types';
 export * from './pdf';
@@ -33,8 +40,17 @@ function isLlamaParseEnabled() {
   return process.env.LLAMAPARSE_ENABLED === 'true' && getLlamaParseMode() !== 'off';
 }
 
+function hasLlamaParseApiKey() {
+  return Boolean(process.env.LLAMAPARSE_API_KEY || process.env.LLAMA_CLOUD_API_KEY);
+}
+
+function isLlamaParseComplexOnly() {
+  return process.env.LLAMAPARSE_COMPLEX_ONLY !== 'false';
+}
+
 function isLlamaParseSupportedFile(extension: string, mimeType?: string) {
-  return (
+  const complexOnly = isLlamaParseComplexOnly();
+  const isComplexFile =
     extension === '.pdf' ||
     extension === '.docx' ||
     extension === '.pptx' ||
@@ -42,7 +58,55 @@ function isLlamaParseSupportedFile(extension: string, mimeType?: string) {
     mimeType === 'application/pdf' ||
     mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
     mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-    mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+
+  if (complexOnly) {
+    return isComplexFile;
+  }
+
+  return isComplexFile;
+}
+
+function withParserMetadata(
+  result: ParsedDocument,
+  {
+    mode,
+    parserUsed,
+    fallbackUsed,
+    localParser,
+    warnings,
+    fileByteLength,
+  }: {
+    mode: LlamaParseMode;
+    parserUsed?: string;
+    fallbackUsed: boolean;
+    localParser?: string;
+    warnings?: string[];
+    fileByteLength: number;
+  },
+): ParsedDocument {
+  const parser = parserUsed || result.metadata?.parser || 'unknown';
+
+  return {
+    ...result,
+    metadata: {
+      ...result.metadata,
+      parser,
+      parser_used: parser,
+      parser_mode: mode,
+      local_parser_used: localParser || result.metadata?.localParser || result.metadata?.parser,
+      fallback_used: fallbackUsed,
+      fallbackUsed,
+      llamaParseMode: mode,
+      extraction_quality: assessExtractionQuality(result.text, fileByteLength),
+      warnings: warnings || result.metadata?.warnings,
+    },
+  };
+}
+
+function warnMissingLlamaParseKey() {
+  console.warn(
+    '[LlamaParse] LLAMAPARSE_ENABLED is true, but LLAMAPARSE_API_KEY is not configured. Using local parsers only.',
   );
 }
 
@@ -133,10 +197,30 @@ export async function parseDocument({
 }): Promise<ParsedDocument> {
   const extension = getFileExtension(filename);
   const mode = getLlamaParseMode();
+  const fileByteLength = toNodeBuffer(buffer).byteLength;
   const shouldConsiderLlamaParse = isLlamaParseEnabled() && isLlamaParseSupportedFile(extension, mimeType);
 
   if (!shouldConsiderLlamaParse) {
-    return parseLocalDocument(buffer, filename, extension, mimeType);
+    const localResult = await parseLocalDocument(buffer, filename, extension, mimeType);
+    return withParserMetadata(localResult, {
+      mode: 'off',
+      fallbackUsed: false,
+      fileByteLength,
+    });
+  }
+
+  if (!hasLlamaParseApiKey()) {
+    warnMissingLlamaParseKey();
+    const localResult = await parseLocalDocument(buffer, filename, extension, mimeType);
+    return withParserMetadata(localResult, {
+      mode,
+      fallbackUsed: false,
+      fileByteLength,
+      warnings: [
+        ...(localResult.metadata?.warnings || []),
+        'LlamaParse was enabled but no API key was configured, so the local parser was used.',
+      ],
+    });
   }
 
   if (mode === 'force') {
@@ -157,15 +241,12 @@ export async function parseDocument({
         }`,
       ];
 
-      return {
-        ...localResult,
-        metadata: {
-          ...localResult.metadata,
-          warnings,
-          fallbackUsed: true,
-          llamaParseMode: mode,
-        },
-      };
+      return withParserMetadata(localResult, {
+        mode,
+        fallbackUsed: true,
+        fileByteLength,
+        warnings,
+      });
     }
   }
 
@@ -178,18 +259,14 @@ export async function parseDocument({
     localError = error;
   }
 
-  const fileByteLength = toNodeBuffer(buffer).byteLength;
   const localTextIsWeak = localResult ? isWeakParsedText(localResult.text, fileByteLength) : true;
 
   if (localResult && !localTextIsWeak) {
-    return {
-      ...localResult,
-      metadata: {
-        ...localResult.metadata,
-        fallbackUsed: false,
-        llamaParseMode: mode,
-      },
-    };
+    return withParserMetadata(localResult, {
+      mode,
+      fallbackUsed: false,
+      fileByteLength,
+    });
   }
 
   try {
@@ -209,20 +286,17 @@ export async function parseDocument({
     });
   } catch (llamaParseError) {
     if (localResult) {
-      return {
-        ...localResult,
-        metadata: {
-          ...localResult.metadata,
-          fallbackUsed: false,
-          llamaParseMode: mode,
-          warnings: [
-            ...(localResult.metadata?.warnings || []),
-            `LlamaParse fallback failed, so the local parser result was kept: ${
-              llamaParseError instanceof Error ? llamaParseError.message : 'Unknown LlamaParse error'
-            }`,
-          ],
-        },
-      };
+      return withParserMetadata(localResult, {
+        mode,
+        fallbackUsed: false,
+        fileByteLength,
+        warnings: [
+          ...(localResult.metadata?.warnings || []),
+          `LlamaParse fallback failed, so the local parser result was kept: ${
+            llamaParseError instanceof Error ? llamaParseError.message : 'Unknown LlamaParse error'
+          }`,
+        ],
+      });
     }
 
     throw llamaParseError;

@@ -4,6 +4,7 @@ import {
   GEMINI_EMBEDDING_DIMENSIONS,
   embedManyWithGemini,
   generateStrictAnswer,
+  generateDocumentIntelligence,
   streamStrictAnswer,
   STRICT_NO_ANSWER,
 } from './providers/gemini';
@@ -12,15 +13,18 @@ import {
   VOYAGE_BATCH_SIZE,
   VOYAGE_EMBEDDING_MODEL,
   VOYAGE_MAX_CONCURRENT_BATCHES,
+  VOYAGE_RERANK_MODEL,
   embedBatchWithVoyage,
   getVoyageEmbeddingDimensions,
+  rerankWithVoyage,
 } from './providers/voyage';
 
 type EmbeddingProvider = 'gemini' | 'voyage';
 type ChatProvider = 'gemini';
 type EmbeddingInputType = 'document' | 'query';
 
-export { generateStrictAnswer, streamStrictAnswer, STRICT_NO_ANSWER };
+export { generateStrictAnswer, generateDocumentIntelligence, streamStrictAnswer, STRICT_NO_ANSWER };
+export { VOYAGE_RERANK_MODEL, rerankWithVoyage };
 
 export function getChatProvider(): ChatProvider {
   const provider = (process.env.SPRINGVOX_CHAT_PROVIDER || 'gemini').toLowerCase();

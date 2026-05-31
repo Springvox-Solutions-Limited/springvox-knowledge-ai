@@ -15,6 +15,13 @@ export class XlsxParser implements DocumentParser {
       const workbook = XLSX.read(buffer, { type: 'buffer' });
       let markdown = '';
       const warnings: string[] = [];
+      const sheets: Array<{
+        name: string;
+        rowCount: number;
+        columnCount: number;
+        columns: string[];
+        truncated?: boolean;
+      }> = [];
       const MAX_SHEET_ROWS = 500;
 
       const escapeCell = (cell: any) => {
@@ -38,6 +45,13 @@ export class XlsxParser implements DocumentParser {
           const formattedHeaders = headers.map((h, i) =>
             h !== undefined && h !== null && h !== '' ? String(h) : `Column ${i + 1}`
           );
+          sheets.push({
+            name: sheetName,
+            rowCount: data.length,
+            columnCount: formattedHeaders.length,
+            columns: formattedHeaders.map(String),
+            truncated: isTruncated || undefined,
+          });
 
           markdown += `| ${formattedHeaders.map(escapeCell).join(' | ')} |\n`;
           markdown += `| ${formattedHeaders.map(() => '---').join(' | ')} |\n`;
@@ -69,6 +83,9 @@ export class XlsxParser implements DocumentParser {
           sheetCount: workbook.SheetNames.length,
           wordCount: countWords(markdown),
           warnings: warnings.length > 0 ? warnings : undefined,
+          tableMetadata: {
+            sheets,
+          },
         },
       };
     } catch (err) {

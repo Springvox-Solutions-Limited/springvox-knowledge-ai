@@ -43,6 +43,7 @@ type DashboardNotification = {
   title: string;
   message: string;
   created_at: string;
+  is_read: boolean;
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -54,6 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [authLoading, setAuthLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
     async function loadAuthContext() {
@@ -85,17 +87,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         try {
           const token = await getAccessToken();
           if (token) {
-            const response = await fetch('/api/notifications', {
+            const response = await fetch('/api/notifications?limit=5&unreadOnly=true', {
               headers: { Authorization: `Bearer ${token}` },
             });
 
             if (response.ok) {
               const result = await response.json();
               setNotifications(result.notifications || []);
+              setUnreadNotificationCount(result.unreadCount || 0);
             }
           }
         } catch {
           setNotifications([]);
+          setUnreadNotificationCount(0);
         }
       } finally {
         setAuthLoading(false);
@@ -106,10 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [pathname, router]);
 
   const navItems = profile ? getNavItems(profile.role) : [];
-  const visibleNavItems =
-    profile && !isWorkspaceAdminRole(profile.role)
-      ? []
-      : navItems;
+  const visibleNavItems = navItems;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -183,6 +184,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
           {visibleNavItems.map((item) => {
             const isActive = pathname === item.href;
+            const showNotificationBadge = item.href === '/dashboard/notifications' && unreadNotificationCount > 0;
             return (
               <Link
                 key={item.name}
@@ -200,7 +202,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
               >
                 <item.icon size={18} className={cn("transition-all duration-300", isActive ? "text-cyan-200" : "text-slate-500 group-hover:text-slate-300")} />
-                <span className={cn("text-sm font-bold transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{item.name}</span>
+                <span className={cn("min-w-0 flex-1 text-sm font-bold transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{item.name}</span>
+                {showNotificationBadge ? (
+                  <span className="rounded-full bg-cyan-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">
+                    {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -309,6 +316,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     Platform Console
                   </Link>
                 )}
+                <Link
+                  href="/dashboard/notifications"
+                  aria-label={`${unreadNotificationCount} unread notifications`}
+                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
+                >
+                  <Bell size={16} />
+                  {unreadNotificationCount > 0 ? (
+                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-cyan-500 px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">
+                      {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+                    </span>
+                  ) : null}
+                </Link>
                 <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 sm:px-4">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                     Online
@@ -325,9 +344,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
                 {notifications.map((notification) => (
-                  <div
+                  <Link
+                    href="/dashboard/notifications"
                     key={notification.id}
-                    className="flex min-w-[16rem] max-w-full items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm shadow-sm sm:min-w-0 sm:max-w-[28rem]"
+                    className="flex min-w-[16rem] max-w-full items-start gap-3 rounded-2xl border border-cyan-200 bg-cyan-50/70 px-3 py-2 text-sm shadow-sm transition hover:bg-cyan-50 sm:min-w-0 sm:max-w-[28rem]"
                   >
                     <span className={cn(
                       "mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em]",
@@ -343,7 +363,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         {notification.message}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -447,7 +467,7 @@ function getDefaultPathForRole(role: UserProfile['role']) {
 
 function isAllowedPath(role: UserProfile['role'], pathname: string) {
   if (!isWorkspaceAdminRole(role)) {
-    return pathname === '/dashboard/chat';
+    return pathname === '/dashboard/chat' || pathname === '/dashboard/notifications';
   }
 
   return true;
@@ -455,7 +475,10 @@ function isAllowedPath(role: UserProfile['role'], pathname: string) {
 
 function getNavItems(role: UserProfile['role']) {
   if (!isWorkspaceAdminRole(role)) {
-    return [{ name: 'Ask Questions', href: '/dashboard/chat', icon: MessageSquare }];
+    return [
+      { name: 'Ask Questions', href: '/dashboard/chat', icon: MessageSquare },
+      { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+    ];
   }
 
   const items = [
@@ -464,6 +487,7 @@ function getNavItems(role: UserProfile['role']) {
     { name: 'Upload Documents', href: '/dashboard/upload', icon: Upload },
     { name: 'Ask Questions', href: '/dashboard/chat', icon: MessageSquare },
     { name: 'Analytics', href: '/dashboard/analytics', icon: ChartColumnBig },
+    { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
     { name: 'Users', href: '/dashboard/users', icon: Users },
     { name: 'Company Settings', href: '/dashboard/settings', icon: Settings },
     { name: 'Unanswered Questions', href: '/dashboard/knowledge-gaps', icon: CircleAlert },

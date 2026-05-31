@@ -61,6 +61,9 @@ type Citation = {
   chunk_text?: string;
   uploaded_at?: string | null;
   uploaded_by?: string | null;
+  document_category?: string | null;
+  relevance_score?: number;
+  confidence?: "high" | "medium" | "low";
 };
 
 type StoredChatMessage = {
@@ -85,6 +88,7 @@ type Message = {
   citations?: Citation[];
   followUps?: string[];
   statusMessage?: string;
+  confidence?: "high" | "medium" | "low";
   error?: boolean;
   chatMessageId?: string;
   feedbackSubmitted?: boolean;
@@ -103,6 +107,13 @@ const EXTRA_FEEDBACK_OPTIONS: FeedbackRating[] = [
   "outdated",
   "needs_more_detail",
 ];
+
+const ANSWER_MODES = [
+  { value: "summary", label: "Summary" },
+  { value: "detailed", label: "Detailed" },
+  { value: "executive", label: "Executive" },
+  { value: "technical", label: "Technical" },
+] as const;
 
 function useAutoResizeTextarea({
   minHeight,
@@ -181,6 +192,7 @@ export default function ChatPage() {
   const [deleteSessionId, setDeleteSessionId] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
+  const [answerMode, setAnswerMode] = useState<(typeof ANSWER_MODES)[number]["value"]>("detailed");
   const [isRecording, setIsRecording] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -198,6 +210,7 @@ export default function ChatPage() {
       followUps: string[];
       chatMessageId?: string;
       statusMessage?: string;
+      confidence?: "high" | "medium" | "low";
     };
   } | null>(null);
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
@@ -543,6 +556,7 @@ export default function ChatPage() {
       citations: pending.payload.citations || [],
       followUps: pending.payload.followUps || [],
       statusMessage: pending.payload.statusMessage || message.statusMessage,
+      confidence: pending.payload.confidence || message.confidence,
       chatMessageId: pending.payload.chatMessageId,
     }));
 
@@ -646,6 +660,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           question,
           session_id: activeSessionId,
+          answer_mode: answerMode,
         }),
         signal: controller.signal,
       });
@@ -714,6 +729,12 @@ export default function ChatPage() {
                   ? payload.chatMessageId
                   : undefined,
               statusMessage: String(payload.statusMessage || ""),
+              confidence:
+                payload.confidence === "high" ||
+                payload.confidence === "medium" ||
+                payload.confidence === "low"
+                  ? payload.confidence
+                  : undefined,
             };
 
             if (typingQueueRef.current) {
@@ -1059,6 +1080,17 @@ export default function ChatPage() {
                               </span>
                             </div>
 
+                            {message.confidence && (
+                              <div className="pl-0 sm:pl-10">
+                                <span className={cn(
+                                  "inline-flex rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em]",
+                                  getConfidenceClass(message.confidence),
+                                )}>
+                                  {formatConfidence(message.confidence)} Confidence
+                                </span>
+                              </div>
+                            )}
+
                             {!!message.content && (
                               <div className={cn(
                                 "markdown-container overflow-hidden pl-0 text-slate-800",
@@ -1191,6 +1223,27 @@ export default function ChatPage() {
                   "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(248,250,252,0)_0%,rgba(248,250,252,0.92)_24%,rgba(248,250,252,1)_100%)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6",
                 isViewer ? "px-1 pt-4 sm:px-4 sm:pb-6 sm:pt-5" : "px-0 pt-4 sm:px-2 sm:pb-5 sm:pt-5"
               )}>
+                <div className="mx-auto mb-3 flex max-w-4xl flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                    Answer mode
+                  </span>
+                  {ANSWER_MODES.map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => setAnswerMode(mode.value)}
+                      disabled={loading}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+                        answerMode === mode.value
+                          ? "border-cyan-300 bg-cyan-50 text-cyan-800"
+                          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50",
+                      )}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
                 <form onSubmit={handleSend} className={cn(
                   "relative",
                   isViewer ? "mx-auto max-w-4xl" : "mx-auto max-w-4xl"
@@ -1583,10 +1636,26 @@ function CitationList({
                       </p>
                       <p className="mt-1 text-[11px] text-slate-500">
                         Section {citation.chunk_index}
+                        {citation.document_category ? ` · ${citation.document_category}` : ""}
                       </p>
                     </div>
-                    <span className="text-[11px] text-teal-600">Open</span>
+                    <div className="shrink-0 text-right">
+                      <span className="text-[11px] text-teal-600">Open</span>
+                      {citation.relevance_score ? (
+                        <p className="mt-1 text-[10px] text-slate-400">
+                          {(citation.relevance_score * 100).toFixed(0)}% relevance
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
+                  {citation.confidence ? (
+                    <span className={cn(
+                      "mt-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]",
+                      getConfidenceClass(citation.confidence),
+                    )}>
+                      {formatConfidence(citation.confidence)}
+                    </span>
+                  ) : null}
                   <p className="mt-2 text-xs leading-6 text-slate-500">
                     {truncate(citation.preview, 120)}
                   </p>
@@ -1604,6 +1673,22 @@ function CitationList({
       )}
     </div>
   );
+}
+
+function formatConfidence(confidence: "high" | "medium" | "low") {
+  return confidence.charAt(0).toUpperCase() + confidence.slice(1);
+}
+
+function getConfidenceClass(confidence: "high" | "medium" | "low") {
+  if (confidence === "high") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (confidence === "medium") {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  return "border-red-200 bg-red-50 text-red-700";
 }
 
 function FeedbackRow({

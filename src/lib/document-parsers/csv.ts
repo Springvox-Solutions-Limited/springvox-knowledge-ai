@@ -32,8 +32,8 @@ export class CsvParser implements DocumentParser {
       };
 
       let markdown = '';
+      const headers = rowsToProcess[0] || [];
       if (rowsToProcess.length > 0) {
-        const headers = rowsToProcess[0];
         markdown += `| ${headers.map(escapeCell).join(' | ')} |\n`;
         markdown += `| ${headers.map(() => '---').join(' | ')} |\n`;
         for (let i = 1; i < rowsToProcess.length; i++) {
@@ -55,6 +55,12 @@ export class CsvParser implements DocumentParser {
           parser: 'papaparse-csv',
           wordCount: countWords(markdown),
           warnings: warnings.length > 0 ? warnings : undefined,
+          tableMetadata: {
+            columns: headers.map((header, index) => header || `Column ${index + 1}`),
+            rowCount: data.length,
+            columnCount: headers.length,
+            truncated: isTruncated || undefined,
+          },
         },
       };
     } catch (err) {

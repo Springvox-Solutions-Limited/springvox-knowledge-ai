@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { inngest } from './client';
 import { getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { buildPreview, chunkDocumentText } from '@/src/lib/documents';
-import { embedMany, getEmbeddingProvider } from '@/src/lib/ai';
+import { embedMany, generateDocumentIntelligence, getEmbeddingProvider } from '@/src/lib/ai';
 import { COLLECTION_NAME, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
 import { parseDocument } from '@/src/lib/document-parsers';
 import { sendEmail } from '@/src/lib/email';
@@ -141,8 +141,24 @@ function isMissingDocumentMetadataColumnError(error: unknown) {
     serialized.code === 'PGRST204' &&
     (message.includes("'parser' column") ||
       message.includes("'parser_metadata' column") ||
-      message.includes("'word_count' column"))
+      message.includes("'word_count' column") ||
+      message.includes("'document_summary' column") ||
+      message.includes("'document_keywords' column") ||
+      message.includes("'document_category' column"))
   );
+}
+
+function inferDocumentCategory(filename: string, parser?: string | null) {
+  const lower = filename.toLowerCase();
+
+  if (parser?.includes('xlsx') || parser?.includes('csv') || /\.(xlsx|csv)$/.test(lower)) return 'Spreadsheet';
+  if (lower.includes('policy') || lower.includes('handbook')) return 'Policy';
+  if (lower.includes('contract') || lower.includes('agreement')) return 'Contract';
+  if (lower.includes('manual')) return 'Manual';
+  if (lower.includes('guide') || lower.includes('cisco')) return 'Technical Guide';
+  if (lower.endsWith('.pptx')) return 'Presentation';
+  if (lower.includes('report') || lower.includes('financial')) return 'Financial Report';
+  return 'Other';
 }
 
 async function runLoggedOperation<T>(operation: string, fn: () => Promise<T> | T) {
@@ -210,6 +226,27 @@ export const processDocument = inngest.createFunction(
 
         await runLoggedOperation('qdrant-ensure-collection', () => ensureQdrantCollection());
 
+        const documentIntelligence = await runLoggedOperation('document-intelligence', async () => {
+          try {
+            return await generateDocumentIntelligence({
+              filename: originalFilename,
+              text: parsedResult.text,
+              parser: parserMetadata?.parser || null,
+            });
+          } catch (error) {
+            console.warn('[Inngest] document-intelligence skipped', serializeError(error));
+            return {
+              summary: buildPreview(parsedResult.text, 500),
+              keywords: originalFilename
+                .replace(/\.[^.]+$/, '')
+                .split(/[\s_\-.,]+/)
+                .filter(Boolean)
+                .slice(0, 8),
+              category: inferDocumentCategory(originalFilename, parserMetadata?.parser),
+            };
+          }
+        });
+
         await runLoggedOperation('cleanup-existing-index', async () => {
           await qdrant.delete(COLLECTION_NAME, {
             filter: {
@@ -248,6 +285,7 @@ export const processDocument = inngest.createFunction(
             chunk_index: chunkIndex,
             chunk_text: chunkText,
             qdrant_point_id: pointId,
+            table_metadata: parserMetadata?.tableMetadata || {},
           });
 
           points.push({
@@ -258,6 +296,10 @@ export const processDocument = inngest.createFunction(
               uploaded_by: userId,
               document_id: documentId,
               filename: originalFilename,
+              document_summary: documentIntelligence.summary,
+              document_keywords: documentIntelligence.keywords,
+              document_category: documentIntelligence.category,
+              table_metadata: parserMetadata?.tableMetadata || {},
               chunk_index: chunkIndex,
               chunk_text: chunkText,
               preview: buildPreview(chunkText),
@@ -289,6 +331,9 @@ export const processDocument = inngest.createFunction(
               parser: parserMetadata?.parser || null,
               parser_metadata: parserMetadata || null,
               word_count: parserMetadata?.wordCount || null,
+              document_summary: documentIntelligence.summary || null,
+              document_keywords: documentIntelligence.keywords || [],
+              document_category: documentIntelligence.category || 'Other',
             })
             .eq('id', documentId);
 
@@ -324,6 +369,7 @@ export const processDocument = inngest.createFunction(
           parser: parserMetadata?.parser || null,
           embeddingProvider: getEmbeddingProvider(),
           wordCount: parserMetadata?.wordCount || null,
+          documentCategory: documentIntelligence.category || 'Other',
         };
       });
 

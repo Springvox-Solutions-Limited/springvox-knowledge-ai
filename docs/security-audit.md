@@ -62,6 +62,14 @@ Phase 4 audit covered the current Next.js App Router application, Supabase acces
 - Trial billing/payment collection is not implemented yet; platform admins can manually activate/suspend/expire workspaces.
 - Audit logs are write-only from server code and selectable by workspace admins through RLS, but no audit log UI exists yet.
 
+## Supabase Dashboard Actions
+
+Enable leaked password protection manually in Supabase:
+
+Supabase Dashboard -> Authentication -> Password Security -> Enable leaked password protection.
+
+This is a Supabase Auth configuration setting, not a SQL migration. Do not attempt to enable it through SQL unless Supabase exposes an official SQL-supported configuration path for the project.
+
 ## Cleanup Audit
 
 No files were deleted in this pass. Static route/component review did not identify a confirmed unused file safe enough to remove without risking active pages, docs, migrations, or security-related behavior.

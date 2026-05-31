@@ -94,7 +94,7 @@ export async function POST(req: Request) {
       notificationId: notification.id,
       message:
         channel !== 'in_app' && !emailProviderConfigured
-          ? 'Notification saved. Email provider is not configured yet.'
+          ? 'Notification saved. Email delivery is skipped because Resend is not configured.'
           : 'Notification saved.',
     });
   } catch (error) {

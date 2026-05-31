@@ -1,5 +1,12 @@
 import LlamaCloud, { toFile } from '@llamaindex/llama-cloud';
-import { countWords, toNodeBuffer, type DocumentParser, type DocumentParserInput, type ParsedDocument } from './types';
+import {
+  assessExtractionQuality,
+  countWords,
+  toNodeBuffer,
+  type DocumentParser,
+  type DocumentParserInput,
+  type ParsedDocument,
+} from './types';
 
 type LlamaParseMode = 'off' | 'fallback' | 'force';
 
@@ -71,6 +78,12 @@ export class LlamaParseParser implements DocumentParser {
       text: extractedText,
       metadata: {
         parser: 'llamaparse',
+        parser_used: 'llamaparse',
+        parser_mode: this.options.mode,
+        llama_parse_job_id: result.job?.id,
+        local_parser_used: this.options.localParser,
+        fallback_used: this.options.fallbackUsed,
+        extraction_quality: assessExtractionQuality(extractedText, nodeBuffer.byteLength),
         fallbackUsed: this.options.fallbackUsed,
         extractedFormat: markdown ? 'markdown' : 'text',
         localParser: this.options.localParser,

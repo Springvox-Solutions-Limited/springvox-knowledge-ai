@@ -1,9 +1,16 @@
 export type DocumentParserInput = Buffer | ArrayBuffer;
+export type ExtractionQuality = 'strong' | 'medium' | 'weak';
 
 export type ParsedDocument = {
   text: string;
   metadata?: {
     parser: string;
+    parser_used?: string;
+    parser_mode?: 'off' | 'fallback' | 'force';
+    llama_parse_job_id?: string;
+    local_parser_used?: string;
+    fallback_used?: boolean;
+    extraction_quality?: ExtractionQuality;
     fallbackUsed?: boolean;
     extractedFormat?: 'markdown' | 'text';
     localParser?: string;
@@ -14,6 +21,19 @@ export type ParsedDocument = {
     slideCount?: number;
     wordCount?: number;
     warnings?: string[];
+    tableMetadata?: {
+      sheets?: Array<{
+        name: string;
+        rowCount: number;
+        columnCount: number;
+        columns: string[];
+        truncated?: boolean;
+      }>;
+      columns?: string[];
+      rowCount?: number;
+      columnCount?: number;
+      truncated?: boolean;
+    };
   };
 };
 
@@ -74,4 +94,21 @@ export function isWeakParsedText(text: string, fileByteLength = 0) {
   const alphabeticRatio = letters / Math.max(visibleCharacters, 1);
 
   return visibleCharacters > 200 && alphabeticRatio < 0.2;
+}
+
+export function assessExtractionQuality(text: string, fileByteLength = 0): ExtractionQuality {
+  if (isWeakParsedText(text, fileByteLength)) {
+    return 'weak';
+  }
+
+  const trimmed = text.trim();
+  const wordCount = countWords(trimmed);
+  const isLikelyDocument = fileByteLength > 50 * 1024;
+  const lines = trimmed.split(/\n+/).filter(Boolean).length;
+
+  if (wordCount >= 250 || lines >= 20 || (isLikelyDocument && trimmed.length >= 1500)) {
+    return 'strong';
+  }
+
+  return 'medium';
 }

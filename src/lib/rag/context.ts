@@ -6,10 +6,14 @@ type SearchPoint = {
 export type ContextChunk = {
   filename: string;
   documentId: string | null;
+  documentCategory?: string | null;
+  documentKeywords?: string[];
   chunkIndex: number;
   preview: string;
   text: string;
   score: number;
+  rerankScore?: number;
+  tableMetadata?: Record<string, unknown>;
 };
 
 export type CompressedContext = {
@@ -47,10 +51,19 @@ export function toContextChunks(searchResults: SearchPoint[]) {
     .map((point) => ({
       filename: getPayloadString(point, 'filename') || 'Unknown file',
       documentId: getPayloadString(point, 'document_id') || null,
+      documentCategory: getPayloadString(point, 'document_category') || null,
+      documentKeywords: Array.isArray(point.payload?.document_keywords)
+        ? (point.payload?.document_keywords as unknown[]).map((item) => String(item)).filter(Boolean)
+        : [],
       chunkIndex: getPayloadNumber(point, 'chunk_index'),
       preview: getPayloadString(point, 'preview'),
       text: getPayloadString(point, 'chunk_text'),
       score: Number(point.score || 0),
+      rerankScore: Number((point as SearchPoint & { rerank_score?: number }).rerank_score || 0) || undefined,
+      tableMetadata:
+        point.payload?.table_metadata && typeof point.payload.table_metadata === 'object'
+          ? (point.payload.table_metadata as Record<string, unknown>)
+          : undefined,
     }))
     .filter((chunk) => chunk.text);
 }
@@ -123,11 +136,20 @@ function buildGroupedContext(chunks: ContextChunk[], maxContextCharacters: numbe
   for (const groupChunks of groups.values()) {
     const firstChunk = groupChunks[0];
     sections.push(`Document: ${firstChunk.filename}`);
+    if (firstChunk.documentCategory) {
+      sections.push(`Category: ${firstChunk.documentCategory}`);
+    }
+    if (firstChunk.documentKeywords?.length) {
+      sections.push(`Keywords: ${firstChunk.documentKeywords.join(', ')}`);
+    }
+    if (firstChunk.tableMetadata && Object.keys(firstChunk.tableMetadata).length > 0) {
+      sections.push(`Table metadata: ${JSON.stringify(firstChunk.tableMetadata).slice(0, 800)}`);
+    }
     sections.push('Relevant excerpts:');
 
     for (const chunk of groupChunks.sort((a, b) => b.score - a.score)) {
       sections.push(
-        `- Section ${chunk.chunkIndex} (score ${chunk.score.toFixed(3)}): ${trimExcerpt(chunk.text)}`,
+        `- Section ${chunk.chunkIndex} (score ${chunk.score.toFixed(3)}${chunk.rerankScore ? `, rerank ${chunk.rerankScore.toFixed(3)}` : ''}): ${trimExcerpt(chunk.text)}`,
       );
     }
   }

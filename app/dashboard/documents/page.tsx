@@ -35,6 +35,9 @@ type DocumentRecord = {
   total_chunks: number | null;
   created_at: string;
   error_message?: string | null;
+  document_summary?: string | null;
+  document_keywords?: string[] | null;
+  document_category?: string | null;
 };
 
 function getDisplayFileType(document: DocumentRecord) {
@@ -209,6 +212,9 @@ export default function DocumentsPage() {
                   Type
                 </th>
                 <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
                   Sections
                 </th>
                 <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
@@ -223,7 +229,7 @@ export default function DocumentsPage() {
               {loading ? (
                 [1, 2, 3].map((i) => (
                   <tr key={i}>
-                    <td colSpan={6} className="px-6 py-16 text-center">
+                    <td colSpan={7} className="px-6 py-16 text-center">
                       <div className="flex items-center justify-center gap-3">
                         <Loader2
                           size={18}
@@ -238,7 +244,7 @@ export default function DocumentsPage() {
                 ))
               ) : filteredDocuments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-24 text-center">
+                  <td colSpan={7} className="px-6 py-24 text-center">
                     <EmptyState
                       icon={FileText}
                       title={
@@ -298,6 +304,16 @@ export default function DocumentsPage() {
                       <span className="inline-flex rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
                         {getDisplayFileType(doc)}
                       </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="inline-flex rounded-lg bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
+                        {doc.document_category || "Other"}
+                      </span>
+                      {doc.document_summary ? (
+                        <p className="mt-2 max-w-xs truncate text-[11px] text-slate-500" title={doc.document_summary}>
+                          {doc.document_summary}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-6 py-5">
                       <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg inline-block">
@@ -376,6 +392,14 @@ export default function DocumentsPage() {
                       {new Date(doc.created_at).toLocaleDateString()} •{" "}
                       {getDisplayFileType(doc)} • {doc.total_chunks || 0} sections
                     </p>
+                    <p className="mt-2 text-xs font-semibold text-cyan-700">
+                      {doc.document_category || "Other"}
+                    </p>
+                    {doc.document_summary ? (
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                        {doc.document_summary}
+                      </p>
+                    ) : null}
                     <p
                       title={getParserStatus(doc)}
                       className={cn(

@@ -1,6 +1,7 @@
 import 'server-only';
 
 export const VOYAGE_EMBEDDING_MODEL = process.env.VOYAGE_EMBEDDING_MODEL || 'voyage-4-lite';
+export const VOYAGE_RERANK_MODEL = process.env.VOYAGE_RERANK_MODEL || 'rerank-2-lite';
 export const VOYAGE_DEFAULT_DIMENSIONS = 1024;
 export const VOYAGE_BATCH_SIZE = 20;
 export const VOYAGE_BATCH_DELAY_MS = 500;
@@ -12,6 +13,18 @@ type VoyageEmbeddingResponse = {
   data?: Array<{
     embedding?: number[];
     index?: number;
+  }>;
+};
+
+export type VoyageRerankResult = {
+  index: number;
+  relevanceScore: number;
+};
+
+type VoyageRerankResponse = {
+  data?: Array<{
+    index?: number;
+    relevance_score?: number;
   }>;
 };
 
@@ -94,6 +107,48 @@ export async function embedBatchWithVoyage(
 
     throw normalizeVoyageError(error);
   }
+}
+
+export async function rerankWithVoyage({
+  query,
+  documents,
+}: {
+  query: string;
+  documents: string[];
+}): Promise<VoyageRerankResult[]> {
+  const apiKey = getVoyageApiKey();
+
+  if (documents.length === 0) {
+    return [];
+  }
+
+  const response = await fetch('https://api.voyageai.com/v1/rerank', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query,
+      documents,
+      model: VOYAGE_RERANK_MODEL,
+      top_k: documents.length,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(`Voyage rerank request failed (${response.status}): ${body || response.statusText}`);
+  }
+
+  const payload = (await response.json()) as VoyageRerankResponse;
+  return (payload.data || [])
+    .map((item) => ({
+      index: Number(item.index),
+      relevanceScore: Number(item.relevance_score || 0),
+    }))
+    .filter((item) => Number.isInteger(item.index) && item.index >= 0)
+    .sort((left, right) => right.relevanceScore - left.relevanceScore);
 }
 
 function normalizeVoyageError(error: unknown) {

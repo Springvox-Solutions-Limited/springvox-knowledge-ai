@@ -58,7 +58,14 @@ export async function embedManyWithGemini(texts: string[]) {
   return embeddings;
 }
 
-export async function generateStrictAnswer(question: string, context: string) {
+export type AnswerMode = 'summary' | 'detailed' | 'executive' | 'technical';
+
+export async function generateStrictAnswer(
+  question: string,
+  context: string,
+  answerMode: AnswerMode = 'detailed',
+  answerIntelligenceInstructions = '',
+) {
   const model = getGeminiClient().getGenerativeModel({
     model: GEMINI_CHAT_MODEL,
     systemInstruction: SYSTEM_PROMPT,
@@ -70,7 +77,7 @@ export async function generateStrictAnswer(question: string, context: string) {
         role: 'user',
         parts: [
           {
-            text: buildStrictAnswerPrompt(question, context),
+            text: buildStrictAnswerPrompt(question, context, answerMode, answerIntelligenceInstructions),
           },
         ],
       },
@@ -83,7 +90,12 @@ export async function generateStrictAnswer(question: string, context: string) {
   return result.response.text().trim();
 }
 
-export async function streamStrictAnswer(question: string, context: string) {
+export async function streamStrictAnswer(
+  question: string,
+  context: string,
+  answerMode: AnswerMode = 'detailed',
+  answerIntelligenceInstructions = '',
+) {
   const model = getGeminiClient().getGenerativeModel({
     model: GEMINI_CHAT_MODEL,
     systemInstruction: SYSTEM_PROMPT,
@@ -95,7 +107,7 @@ export async function streamStrictAnswer(question: string, context: string) {
         role: 'user',
         parts: [
           {
-            text: buildStrictAnswerPrompt(question, context),
+            text: buildStrictAnswerPrompt(question, context, answerMode, answerIntelligenceInstructions),
           },
         ],
       },
@@ -106,7 +118,131 @@ export async function streamStrictAnswer(question: string, context: string) {
   });
 }
 
-function buildStrictAnswerPrompt(question: string, context: string) {
+export async function generateDocumentIntelligence({
+  filename,
+  text,
+  parser,
+}: {
+  filename: string;
+  text: string;
+  parser?: string | null;
+}) {
+  const model = getGeminiClient().getGenerativeModel({
+    model: GEMINI_CHAT_MODEL,
+    systemInstruction:
+      'You classify and summarize uploaded business documents. Return only valid compact JSON.',
+  });
+  const clippedText = text.slice(0, 9000);
+
+  const result = await model.generateContent({
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            text: [
+              'Analyze this uploaded document for SpringVox Knowledge AI.',
+              'Return JSON only with keys: summary, keywords, category.',
+              'summary: 1-3 concise sentences.',
+              'keywords: 5-12 short useful search terms.',
+              'category: one of Manual, Policy, Procedure, Contract, Financial Report, Spreadsheet, Presentation, Technical Guide, Knowledge Base, Other.',
+              '',
+              `Filename: ${filename}`,
+              `Parser: ${parser || 'unknown'}`,
+              '',
+              'Document text:',
+              clippedText,
+            ].join('\n'),
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: 'application/json',
+    },
+  });
+
+  const raw = result.response.text().trim();
+  const parsed = JSON.parse(raw) as {
+    summary?: unknown;
+    keywords?: unknown;
+    category?: unknown;
+  };
+
+  const summary = typeof parsed.summary === 'string' ? parsed.summary.trim().slice(0, 1200) : '';
+  const keywords = Array.isArray(parsed.keywords)
+    ? parsed.keywords.map((item) => String(item).trim()).filter(Boolean).slice(0, 12)
+    : [];
+  const category = normalizeDocumentCategory(String(parsed.category || 'Other'));
+
+  return {
+    summary,
+    keywords,
+    category,
+  };
+}
+
+function normalizeDocumentCategory(category: string) {
+  const allowed = new Set([
+    'Manual',
+    'Policy',
+    'Procedure',
+    'Contract',
+    'Financial Report',
+    'Spreadsheet',
+    'Presentation',
+    'Technical Guide',
+    'Knowledge Base',
+    'Other',
+  ]);
+
+  return allowed.has(category) ? category : 'Other';
+}
+
+function getAnswerModeInstructions(answerMode: AnswerMode) {
+  if (answerMode === 'summary') {
+    return [
+      'Answer mode: Summary.',
+      '- Use 3-5 bullets maximum.',
+      '- Include only the most relevant details.',
+      '- Avoid extra narrative.',
+    ];
+  }
+
+  if (answerMode === 'executive') {
+    return [
+      'Answer mode: Executive.',
+      '- Use business-focused language.',
+      '- Highlight recommendations, risks, decisions, and next actions when supported.',
+      '- Call out operational or commercial impact when the context supports it.',
+      '- Avoid unnecessary technical detail.',
+    ];
+  }
+
+  if (answerMode === 'technical') {
+    return [
+      'Answer mode: Technical.',
+      '- Include procedural detail, implementation steps, exact values, model numbers, and references when supported.',
+      '- Preserve technical terminology from the documents.',
+      '- Include troubleshooting detail when the source supports it.',
+      '- Be precise about limits and source support.',
+    ];
+  }
+
+  return [
+    'Answer mode: Detailed.',
+    '- Give a balanced structured answer with useful figures and caveats when supported.',
+    '- Use headings or bullets when helpful.',
+  ];
+}
+
+function buildStrictAnswerPrompt(
+  question: string,
+  context: string,
+  answerMode: AnswerMode,
+  answerIntelligenceInstructions = '',
+) {
   return [
     'You are SpringVox Knowledge AI.',
     '',
@@ -122,6 +258,9 @@ function buildStrictAnswerPrompt(question: string, context: string) {
     '- Do not invent products, names, numbers, or claims.',
     '- Keep the answer concise but complete.',
     '- The frontend will display source citations separately, so do not overload the answer with repeated inline citations.',
+    '',
+    ...getAnswerModeInstructions(answerMode),
+    answerIntelligenceInstructions ? ['', answerIntelligenceInstructions].join('\n') : '',
     '',
     'Context:',
     context,
