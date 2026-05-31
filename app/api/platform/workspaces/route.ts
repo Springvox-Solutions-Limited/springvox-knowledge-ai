@@ -14,7 +14,7 @@ export async function GET(req: Request) {
     const [workspacesResult, profilesResult, documentsResult, chatsResult] = await Promise.all([
       supabase
         .from('workspaces')
-        .select('id, name, slug, status, plan, subscription_status, subscription_plan, billing_status, trial_started_at, trial_ends_at, payment_required_at, suspended_reason, suspension_reason, created_at, updated_at')
+        .select('id, name, slug, status, plan, subscription_status, subscription_plan, billing_status, trial_started_at, trial_ends_at, payment_required_at, suspended_reason, suspension_reason, deletion_status, deletion_requested_at, deletion_scheduled_for, deleted_at, deletion_reason, created_at, updated_at')
         .order('created_at', { ascending: false }),
       supabase
         .from('profiles')

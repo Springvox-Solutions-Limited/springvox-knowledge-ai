@@ -104,3 +104,13 @@ export async function deleteDocumentVectors(documentId: string, workspaceId: str
     },
   });
 }
+
+export async function deleteWorkspaceVectors(workspaceId: string) {
+  await ensureQdrantCollection();
+
+  await qdrant.delete(COLLECTION_NAME, {
+    filter: {
+      must: [{ key: 'workspace_id', match: { value: workspaceId } }],
+    },
+  });
+}

@@ -9,6 +9,7 @@ SpringVox Knowledge AI is a secure multi-tenant SaaS platform for company knowle
 - Phase 3: production RAG retrieval, intent classification, context compression, follow-ups, Voyage embeddings.
 - Phase 4: trial lifecycle, notifications, audit logs, platform operations, user controls, security linter fixes.
 - Phase 5A: Voyage reranking, hybrid search, confidence scoring, answer modes, document intelligence, improved source quality.
+- Phase 5B: beta rate limiting, usage metering, evaluations, diagnostics, workspace deletion lifecycle, support documentation.
 
 ## Architecture Diagram
 
@@ -203,6 +204,21 @@ Platform admins can send in-app or email notifications to one workspace or all w
 
 Email uses Resend when configured. Missing `RESEND_API_KEY` does not crash notification creation.
 
+## Beta Safety And Operations
+
+Phase 5B adds Supabase-backed beta safety controls:
+
+- Rate limits for chat, uploads, signup, platform APIs, notifications, and document deletion.
+- Usage metering in `workspace_usage_daily`.
+- Platform usage dashboard at `/platform/usage`.
+- Diagnostics dashboard at `/platform/diagnostics`.
+- Workspace evaluation harness at `/dashboard/evaluations`.
+- Workspace deletion lifecycle with scheduled deletion, cancellation, and force-delete event processing.
+
+Rate limits return HTTP 429 with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `Retry-After`.
+
+Usage token counts are estimated from text length when exact provider token counts are unavailable.
+
 ## Trial System
 
 New workspaces start on a 14-day trial. Trial expiry blocks tenant app usage until activation or payment handling. Platform admins can activate, suspend, expire, extend trials, mark past due, or convert to paid/active.
@@ -291,6 +307,7 @@ Run SQL files in order:
 12. `sql/phase4h_notification_reads.sql`
 13. `sql/phase4h_security_linter_fixes.sql`
 14. `sql/phase5a_document_intelligence.sql`
+15. `sql/phase5b_beta_hardening.sql`
 
 ## Deployment
 
@@ -309,6 +326,9 @@ Run SQL files in order:
 - OCR for scanned PDFs is not fully implemented.
 - LlamaParse is optional and disabled by default. Scanned/image-heavy PDFs still depend on the configured LlamaParse plan and extraction quality.
 - Answer intelligence is deterministic prompt guidance, not a second verifier. Confidence is based on retrieval quality.
+- Evaluation scoring is deterministic and does not use an LLM judge yet.
+- Beta rate limiting uses Supabase and is intended for controlled beta safety, not advanced bot mitigation.
+- Workspace force deletion disables profiles but does not delete `auth.users` by default.
 - `xlsx` has known audit advisories with no direct fixed version from npm audit output.
 - Confidence scores are retrieval-quality indicators, not formal correctness guarantees.
 - Billing checkout is not implemented.

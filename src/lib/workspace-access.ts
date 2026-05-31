@@ -22,13 +22,15 @@ export type WorkspaceAccessSnapshot = {
   trial_ends_at: string | null;
   payment_required_at: string | null;
   suspended_reason: string | null;
+  deletion_status?: string | null;
+  deletion_scheduled_for?: string | null;
 };
 
 export async function getWorkspaceAccessSnapshot(workspaceId: string) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from('workspaces')
-    .select('id, name, slug, status, plan, subscription_status, subscription_plan, billing_status, trial_started_at, trial_ends_at, payment_required_at, suspended_reason')
+    .select('id, name, slug, status, plan, subscription_status, subscription_plan, billing_status, trial_started_at, trial_ends_at, payment_required_at, suspended_reason, deletion_status, deletion_scheduled_for')
     .eq('id', workspaceId)
     .maybeSingle();
 
@@ -43,6 +45,10 @@ export async function assertWorkspaceOperational(workspaceId: string) {
   const workspace = await getWorkspaceAccessSnapshot(workspaceId);
   const now = Date.now();
   const trialEndsAt = workspace.trial_ends_at ? new Date(workspace.trial_ends_at).getTime() : null;
+
+  if (workspace.deletion_status === 'scheduled' || workspace.deletion_status === 'deleting' || workspace.deletion_status === 'deleted') {
+    throw new Error('This workspace is scheduled for deletion. Contact SpringVox support if this is unexpected.');
+  }
 
   if (
     workspace.subscription_status === 'trial' &&

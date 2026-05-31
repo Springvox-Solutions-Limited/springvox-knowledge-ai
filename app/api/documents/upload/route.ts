@@ -7,7 +7,10 @@ import {
   sanitizeFilename,
 } from '@/src/lib/documents';
 import { deleteDocumentVectors } from '@/src/lib/qdrant';
+import { assertRateLimit, BETA_RATE_LIMITS, maybeRateLimitResponse } from '@/src/lib/rate-limit';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { logSystemEvent } from '@/src/lib/system-events';
+import { incrementWorkspaceUsage } from '@/src/lib/usage-metering';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
@@ -26,6 +29,13 @@ export async function POST(req: Request) {
     authenticatedUserId = user.id;
     authenticatedWorkspaceId = profile.workspace_id;
     await assertWorkspaceOperational(profile.workspace_id!);
+    await assertRateLimit({
+      key: profile.workspace_id!,
+      scope: 'upload',
+      ...BETA_RATE_LIMITS.upload,
+      userId: user.id,
+      workspaceId: profile.workspace_id,
+    });
     const supabase = getSupabaseAdmin();
     const formData = await req.formData();
     const file = formData.get('file');
@@ -104,12 +114,20 @@ export async function POST(req: Request) {
       },
     });
 
+    await incrementWorkspaceUsage(profile.workspace_id!, {
+      uploads_count: 1,
+      storage_bytes: file.size,
+    });
+
     return Response.json({
       success: true,
       documentId,
       status: 'processing',
     });
   } catch (error) {
+    const rateLimit = maybeRateLimitResponse(error);
+    if (rateLimit) return rateLimit;
+
     const message = error instanceof Error ? error.message : 'Unexpected upload error';
     const status =
       message.startsWith('Unsupported file type') ||
@@ -147,6 +165,16 @@ export async function POST(req: Request) {
       } catch (cleanupError) {
         console.error('Upload cleanup error:', cleanupError);
       }
+    }
+
+    if (authenticatedWorkspaceId) {
+      await logSystemEvent({
+        workspaceId: authenticatedWorkspaceId,
+        userId: authenticatedUserId,
+        eventType: 'upload.failed',
+        severity: 'error',
+        message,
+      });
     }
 
     console.error('Upload error:', error);

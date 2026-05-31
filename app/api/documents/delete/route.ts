@@ -1,5 +1,6 @@
 import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { deleteDocumentVectors } from '@/src/lib/qdrant';
+import { assertRateLimit, BETA_RATE_LIMITS, maybeRateLimitResponse } from '@/src/lib/rate-limit';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
@@ -8,8 +9,15 @@ export const dynamic = 'force-dynamic';
 
 export async function DELETE(req: Request) {
   try {
-    const { profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
+    const { user, profile } = await getAuthenticatedUserWithProfile(req, WORKSPACE_ADMIN_ROLES);
     await assertWorkspaceOperational(profile.workspace_id!);
+    await assertRateLimit({
+      key: user.id,
+      scope: 'document_delete',
+      ...BETA_RATE_LIMITS.document_delete,
+      userId: user.id,
+      workspaceId: profile.workspace_id,
+    });
     const { searchParams } = new URL(req.url);
     const documentId = searchParams.get('id');
 
@@ -60,6 +68,9 @@ export async function DELETE(req: Request) {
 
     return Response.json({ success: true });
   } catch (error) {
+    const rateLimit = maybeRateLimitResponse(error);
+    if (rateLimit) return rateLimit;
+
     const message = error instanceof Error ? error.message : 'Unexpected delete error';
     const status = getRequestErrorStatus(message);
 

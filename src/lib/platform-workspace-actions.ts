@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createAuditLog } from '@/src/lib/audit-log';
+import { inngest } from '@/src/lib/inngest/client';
 import { getSupabaseAdmin } from '@/src/lib/supabase-server';
 
 export async function updatePlatformWorkspaceStatus({
@@ -66,6 +67,103 @@ export async function updatePlatformWorkspaceStatus({
     actorUserId,
     action: `workspace.${action}`,
     metadata: { reason: reason || null },
+  });
+}
+
+export async function scheduleWorkspaceDeletion({
+  workspaceId,
+  actorUserId,
+  reason,
+  retentionDays = 14,
+}: {
+  workspaceId: string;
+  actorUserId: string;
+  reason?: string | null;
+  retentionDays?: number;
+}) {
+  const supabase = getSupabaseAdmin();
+  const now = new Date();
+  const scheduledFor = new Date(now.getTime() + retentionDays * 24 * 60 * 60 * 1000);
+  const { error } = await supabase
+    .from('workspaces')
+    .update({
+      status: 'suspended',
+      subscription_status: 'suspended',
+      billing_status: 'suspended',
+      deletion_status: 'scheduled',
+      deletion_requested_at: now.toISOString(),
+      deletion_scheduled_for: scheduledFor.toISOString(),
+      deletion_reason: reason || null,
+      suspended_reason: reason || 'Workspace deletion scheduled.',
+      suspension_reason: reason || 'Workspace deletion scheduled.',
+      updated_at: now.toISOString(),
+    })
+    .eq('id', workspaceId);
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    actorUserId,
+    action: 'workspace.deletion_scheduled',
+    metadata: { scheduled_for: scheduledFor.toISOString(), reason: reason || null },
+  });
+}
+
+export async function cancelWorkspaceDeletion({
+  workspaceId,
+  actorUserId,
+}: {
+  workspaceId: string;
+  actorUserId: string;
+}) {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from('workspaces')
+    .update({
+      status: 'active',
+      subscription_status: 'active',
+      billing_status: 'active',
+      deletion_status: 'cancelled',
+      deletion_scheduled_for: null,
+      deletion_reason: null,
+      suspended_reason: null,
+      suspension_reason: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', workspaceId);
+
+  if (error) throw error;
+
+  await createAuditLog({
+    workspaceId,
+    actorUserId,
+    action: 'workspace.deletion_cancelled',
+  });
+}
+
+export async function forceWorkspaceDeletion({
+  workspaceId,
+  actorUserId,
+  confirmation,
+}: {
+  workspaceId: string;
+  actorUserId: string;
+  confirmation: string;
+}) {
+  if (confirmation !== 'DELETE WORKSPACE') {
+    throw new Error('Type DELETE WORKSPACE to confirm force deletion.');
+  }
+
+  await createAuditLog({
+    workspaceId,
+    actorUserId,
+    action: 'workspace.force_delete_requested',
+  });
+
+  await inngest.send({
+    name: 'workspace/delete.started',
+    data: { workspaceId, actorUserId, force: true },
   });
 }
 

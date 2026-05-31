@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { inngest } from '@/src/lib/inngest/client';
 import { isValidEmail, isValidUrl, validateWorkspaceSlug } from '@/src/lib/onboarding';
+import { assertRateLimit, BETA_RATE_LIMITS, getClientIp, maybeRateLimitResponse } from '@/src/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,12 @@ export async function POST(req: Request) {
   let createdWorkspaceId: string | null = null;
 
   try {
+    await assertRateLimit({
+      key: getClientIp(req),
+      scope: 'signup',
+      ...BETA_RATE_LIMITS.signup,
+    });
+
     const body = await req.json();
     const companyName = typeof body.companyName === 'string' ? body.companyName.trim() : '';
     const slugInput = typeof body.slug === 'string' ? body.slug.trim() : '';
@@ -149,6 +156,9 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
+    const rateLimit = maybeRateLimitResponse(error);
+    if (rateLimit) return rateLimit;
+
     if (createdWorkspaceId) {
       await supabase.from('workspaces').delete().eq('id', createdWorkspaceId);
     }

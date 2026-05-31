@@ -10,10 +10,11 @@ import {
   Upload, 
   Users,
   CircleAlert,
+  ClipboardCheck,
   Settings,
   LogOut, 
   PanelLeftOpen,
-  Bell
+  Bell,
 } from 'lucide-react';
 import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
 import { ViewerChatSidebarHistory } from '@/src/components/dashboard/ViewerChatSidebarHistory';
@@ -487,6 +488,7 @@ function getNavItems(role: UserProfile['role']) {
     { name: 'Upload Documents', href: '/dashboard/upload', icon: Upload },
     { name: 'Ask Questions', href: '/dashboard/chat', icon: MessageSquare },
     { name: 'Analytics', href: '/dashboard/analytics', icon: ChartColumnBig },
+    { name: 'Evaluations', href: '/dashboard/evaluations', icon: ClipboardCheck },
     { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
     { name: 'Users', href: '/dashboard/users', icon: Users },
     { name: 'Company Settings', href: '/dashboard/settings', icon: Settings },

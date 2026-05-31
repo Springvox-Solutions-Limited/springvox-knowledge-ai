@@ -1,5 +1,6 @@
 import { createAuditLog } from '@/src/lib/audit-log';
 import { requirePlatformAdminRequest, createPlatformErrorResponse } from '@/src/lib/platform-api';
+import { assertRateLimit, BETA_RATE_LIMITS } from '@/src/lib/rate-limit';
 import { getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { inngest } from '@/src/lib/inngest/client';
 
@@ -28,6 +29,12 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { user } = await requirePlatformAdminRequest(req);
+    await assertRateLimit({
+      key: user.id,
+      scope: 'notifications',
+      ...BETA_RATE_LIMITS.notifications,
+      userId: user.id,
+    });
     const body = await req.json();
     const workspaceId = typeof body.workspaceId === 'string' && body.workspaceId !== 'all' ? body.workspaceId : null;
     const type = typeof body.type === 'string' ? body.type : '';

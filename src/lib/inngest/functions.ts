@@ -11,6 +11,10 @@ import { buildTrialReminderEmail } from '@/src/lib/email/templates/trial-reminde
 import { buildTrialStartedEmail } from '@/src/lib/email/templates/trial-started';
 import { buildWelcomeEmail } from '@/src/lib/email/templates/welcome';
 import { buildPlatformNotificationEmail } from '@/src/lib/email/templates/platform-notification';
+import { createAuditLog } from '@/src/lib/audit-log';
+import { deleteWorkspaceVectors } from '@/src/lib/qdrant';
+import { logSystemEvent } from '@/src/lib/system-events';
+import { estimateTokens, incrementWorkspaceUsage } from '@/src/lib/usage-metering';
 
 type SerializedError = {
   message: string;
@@ -271,6 +275,10 @@ export const processDocument = inngest.createFunction(
         const chunkRows = [];
         const points = [];
         const vectors = await runLoggedOperation('embed-many', () => embedMany(chunks, { inputType: 'document' }));
+        await incrementWorkspaceUsage(workspaceId, {
+          embedding_calls: Math.ceil(chunks.length / 20),
+          embedding_tokens: estimateTokens(chunks.join('\n')),
+        });
         
         for (const [index, chunkText] of chunks.entries()) {
           const chunkIndex = index + 1;
@@ -364,6 +372,10 @@ export const processDocument = inngest.createFunction(
           }
         });
 
+        await incrementWorkspaceUsage(workspaceId, {
+          documents_count: 1,
+        });
+
         return {
           totalChunks: chunkRows.length,
           parser: parserMetadata?.parser || null,
@@ -378,6 +390,14 @@ export const processDocument = inngest.createFunction(
       const serialized = serializeError(error);
       const readableMessage = formatSerializedError(serialized);
       console.error('[Inngest] process-document failed', serialized);
+      await logSystemEvent({
+        workspaceId,
+        userId,
+        eventType: 'ingestion.failed',
+        severity: 'error',
+        message: readableMessage,
+        metadata: { document_id: documentId, filename: originalFilename },
+      });
 
       // Record failure on the document
       await step.run("mark-failed", async () => {
@@ -398,6 +418,155 @@ export const processDocument = inngest.createFunction(
       throw toOperationError('process-document', error);
     }
   }
+);
+
+export const deleteWorkspaceData = inngest.createFunction(
+  { id: 'delete-workspace-data', retries: 1, triggers: [{ event: 'workspace/delete.started' }] },
+  async ({ event, step }) => {
+    const { workspaceId, actorUserId, force } = event.data as {
+      workspaceId: string;
+      actorUserId?: string | null;
+      force?: boolean;
+    };
+
+    await step.run('mark-deleting', async () => {
+      const supabase = getSupabaseAdmin();
+      const { error } = await supabase
+        .from('workspaces')
+        .update({
+          deletion_status: 'deleting',
+          status: 'suspended',
+          subscription_status: 'suspended',
+          billing_status: 'suspended',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', workspaceId);
+
+      if (error) throw error;
+      await logSystemEvent({
+        workspaceId,
+        userId: actorUserId,
+        eventType: 'workspace_deletion.started',
+        severity: force ? 'critical' : 'warning',
+        message: 'Workspace deletion started.',
+      });
+    });
+
+    await step.run('delete-qdrant-vectors', () => deleteWorkspaceVectors(workspaceId));
+
+    await step.run('delete-storage-files', async () => {
+      const supabase = getSupabaseAdmin();
+      const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'documents';
+      const { data: documents, error } = await supabase
+        .from('documents')
+        .select('file_path')
+        .eq('workspace_id', workspaceId);
+
+      if (error) throw error;
+
+      const paths = (documents || []).map((document) => document.file_path).filter(Boolean);
+      for (let index = 0; index < paths.length; index += 100) {
+        const batch = paths.slice(index, index + 100);
+        if (batch.length > 0) {
+          const { error: removeError } = await supabase.storage.from(bucket).remove(batch);
+          if (removeError) throw removeError;
+        }
+      }
+    });
+
+    await step.run('delete-workspace-rows', async () => {
+      const supabase = getSupabaseAdmin();
+      const tables = [
+        'document_chunks',
+        'documents',
+        'chat_messages',
+        'chat_sessions',
+        'invitations',
+        'platform_notifications',
+        'workspace_usage_daily',
+        'rag_eval_sets',
+      ];
+
+      for (const table of tables) {
+        const { error } = await supabase.from(table).delete().eq('workspace_id', workspaceId);
+        if (error) throw error;
+      }
+
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .update({
+          status: 'disabled',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('workspace_id', workspaceId);
+
+      if (profilesError) throw profilesError;
+    });
+
+    await step.run('mark-deleted', async () => {
+      const supabase = getSupabaseAdmin();
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('workspaces')
+        .update({
+          status: 'suspended',
+          subscription_status: 'suspended',
+          billing_status: 'suspended',
+          deletion_status: 'deleted',
+          deleted_at: now,
+          updated_at: now,
+        })
+        .eq('id', workspaceId);
+
+      if (error) throw error;
+      if (actorUserId) {
+        await createAuditLog({
+          workspaceId,
+          actorUserId,
+          action: 'workspace.deleted',
+          metadata: { force: Boolean(force) },
+        });
+      }
+      await logSystemEvent({
+        workspaceId,
+        userId: actorUserId,
+        eventType: 'workspace_deletion.completed',
+        severity: 'critical',
+        message: 'Workspace deletion completed.',
+      });
+    });
+
+    return { success: true, workspaceId };
+  },
+);
+
+export const scheduledWorkspaceDeletionCheck = inngest.createFunction(
+  { id: 'scheduled-workspace-deletion-check', retries: 1, triggers: [{ cron: '0 * * * *' }] },
+  async ({ step }) => {
+    return step.run('queue-due-workspace-deletions', async () => {
+      const supabase = getSupabaseAdmin();
+      const { data, error } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('deletion_status', 'scheduled')
+        .lte('deletion_scheduled_for', new Date().toISOString())
+        .limit(25);
+
+      if (error) throw error;
+
+      const dueWorkspaces = data || [];
+      await Promise.all(
+        dueWorkspaces.map((workspace) =>
+          inngest.send({
+            name: 'workspace/delete.started',
+            data: { workspaceId: workspace.id, actorUserId: null, force: false },
+          }),
+        ),
+      );
+
+      return { queued: dueWorkspaces.length };
+    });
+  },
 );
 
 function getAppUrl() {

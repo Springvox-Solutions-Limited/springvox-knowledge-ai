@@ -7,12 +7,14 @@ import {
   BarChart3,
   Building2,
   Bell,
+  Activity,
   LayoutGrid,
   LogOut,
   Menu,
   Monitor,
   ReceiptText,
   ScrollText,
+  Wrench,
   Users,
 } from 'lucide-react';
 
@@ -35,6 +37,8 @@ const platformNavItems = [
   { name: 'Users', href: '/platform/users', icon: Users },
   { name: 'Notifications', href: '/platform/notifications', icon: Bell },
   { name: 'Audit Logs', href: '/platform/audit-logs', icon: ScrollText },
+  { name: 'Usage', href: '/platform/usage', icon: Activity },
+  { name: 'Diagnostics', href: '/platform/diagnostics', icon: Wrench },
   { name: 'Analytics', href: '/platform/analytics', icon: BarChart3 },
   { name: 'Plans', href: '/platform/plans', icon: ReceiptText },
 ];

@@ -13,6 +13,7 @@ import {
 } from '@/src/lib/ai';
 import { upsertKnowledgeGap } from '@/src/lib/knowledge-gaps';
 import { COLLECTION_NAME, ensureQdrantCollection, qdrant } from '@/src/lib/qdrant';
+import { assertRateLimit, BETA_RATE_LIMITS, maybeRateLimitResponse } from '@/src/lib/rate-limit';
 import { buildAnswerIntelligenceInstructions } from '@/src/lib/rag/answer-intelligence';
 import { compressSearchResults } from '@/src/lib/rag/context';
 import { calculateAnswerConfidence, sourceConfidenceFromScore, type AnswerConfidence } from '@/src/lib/rag/confidence';
@@ -27,6 +28,8 @@ import {
   type RetrievalCandidate,
 } from '@/src/lib/rag/retrieval';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { logSystemEvent } from '@/src/lib/system-events';
+import { estimateTokens, incrementWorkspaceUsage } from '@/src/lib/usage-metering';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { ALL_ROLES, isWorkspaceAdminRole, type AnyAppRole } from '@/src/lib/workspace';
 
@@ -247,6 +250,13 @@ export async function POST(req: Request) {
 
     const normalizedQuestion = question.trim();
     const answerMode = normalizeAnswerMode(answer_mode);
+    await assertRateLimit({
+      key: user.id,
+      scope: 'chat',
+      ...BETA_RATE_LIMITS.chat,
+      userId: user.id,
+      workspaceId: profile.workspace_id,
+    });
     const supabase = getSupabaseAdmin();
     const chatSession = await resolveOwnedChatSession(supabase, {
       sessionId: session_id,
@@ -363,6 +373,9 @@ export async function POST(req: Request) {
             query: normalizedQuestion,
             candidates: searchResults,
           });
+          if (rerankResult.rerankedCount > 0) {
+            await incrementWorkspaceUsage(profile.workspace_id!, { rerank_calls: 1 });
+          }
           searchResults = rerankResult.candidates.slice(0, rerankTopK);
           const rerankMs = Date.now() - rerankStartedAt;
 
@@ -527,6 +540,11 @@ export async function POST(req: Request) {
             }
 
             answer = generatedAnswer.trim() || STRICT_NO_ANSWER;
+            await incrementWorkspaceUsage(profile.workspace_id!, {
+              llm_calls: 1,
+              llm_input_tokens: estimateTokens(`${compressedContext.context}\n${normalizedQuestion}`),
+              llm_output_tokens: estimateTokens(answer),
+            });
           } else {
             answer = buildNoAnswerMessage(retrievedFilenames);
             sendEvent('status', { message: statuses.matching });
@@ -610,6 +628,8 @@ export async function POST(req: Request) {
             throw insertError;
           }
 
+          await incrementWorkspaceUsage(profile.workspace_id!, { questions_count: 1 });
+
           if (noAnswer) {
             await upsertKnowledgeGap({
               supabase,
@@ -640,6 +660,13 @@ export async function POST(req: Request) {
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unexpected chat error';
           console.error('Chat stream error:', error);
+          await logSystemEvent({
+            workspaceId: profile.workspace_id,
+            userId: user.id,
+            eventType: 'chat.failed',
+            severity: 'error',
+            message,
+          });
           failStream(message);
         }
       },
@@ -653,6 +680,9 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
+    const rateLimit = maybeRateLimitResponse(error);
+    if (rateLimit) return rateLimit;
+
     const message = error instanceof Error ? error.message : 'Unexpected chat error';
     const status = getRequestErrorStatus(message);
 
