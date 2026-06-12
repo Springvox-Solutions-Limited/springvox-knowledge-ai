@@ -14,15 +14,15 @@ type AppButtonTone =
 
 const toneClasses: Record<AppButtonTone, string> = {
   primary:
-    "border-transparent bg-[#0d1f35] text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] hover:bg-[#132744] disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500",
+    "border-transparent bg-[var(--accent-jade)] text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] hover:bg-[var(--accent-jade-hover)] disabled:border-[var(--line)] disabled:bg-[var(--surface-2)] disabled:text-[var(--ink-muted)]",
   secondary:
-    "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400",
+    "border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft)] hover:border-[var(--line)] hover:bg-[var(--surface-2)] disabled:bg-[var(--surface-2)] disabled:text-[var(--ink-muted)]",
   subtle:
-    "border-cyan-200 bg-cyan-50 text-cyan-800 hover:border-cyan-300 hover:bg-cyan-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400",
+    "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] text-[var(--accent-jade)] hover:border-[var(--accent-jade-100)] hover:bg-[var(--accent-jade-100)] disabled:border-[var(--line)] disabled:bg-[var(--surface-2)] disabled:text-[var(--ink-muted)]",
   ghost:
-    "border-transparent bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-950 disabled:text-slate-400",
+    "border-transparent bg-transparent text-[var(--ink-soft)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)] disabled:text-[var(--ink-muted)]",
   destructive:
-    "border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400",
+    "border-red-500/30 bg-red-500/10 text-red-300 hover:border-red-300 hover:bg-red-100 disabled:border-[var(--line)] disabled:bg-[var(--surface-2)] disabled:text-[var(--ink-muted)]",
 };
 
 export function AppButton({
@@ -33,7 +33,7 @@ export function AppButton({
   return (
     <Button
       className={cn(
-        "h-11 rounded-xl px-4 text-sm font-semibold transition focus-visible:ring-4 focus-visible:ring-cyan-100 active:scale-[0.99]",
+        "h-11 rounded-xl px-4 text-sm font-semibold transition focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)] active:scale-[0.99]",
         toneClasses[tone],
         className,
       )}

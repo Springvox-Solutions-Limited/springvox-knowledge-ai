@@ -1,0 +1,37 @@
+ACME CORPORATION — IT ACCEPTABLE USE & SECURITY POLICY
+Document owner: Information Security
+Effective date: 1 January 2026
+Version: 3.0
+
+1. ACCOUNTS AND PASSWORDS
+- Passwords must be at least 14 characters and include a mix of letters, numbers, and symbols.
+- Passwords must be rotated every 180 days.
+- Multi-factor authentication (MFA) is mandatory on all company accounts, with no exceptions.
+
+2. NETWORK ACCESS
+- A company VPN must be used whenever accessing internal systems from outside the office network.
+- Public Wi-Fi may only be used with the VPN active.
+
+3. DATA CLASSIFICATION
+Acme classifies data into four levels:
+- Public: may be shared freely.
+- Internal: for employees only.
+- Confidential: restricted to specific teams; encryption required at rest and in transit.
+- Restricted: highest sensitivity (e.g. customer PII, financials); access logged and reviewed.
+
+4. REMOVABLE MEDIA
+- USB storage devices are prohibited for Confidential and Restricted data.
+- Cloud sync of Restricted data to personal accounts is prohibited.
+
+5. INCIDENT REPORTING
+- Suspected security incidents must be reported to the security team within 1 hour of discovery.
+- Lost or stolen devices must be reported immediately so they can be remotely wiped.
+
+6. PROHIBITED USE
+- No cryptocurrency mining on company hardware or networks.
+- No installation of unapproved software on company devices.
+- No use of company systems for personal commercial activity.
+
+7. ENFORCEMENT
+Violations may result in disciplinary action up to and including termination, and where
+relevant, may be reported to the appropriate authorities.

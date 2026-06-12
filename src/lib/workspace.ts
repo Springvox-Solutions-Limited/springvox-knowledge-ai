@@ -115,15 +115,15 @@ export function isWorkspaceRestrictedStatus(status: WorkspaceStatus) {
 
 export function getWorkspaceStatusMessage(status: WorkspaceStatus) {
   if (status === 'suspended') {
-    return 'This workspace is currently suspended. Please contact SpringVox support.';
+    return 'This workspace is currently suspended. Please contact Rekall-IQ support.';
   }
 
   if (status === 'expired') {
-    return 'Your 14-day trial has ended. Please upgrade to continue using SpringVox.';
+    return 'Your 14-day trial has ended. Please upgrade to continue using Rekall-IQ.';
   }
 
   if (status === 'past_due') {
-    return 'Payment is required to continue using SpringVox.';
+    return 'Payment is required to continue using Rekall-IQ.';
   }
 
   if (status === 'inactive') {
@@ -188,29 +188,29 @@ export const PLAN_DETAILS: Record<
   }
 > = {
   pilot: {
-    label: 'Pilot',
-    description: 'Default manual plan for pilot companies and onboarding cohorts.',
+    label: 'Essential',
+    description: 'Foundational workspace plan for teams getting started with secure document intelligence.',
     suggestedDocuments: '20',
     suggestedUsers: '25',
     suggestedMonthlyQuestions: '1,000',
   },
   starter: {
     label: 'Starter',
-    description: 'Entry-level demo plan for smaller teams.',
+    description: 'Entry-level workspace plan for smaller teams.',
     suggestedDocuments: '50',
     suggestedUsers: '50',
     suggestedMonthlyQuestions: '3,000',
   },
   business: {
     label: 'Business',
-    description: 'Growth-oriented demo plan for larger internal rollouts.',
+    description: 'Growth-oriented workspace plan for larger organisational rollouts.',
     suggestedDocuments: '200',
     suggestedUsers: '250',
     suggestedMonthlyQuestions: '15,000',
   },
   enterprise: {
     label: 'Enterprise',
-    description: 'Custom demo plan for large or specialized deployments.',
+    description: 'Custom workspace plan for large or specialized deployments.',
     suggestedDocuments: 'Custom',
     suggestedUsers: 'Custom',
     suggestedMonthlyQuestions: 'Custom',

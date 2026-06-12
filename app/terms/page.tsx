@@ -3,32 +3,32 @@ import { LegalPageLayout } from '@/src/components/legal/LegalPageLayout';
 import { LegalSection } from '@/src/components/legal/LegalSection';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | SpringVox Knowledge AI',
-  description: 'Terms and conditions governing the use of the SpringVox Knowledge AI platform.',
+  title: 'Terms of Service | Rekall-IQ',
+  description: 'Terms and conditions governing the use of the Rekall-IQ platform.',
 };
 
 export default function TermsPage() {
   return (
     <LegalPageLayout
       title="Terms of Service"
-      description="These terms outline the rules and responsibilities for using the SpringVox Knowledge AI platform. By accessing the service, you agree to these terms."
+      description="These terms outline the rules and responsibilities for using the Rekall-IQ platform. By accessing the service, you agree to these terms."
       lastUpdated="May 2026"
       activePath="/terms"
     >
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-slate-600">
-          Please read these Terms of Service (&ldquo;Terms&rdquo;) carefully before using the SpringVox Knowledge AI platform.
+        <p className="text-sm leading-6 text-[var(--ink-soft)]">
+          Please read these Terms of Service (&ldquo;Terms&rdquo;) carefully before using the Rekall-IQ platform.
         </p>
 
         <LegalSection id="agreement-to-terms" title="1. Agreement to Terms">
           <p>
-            By registering, logging in, or accessing SpringVox Knowledge AI, you agree to comply with and be bound by these Terms. If you are accepting these Terms on behalf of an organisation, you represent that you have the authority to bind that organisation to these Terms.
+            By registering, logging in, or accessing Rekall-IQ, you agree to comply with and be bound by these Terms. If you are accepting these Terms on behalf of an organisation, you represent that you have the authority to bind that organisation to these Terms.
           </p>
         </LegalSection>
 
         <LegalSection id="service-description" title="2. Service Description">
           <p>
-            SpringVox Knowledge AI is a multi-tenant SaaS application that allows registered organisations to upload internal documents and configure an AI-powered assistant for their staff. The assistant generates answers to user queries using only the workspace&apos;s uploaded documents as context.
+            Rekall-IQ is a multi-tenant SaaS application that allows registered organisations to upload internal documents and configure an AI-powered assistant for their staff. The assistant generates answers to user queries using only the workspace&apos;s uploaded documents as context.
           </p>
         </LegalSection>
 
@@ -44,7 +44,7 @@ export default function TermsPage() {
               <strong>Viewers:</strong> Staff members with query-only access to ask questions from approved documents.
             </li>
             <li>
-              <strong>Platform Admins:</strong> SpringVox operators who manage aggregate system health but do not view tenant document contents by default.
+              <strong>Platform Admins:</strong> Rekall-IQ operators who manage aggregate system health but do not view tenant document contents by default.
             </li>
           </ul>
           <p className="mt-2">
@@ -57,7 +57,7 @@ export default function TermsPage() {
             <strong>Ownership:</strong> Customers and organisations retain all ownership, intellectual property rights, and title in the documents and files they upload to the service.
           </p>
           <p>
-            <strong>License to Process:</strong> You grant SpringVox a limited, non-exclusive, royalty-free license to parse, index, chunk, convert into embeddings, and query your uploaded content solely to provide the SaaS service to your organisation.
+            <strong>License to Process:</strong> You grant Rekall-IQ a limited, non-exclusive, royalty-free license to parse, index, chunk, convert into embeddings, and query your uploaded content solely to provide the SaaS service to your organisation.
           </p>
           <p>
             <strong>Responsibility:</strong> You warrant that you have all necessary rights, licenses, and permissions to upload the documents to the platform and that doing so does not violate any third-party confidentiality agreements or copyright laws.
@@ -89,7 +89,7 @@ export default function TermsPage() {
 
         <LegalSection id="plans-and-billing" title="7. Plans and Billing">
           <p>
-            The platform supports pilot, starter, business, and enterprise workspace plan designations. Paid features, subscription fees, and payment cycles may be activated as billing updates are rolled out. Customer organisations will receive advance notice of updated payment terms prior to any paid billing activation.
+            The platform supports essential, starter, business, and enterprise workspace plan designations. Paid features, subscription fees, and payment cycles may be activated as billing updates are rolled out. Customer organisations will receive advance notice of updated payment terms prior to any paid billing activation.
           </p>
         </LegalSection>
 
@@ -119,7 +119,7 @@ export default function TermsPage() {
 
         <LegalSection id="limitation-of-liability" title="11. Limitation of Liability">
           <p>
-            To the maximum extent permitted by applicable law, SpringVox and its suppliers shall not be liable for any indirect, incidental, special, exemplary, or consequential damages, including loss of profits, data corruption, or business interruption, arising out of or related to the use of the service.
+            To the maximum extent permitted by applicable law, Rekall-IQ and its suppliers shall not be liable for any indirect, incidental, special, exemplary, or consequential damages, including loss of profits, data corruption, or business interruption, arising out of or related to the use of the service.
           </p>
         </LegalSection>
 
@@ -133,8 +133,8 @@ export default function TermsPage() {
           <p>
             For terms support or platform troubleshooting, please reach out to us at:
           </p>
-          <div className="mt-2 bg-slate-50 border border-slate-200/80 p-3 rounded-xl inline-block">
-            <p className="font-semibold text-slate-800">Email: <a href="mailto:support@springvox.ai" className="text-cyan-600 hover:underline">support@springvox.ai</a></p>
+          <div className="mt-2 bg-[var(--surface-2)] border border-[var(--line)] p-3 rounded-xl inline-block">
+            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:support@rekall-iq.com" className="text-[var(--accent-jade)] hover:underline">support@rekall-iq.com</a></p>
           </div>
         </LegalSection>
       </div>

@@ -13,7 +13,7 @@ export function AppCard({
   return (
     <Card
       className={cn(
-        "rounded-2xl border border-slate-200 bg-white shadow-[0_14px_28px_rgba(15,23,42,0.05)]",
+        "rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[0_14px_28px_rgba(15,23,42,0.05)]",
         className,
       )}
       {...props}
@@ -37,7 +37,7 @@ export function AppCardTitle({
   return (
     <CardTitle
       className={cn(
-        "text-lg font-bold tracking-tight text-slate-950",
+        "text-lg font-bold tracking-tight text-[var(--ink)]",
         className,
       )}
       {...props}

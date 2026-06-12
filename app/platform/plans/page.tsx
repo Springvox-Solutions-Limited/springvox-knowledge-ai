@@ -50,23 +50,23 @@ export default function PlatformPlansPage() {
     <div className="admin-page">
       <PlatformPageHeader
         title="Plans"
-        subtitle="Manage demo plan labels for company workspaces."
-        privacyNote="Plan limits are display-only in this phase. Billing and payment processing are not enabled."
+        subtitle="Review workspace plan tiers and operational capacity guidance."
+        privacyNote="Showing plan capacity guidance and workspace assignments."
       />
 
-      {error && <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700"><AlertDescription>{error}</AlertDescription></Alert>}
+      {error && <Alert className="rounded-2xl border-red-500/30 bg-red-500/10 text-red-300"><AlertDescription>{error}</AlertDescription></Alert>}
 
       <div className="space-y-6">
         {loading ? (
-          <AppCard className="p-6 text-sm text-slate-500">Loading plans...</AppCard>
+          <AppCard className="p-6 text-sm text-[var(--ink-muted)]">Loading plans...</AppCard>
         ) : (
           plans.map((plan) => (
             <AppCard key={plan.plan} className="p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">
                   <PlanBadge plan={plan.plan} />
-                  <h2 className="text-2xl font-bold text-slate-950">{plan.label}</h2>
-                  <p className="max-w-2xl text-sm text-slate-600">{plan.description}</p>
+                  <h2 className="text-2xl font-bold text-[var(--ink)]">{plan.label}</h2>
+                  <p className="max-w-2xl text-sm text-[var(--ink-soft)]">{plan.description}</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <PlanMetric label="Suggested documents" value={plan.suggestedDocuments} />
@@ -75,24 +75,24 @@ export default function PlatformPlansPage() {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+              <div className="mt-6 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-slate-950">Workspaces on this plan</p>
-                  <span className="text-lg font-bold text-slate-950">{plan.workspaceCount}</span>
+                  <p className="text-sm font-semibold text-[var(--ink)]">Workspaces on this plan</p>
+                  <span className="text-lg font-bold text-[var(--ink)]">{plan.workspaceCount}</span>
                 </div>
               </div>
 
               <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {plan.companies.length === 0 ? (
-                  <p className="text-sm text-slate-500">No companies assigned to this plan yet.</p>
+                  <p className="text-sm text-[var(--ink-muted)]">No companies assigned to this plan yet.</p>
                 ) : (
                   plan.companies.map((company) => (
-                    <Link key={company.id} href={`/platform/companies/${company.id}`} className="rounded-2xl border border-slate-100 bg-white p-4 transition hover:border-slate-200 hover:shadow-md">
+                    <Link key={company.id} href={`/platform/companies/${company.id}`} className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 transition hover:border-[var(--line)] hover:shadow-md">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-slate-950">{company.name}</p>
+                        <p className="font-semibold text-[var(--ink)]">{company.name}</p>
                         <StatusBadge status={company.status} />
                       </div>
-                      <p className="mt-2 text-xs text-slate-500">{company.slug}</p>
+                      <p className="mt-2 text-xs text-[var(--ink-muted)]">{company.slug}</p>
                     </Link>
                   ))
                 )}
@@ -107,9 +107,9 @@ export default function PlatformPlansPage() {
 
 function PlanMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <p className="mt-2 text-lg font-bold text-slate-950">{value}</p>
+    <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">{label}</p>
+      <p className="mt-2 text-lg font-bold text-[var(--ink)]">{value}</p>
     </div>
   );
 }

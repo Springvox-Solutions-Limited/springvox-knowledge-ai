@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -50,10 +59,10 @@ type WorkspaceOption = {
 function UserStatusBadge({ status }: { status: string }) {
   const className =
     status === "active"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
       : status === "suspended" || status === "disabled"
-        ? "border-red-200 bg-red-50 text-red-700"
-        : "border-amber-200 bg-amber-50 text-amber-700";
+        ? "border-red-500/30 bg-red-500/10 text-red-300"
+        : "border-amber-500/30 bg-amber-500/10 text-amber-300";
 
   return (
     <span
@@ -193,10 +202,10 @@ export default function PlatformUsersPage() {
           className="h-12 px-4"
         />
         <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]">
             <SelectValue placeholder="All roles" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-slate-200">
+          <SelectContent className="rounded-xl border-[var(--line)]">
             <SelectItem value="all">All roles</SelectItem>
             <SelectItem value="platform_admin">Platform Admin</SelectItem>
             <SelectItem value="tenant_admin">Workspace Admin</SelectItem>
@@ -204,10 +213,10 @@ export default function PlatformUsersPage() {
           </SelectContent>
         </Select>
         <Select value={workspaceFilter} onValueChange={setWorkspaceFilter}>
-          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]">
             <SelectValue placeholder="All workspaces" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-slate-200">
+          <SelectContent className="rounded-xl border-[var(--line)]">
             <SelectItem value="all">All workspaces</SelectItem>
             {workspaceOptions.map((workspace) => (
               <SelectItem key={workspace.id} value={workspace.id}>
@@ -217,10 +226,10 @@ export default function PlatformUsersPage() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-slate-200">
+          <SelectContent className="rounded-xl border-[var(--line)]">
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="active">Active users</SelectItem>
             <SelectItem value="suspended">Suspended users</SelectItem>
@@ -246,7 +255,7 @@ export default function PlatformUsersPage() {
       ) : null}
 
       {error && (
-        <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700">
+        <Alert className="rounded-2xl border-red-500/30 bg-red-500/10 text-red-300">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -274,7 +283,7 @@ export default function PlatformUsersPage() {
                 <AppTableRow>
                   <AppTableCell
                     colSpan={7}
-                    className="py-12 text-center text-sm text-slate-500"
+                    className="py-12 text-center text-sm text-[var(--ink-muted)]"
                   >
                     Loading users...
                   </AppTableCell>
@@ -283,7 +292,7 @@ export default function PlatformUsersPage() {
                 <AppTableRow>
                   <AppTableCell
                     colSpan={7}
-                    className="py-12 text-center text-sm text-slate-500"
+                    className="py-12 text-center text-sm text-[var(--ink-muted)]"
                   >
                     No users found.
                   </AppTableCell>
@@ -293,23 +302,23 @@ export default function PlatformUsersPage() {
                   <AppTableRow key={user.id}>
                     <AppTableCell className="max-w-[18rem]">
                       <p
-                        className="truncate font-semibold text-slate-950"
+                        className="truncate font-semibold text-[var(--ink)]"
                         title={user.email || ""}
                       >
                         {user.email || "No email"}
                       </p>
                       <p
-                        className="mt-1 truncate text-xs text-slate-500"
+                        className="mt-1 truncate text-xs text-[var(--ink-muted)]"
                         title={user.workspace_name}
                       >
                         {user.workspace_name}
                       </p>
                     </AppTableCell>
-                    <AppTableCell className="text-sm font-semibold text-slate-700">
+                    <AppTableCell className="text-sm font-semibold text-[var(--ink-soft)]">
                       {getRoleLabel(user.role as any)}
                     </AppTableCell>
                     <AppTableCell
-                      className="max-w-[14rem] text-sm text-slate-600"
+                      className="max-w-[14rem] text-sm text-[var(--ink-soft)]"
                       title={user.workspace_name}
                     >
                       {user.workspace_name}
@@ -317,67 +326,79 @@ export default function PlatformUsersPage() {
                     <AppTableCell>
                       <UserStatusBadge status={user.status} />
                     </AppTableCell>
-                  <AppTableCell className="text-sm text-slate-600">
+                  <AppTableCell className="text-sm text-[var(--ink-soft)]">
                     {formatDate(user.created_at)}
                   </AppTableCell>
-                  <AppTableCell className="text-sm text-slate-600">
+                  <AppTableCell className="text-sm text-[var(--ink-soft)]">
                     {user.last_sign_in_at ? formatDate(user.last_sign_in_at) : "Not seen yet"}
                   </AppTableCell>
                   <AppTableCell>
-                      {user.role === "platform_admin" ? (
-                        <span className="text-xs font-semibold text-slate-400">
-                          Managed separately
-                        </span>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
+                    {user.role === "platform_admin" ? (
+                      <span className="text-xs font-semibold text-[var(--ink-muted)]">
+                        Managed separately
+                      </span>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <AppButton
-                            onClick={() => updateRole(user, "tenant_admin")}
-                            disabled={savingId === user.id}
                             tone="secondary"
-                            className="h-9 rounded-lg px-3 text-xs"
+                            disabled={savingId === user.id}
+                            className="h-9 gap-1.5 px-3 text-xs"
+                          >
+                            {savingId === user.id ? (
+                              <Loader2 size={13} className="animate-spin" />
+                            ) : null}
+                            Actions
+                            <ChevronDown size={13} />
+                          </AppButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44 rounded-xl border-[var(--line)] shadow-lg">
+                          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-[var(--ink-muted)]">
+                            Role
+                          </DropdownMenuLabel>
+                          <DropdownMenuItem
+                            className="cursor-pointer text-sm"
+                            onClick={() => updateRole(user, "tenant_admin")}
                           >
                             Make Workspace Admin
-                          </AppButton>
-                          <AppButton
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer text-sm"
                             onClick={() => updateRole(user, "viewer")}
-                            disabled={savingId === user.id}
-                            tone="secondary"
-                            className="h-9 rounded-lg px-3 text-xs"
                           >
                             Make Viewer
-                          </AppButton>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className="text-[10px] uppercase tracking-widest text-[var(--ink-muted)]">
+                            Status
+                          </DropdownMenuLabel>
                           {user.status === "active" ? (
                             <>
-                              <AppButton
+                              <DropdownMenuItem
+                                className="cursor-pointer text-sm text-amber-300 focus:text-amber-300"
                                 onClick={() => updateUserStatus(user, "suspended")}
-                                disabled={savingId === user.id}
-                                tone="destructive"
-                                className="h-9 rounded-lg px-3 text-xs"
                               >
                                 Suspend
-                              </AppButton>
-                              <AppButton
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="cursor-pointer text-sm text-red-300 focus:text-red-300"
                                 onClick={() => updateUserStatus(user, "disabled")}
-                                disabled={savingId === user.id}
-                                tone="destructive"
-                                className="h-9 rounded-lg px-3 text-xs"
                               >
                                 Disable
-                              </AppButton>
+                              </DropdownMenuItem>
                             </>
                           ) : (
-                            <AppButton
+                            <DropdownMenuItem
+                              className="cursor-pointer text-sm"
                               onClick={() => updateUserStatus(user, "active")}
-                              disabled={savingId === user.id}
-                              tone="secondary"
-                              className="h-9 rounded-lg px-3 text-xs"
                             >
                               Activate
-                            </AppButton>
+                            </DropdownMenuItem>
                           )}
-                        </div>
-                      )}
-                    </AppTableCell>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </AppTableCell>
                   </AppTableRow>
                 ))
               )}
@@ -394,13 +415,13 @@ export default function PlatformUsersPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p
-                      className="truncate font-semibold text-slate-950"
+                      className="truncate font-semibold text-[var(--ink)]"
                       title={user.email || ""}
                     >
                       {user.email || "No email"}
                     </p>
                     <p
-                      className="mt-1 truncate text-xs text-slate-500"
+                      className="mt-1 truncate text-xs text-[var(--ink-muted)]"
                       title={user.workspace_name}
                     >
                       {user.workspace_name}
@@ -408,7 +429,7 @@ export default function PlatformUsersPage() {
                   </div>
                   <UserStatusBadge status={user.status} />
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ink-muted)]">
                   <span>{getRoleLabel(user.role as any)}</span>
                   <span>•</span>
                   <span>Created {formatDate(user.created_at)}</span>
@@ -418,55 +439,30 @@ export default function PlatformUsersPage() {
                   </span>
                 </div>
                 {user.role === "platform_admin" ? (
-                  <p className="text-xs text-slate-400">Managed separately</p>
+                  <p className="text-xs text-[var(--ink-muted)]">Managed separately</p>
                 ) : (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <AppButton
-                      onClick={() => updateRole(user, "tenant_admin")}
-                      disabled={savingId === user.id}
-                      tone="secondary"
-                      className="h-10 px-3 text-xs"
-                    >
-                      Make Workspace Admin
-                    </AppButton>
-                    <AppButton
-                      onClick={() => updateRole(user, "viewer")}
-                      disabled={savingId === user.id}
-                      tone="secondary"
-                      className="h-10 px-3 text-xs"
-                    >
-                      Make Viewer
-                    </AppButton>
-                    {user.status === "active" ? (
-                      <>
-                        <AppButton
-                          onClick={() => updateUserStatus(user, "suspended")}
-                          disabled={savingId === user.id}
-                          tone="destructive"
-                          className="h-10 px-3 text-xs"
-                        >
-                          Suspend
-                        </AppButton>
-                        <AppButton
-                          onClick={() => updateUserStatus(user, "disabled")}
-                          disabled={savingId === user.id}
-                          tone="destructive"
-                          className="h-10 px-3 text-xs"
-                        >
-                          Disable
-                        </AppButton>
-                      </>
-                    ) : (
-                      <AppButton
-                        onClick={() => updateUserStatus(user, "active")}
-                        disabled={savingId === user.id}
-                        tone="secondary"
-                        className="h-10 px-3 text-xs"
-                      >
-                        Activate
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <AppButton tone="secondary" disabled={savingId === user.id} className="h-10 w-full gap-1.5 px-3 text-xs">
+                        {savingId === user.id ? <Loader2 size={13} className="animate-spin" /> : null}
+                        Actions
+                        <ChevronDown size={13} />
                       </AppButton>
-                    )}
-                  </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44 rounded-xl border-[var(--line)] shadow-lg">
+                      <DropdownMenuItem className="cursor-pointer text-sm" onClick={() => updateRole(user, "tenant_admin")}>Make Workspace Admin</DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer text-sm" onClick={() => updateRole(user, "viewer")}>Make Viewer</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {user.status === "active" ? (
+                        <>
+                          <DropdownMenuItem className="cursor-pointer text-sm text-amber-300 focus:text-amber-300" onClick={() => updateUserStatus(user, "suspended")}>Suspend</DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer text-sm text-red-300 focus:text-red-300" onClick={() => updateUserStatus(user, "disabled")}>Disable</DropdownMenuItem>
+                        </>
+                      ) : (
+                        <DropdownMenuItem className="cursor-pointer text-sm" onClick={() => updateUserStatus(user, "active")}>Activate</DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             </AppCard>
@@ -475,7 +471,7 @@ export default function PlatformUsersPage() {
       ) : null}
       {users.length > PAGE_SIZE ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[var(--ink-muted)]">
             Showing {(currentPage - 1) * PAGE_SIZE + 1}-
             {Math.min(currentPage * PAGE_SIZE, users.length)} of {users.length}
           </p>

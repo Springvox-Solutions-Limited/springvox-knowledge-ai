@@ -1,14 +1,27 @@
-# SpringVox Knowledge AI Design System
+# Rekall-IQ Design System
 
-This file is the permanent visual design contract for SpringVox Knowledge AI.
+> **CURRENT DIRECTION (2026-06-12) — Unified dark, professional console.**
+> The entire product — landing page, auth, dashboard, and platform console — uses one **dark theme**.
+> - **Canvas:** near-black olive-tinted `#0a0c0b` (`--canvas`); surfaces `#141816` (`--surface`); raised `#1c211e` (`--surface-2`); hairline borders `#242a26` (`--line`).
+> - **Text:** `--ink #f3f5f4`, `--ink-soft #b2bab5`, `--ink-muted #7b847e`.
+> - **Accent:** jade/teal — `--accent-jade #14b8a6`, hover `#2dd4bf`, translucent tints `--accent-jade-50/100/200`. Use the `teal-*` scale or the tokens — never `cyan-*`.
+> - **Shells:** both the dashboard and platform sidebars are dark (`--brand-sidebar #070908`); active states use translucent jade.
+> - **One title per page:** the body owns the page H1 (`AppPageHeader` / `PlatformPageHeader`); the top bar is a quiet breadcrumb (workspace context + actions) and must never repeat the title.
+> - **Logo:** the Rekall-IQ "R" monogram is an inline SVG (`src/components/brand/BrandLogo.tsx` → `RekallMark`); favicon at `public/brand/rekall-icon.svg`. There is no raster logo asset.
+> - **Radii:** `rounded-lg`/`rounded-xl`, denser spacing, subtle shadows — an "app" feel, not pill-heavy marketing.
+> - `<html class="dark">`; tokens live in `app/globals.css` `:root`; shared classes (`admin-shell-card`, `app-button-*`, `admin-input`) already follow this.
+>
+> The legacy v1 (navy `#0F172A` + cyan) **and** the interim light PipesHub direction are both retired. Any section below that describes a light canvas, white surfaces, or a light dashboard sidebar is historical — the dark tokens above govern.
 
-Future AI agents, frontend engineers, and contributors must read this file before making UI or UX changes. It defines how SpringVox should look, feel, behave, and communicate across public pages, onboarding, workspace dashboards, platform administration, document workflows, chat, analytics, and trust pages.
+This file is the permanent visual design contract for Rekall-IQ.
+
+Future AI agents, frontend engineers, and contributors must read this file before making UI or UX changes. It defines how Rekall-IQ should look, feel, behave, and communicate across public pages, onboarding, workspace dashboards, platform administration, document workflows, chat, analytics, and trust pages.
 
 Do not introduce a new visual direction without updating this file first.
 
 ## 1. Design Philosophy
 
-SpringVox is a secure workplace knowledge product. Its interface must communicate trust, calm intelligence, and operational control.
+Rekall-IQ is a secure workplace knowledge product. Its interface must communicate trust, calm intelligence, and operational control.
 
 The product exists so organisations can upload approved documents and let staff ask questions from those documents. The design should make this feel safe, clear, and easy, especially for non-technical users.
 
@@ -21,11 +34,11 @@ Core philosophy:
 - Enterprise control: admins need precise tools for documents, users, analytics, settings, and governance.
 - Lightweight execution: pages should feel fast, direct, and uncluttered.
 
-SpringVox should feel closer to a mature SaaS workspace than a marketing-heavy AI demo.
+Rekall-IQ should feel closer to a mature SaaS workspace than a marketing-heavy AI demo.
 
 ## 2. Brand Personality
 
-SpringVox speaks with a professional, helpful, and human voice.
+Rekall-IQ speaks with a professional, helpful, and human voice.
 
 Personality traits:
 
@@ -36,11 +49,11 @@ Personality traits:
 - Human: copy can be warm, but should avoid hype.
 - Measured: AI claims must be grounded and source-aware.
 
-SpringVox should not sound like a speculative AI product promising too much. It should sound like a dependable assistant that respects company knowledge boundaries.
+Rekall-IQ should not sound like a speculative AI product promising too much. It should sound like a dependable assistant that respects company knowledge boundaries.
 
 ## 3. Visual Theme & Atmosphere
 
-The SpringVox interface uses light workspace surfaces with a dark navy sidebar anchor.
+The Rekall-IQ interface uses light workspace surfaces with a dark navy sidebar anchor.
 
 Primary atmosphere:
 
@@ -70,7 +83,7 @@ Use a calm slate, navy, teal, and cyan system.
 
 Primary colors:
 
-- App background: `slate-50`, `#f8fafc`, or current SpringVox soft background `#f4f7fb`.
+- App background: `slate-50`, `#f8fafc`, or current Rekall-IQ soft background `#f4f7fb`.
 - Card surface: `white`, `#ffffff`.
 - Muted surface: `slate-50`, `#f8fafc`.
 - Border: `slate-200`, `#e2e8f0`.
@@ -106,7 +119,7 @@ Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", 
 
 Typography should support scanning.
 
-SpringVox uses Inter as the only named product font. It gives the interface a familiar, precise SaaS feel while staying clean enough for enterprise dashboards and data tables.
+Rekall-IQ uses Inter as the only named product font. It gives the interface a familiar, precise SaaS feel while staying clean enough for enterprise dashboards and data tables.
 
 Recommended scale:
 
@@ -134,7 +147,7 @@ Rules:
 
 ## 6. Layout Principles
 
-SpringVox layouts should be spacious enough to breathe but dense enough for repeated workplace use.
+Rekall-IQ layouts should be spacious enough to breathe but dense enough for repeated workplace use.
 
 Page layout:
 
@@ -159,7 +172,7 @@ Card layout:
 - Cards should hold specific units of information or repeated items.
 - Do not wrap page sections in decorative cards unless the section is a contained tool or data region.
 - Avoid cards inside cards.
-- Use rounded corners consistently with the current app, generally `rounded-xl`, `rounded-2xl`, or existing SpringVox card radius.
+- Use rounded corners consistently with the current app, generally `rounded-xl`, `rounded-2xl`, or existing Rekall-IQ card radius.
 
 ## 7. Component Styling Rules
 
@@ -266,7 +279,7 @@ Workspace admins need to manage documents, users, analytics, settings, and knowl
 
 ## 9. Platform Admin Patterns
 
-Platform Admin is for SpringVox operational management, not tenant content browsing.
+Platform Admin is for Rekall-IQ operational management, not tenant content browsing.
 
 Platform admin UI should emphasize:
 
@@ -429,7 +442,7 @@ Rules:
 
 ## 15. Responsive Behavior
 
-SpringVox must be first-class on mobile.
+Rekall-IQ must be first-class on mobile.
 
 390px mobile:
 
@@ -581,7 +594,7 @@ Future AI agents must follow these instructions when doing UI work:
 2. Preserve backend behavior unless explicitly asked to change it.
 3. Do not change auth, roles, workspace isolation, Supabase, Qdrant, Gemini, Inngest, RAG, or platform admin privacy rules during UI work.
 4. Use existing shared components first.
-5. Keep UI consistent with SpringVox's enterprise SaaS style.
+5. Keep UI consistent with Rekall-IQ's enterprise SaaS style.
 6. Do not introduce new colors, spacing systems, or component styles without updating `DESIGN.md`.
 7. Keep admin pages compact and scannable.
 8. Keep viewer-facing language non-technical.
@@ -594,5 +607,5 @@ Future AI agents must follow these instructions when doing UI work:
 Reusable prompt:
 
 ```text
-Use DESIGN.md as the source of truth. Preserve backend behavior and existing routes. Update the UI using existing SpringVox shared components, keep pages responsive at 390px and 430px, avoid technical end-user language, and run npx tsc --noEmit plus npm run build when code changes are complete.
+Use DESIGN.md as the source of truth. Preserve backend behavior and existing routes. Update the UI using existing Rekall-IQ shared components, keep pages responsive at 390px and 430px, avoid technical end-user language, and run npx tsc --noEmit plus npm run build when code changes are complete.
 ```

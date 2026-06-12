@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, Loader2, MailPlus, Users, AlertCircle } from "lucide-react";
+import { Copy, Loader2, MailPlus, ShieldCheck, Users, UserCog, AlertCircle, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -36,6 +36,7 @@ import {
   type UserProfile,
 } from "@/src/lib/workspace";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
+import { StatCard } from "@/src/components/ui/stat-card";
 import {
   AppTable,
   AppTableBody,
@@ -75,21 +76,21 @@ function getRoleTone(role: AnyAppRole) {
   switch (role) {
     case "tenant_admin":
     case "admin":
-      return "border-cyan-200 bg-cyan-50 text-cyan-800";
+      return "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] text-[var(--accent-jade)]";
     case "platform_admin":
-      return "border-slate-300 bg-slate-100 text-slate-800";
+      return "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink)]";
     default:
-      return "border-slate-200 bg-slate-50 text-slate-600";
+      return "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-soft)]";
   }
 }
 
 function UserStatusBadge({ status }: { status: ManagedUser["status"] }) {
   const className =
     status === "active"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
       : status === "suspended" || status === "disabled"
-        ? "border-red-200 bg-red-50 text-red-700"
-        : "border-amber-200 bg-amber-50 text-amber-700";
+        ? "border-red-500/30 bg-red-500/10 text-red-300"
+        : "border-amber-500/30 bg-amber-500/10 text-amber-300";
 
   return (
     <span
@@ -244,7 +245,7 @@ export default function UsersPage() {
     }
   };
 
-  const createInvitation = async (event: React.FormEvent) => {
+  const createInvitation = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
       setSaving(true);
@@ -366,39 +367,11 @@ export default function UsersPage() {
         subtitle="Manage team roles and invitations."
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            Workspace users
-          </p>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-            {users.length}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            Workspace admins
-          </p>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-            {users.filter((user) => user.role === "tenant_admin").length}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            Viewers
-          </p>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-            {users.filter((user) => user.role === "viewer").length}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            Pending invites
-          </p>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
-            {invitations.filter((item) => item.status === "pending").length}
-          </p>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Workspace users" value={users.length} icon={Users} />
+        <StatCard label="Workspace admins" value={users.filter((u) => u.role === "tenant_admin").length} icon={UserCog} />
+        <StatCard label="Viewers" value={users.filter((u) => u.role === "viewer").length} icon={ShieldCheck} />
+        <StatCard label="Pending invites" value={invitations.filter((i) => i.status === "pending").length} icon={Clock} />
       </div>
 
       <ResponsiveToolbar className="lg:items-center">
@@ -423,10 +396,10 @@ export default function UsersPage() {
           value={roleFilter}
           onValueChange={(value) => setRoleFilter(value as "all" | AnyAppRole)}
         >
-          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm lg:w-[14rem]">
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm lg:w-[14rem]">
             <SelectValue placeholder="All roles" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-slate-200">
+          <SelectContent className="rounded-xl border-[var(--line)]">
             <SelectItem value="all">All roles</SelectItem>
             <SelectItem value="platform_admin">Platform Admin</SelectItem>
             <SelectItem value="viewer">Viewer</SelectItem>
@@ -437,10 +410,10 @@ export default function UsersPage() {
           value={statusFilter}
           onValueChange={(value) => setStatusFilter(value as "all" | ManagedUser["status"])}
         >
-          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm lg:w-[13rem]">
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm lg:w-[13rem]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-slate-200">
+          <SelectContent className="rounded-xl border-[var(--line)]">
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="suspended">Suspended</SelectItem>
@@ -463,22 +436,22 @@ export default function UsersPage() {
       </ResponsiveToolbar>
 
       {error && (
-        <Alert className="rounded-2xl border-red-200 bg-red-50/50 text-red-700">
+        <Alert className="rounded-2xl border-red-500/30 bg-red-500/10 text-red-300">
           <AlertCircle size={18} className="mt-0.5 shrink-0" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       <OverflowGuard
-        className="hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:block"
+        className="hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--brand-shadow)] md:block"
         mode="scroll"
       >
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 px-6 py-24">
             <div className="relative w-12 h-12">
-              <Loader2 size={24} className="animate-spin text-slate-400" />
+              <Loader2 size={24} className="animate-spin text-[var(--ink-muted)]" />
             </div>
-            <p className="text-sm font-medium text-slate-600">
+            <p className="text-sm font-medium text-[var(--ink-soft)]">
               Loading users...
             </p>
           </div>
@@ -510,21 +483,21 @@ export default function UsersPage() {
                 <AppTableRow key={user.id}>
                   <AppTableCell className="max-w-[18rem]">
                     <p
-                      className="truncate text-sm font-bold text-slate-900"
+                      className="truncate text-sm font-bold text-[var(--ink)]"
                       title={user.email || ""}
                     >
                       {user.email || "Anonymous"}
                     </p>
                     {user.full_name && (
                       <p
-                        className="mt-1 truncate text-xs font-medium text-slate-500"
+                        className="mt-1 truncate text-xs font-medium text-[var(--ink-muted)]"
                         title={user.full_name}
                       >
                         {user.full_name}
                       </p>
                     )}
                     <p
-                      className="mt-2 truncate text-[11px] font-medium text-slate-400"
+                      className="mt-2 truncate text-[11px] font-medium text-[var(--ink-muted)]"
                       title={user.workspace_name}
                     >
                       {user.workspace_name}
@@ -543,10 +516,10 @@ export default function UsersPage() {
                   <AppTableCell>
                     <UserStatusBadge status={user.status} />
                   </AppTableCell>
-                  <AppTableCell className="text-xs text-slate-500">
+                  <AppTableCell className="text-xs text-[var(--ink-muted)]">
                     {new Date(user.created_at).toLocaleDateString()}
                   </AppTableCell>
-                  <AppTableCell className="text-xs text-slate-500">
+                  <AppTableCell className="text-xs text-[var(--ink-muted)]">
                     {new Date(user.updated_at).toLocaleDateString()}
                   </AppTableCell>
                   <AppTableCell className="text-right">
@@ -563,7 +536,7 @@ export default function UsersPage() {
                           className={cn(
                             "h-8 rounded-lg px-2.5 text-[11px]",
                             roleOption === user.role
-                              ? "cursor-default border-slate-200 bg-slate-100 text-slate-400"
+                              ? "cursor-default border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-muted)]"
                               : "",
                           )}
                         >
@@ -607,27 +580,27 @@ export default function UsersPage() {
           {pagedUsers.map((user) => (
             <div
               key={`${user.id}-mobile`}
-              className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_14px_28px_rgba(15,23,42,0.05)]"
+              className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--brand-shadow)]"
             >
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p
-                      className="truncate text-sm font-bold text-slate-950"
+                      className="truncate text-sm font-bold text-[var(--ink)]"
                       title={user.email || ""}
                     >
                       {user.email || "Anonymous"}
                     </p>
                     {user.full_name ? (
                       <p
-                        className="mt-1 truncate text-xs text-slate-500"
+                        className="mt-1 truncate text-xs text-[var(--ink-muted)]"
                         title={user.full_name}
                       >
                         {user.full_name}
                       </p>
                     ) : null}
                     <p
-                      className="mt-2 truncate text-[11px] font-medium text-slate-400"
+                      className="mt-2 truncate text-[11px] font-medium text-[var(--ink-muted)]"
                       title={user.workspace_name}
                     >
                       {user.workspace_name}
@@ -643,7 +616,7 @@ export default function UsersPage() {
                   </span>
                 </div>
                 <UserStatusBadge status={user.status} />
-                <div className="grid gap-2 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 text-xs text-slate-500">
+                <div className="grid gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-3 text-xs text-[var(--ink-muted)]">
                   <p>Added: {new Date(user.created_at).toLocaleDateString()}</p>
                   <p>
                     Updated: {new Date(user.updated_at).toLocaleDateString()}
@@ -660,7 +633,7 @@ export default function UsersPage() {
                       className={cn(
                         "h-9 px-3 text-xs",
                         roleOption === user.role
-                          ? "cursor-default border-slate-200 bg-slate-100 text-slate-400"
+                          ? "cursor-default border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-muted)]"
                           : "",
                       )}
                     >
@@ -699,7 +672,7 @@ export default function UsersPage() {
 
       {filteredUsers.length > PAGE_SIZE ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[var(--ink-muted)]">
             Showing {(currentPage - 1) * PAGE_SIZE + 1}-
             {Math.min(currentPage * PAGE_SIZE, filteredUsers.length)} of{" "}
             {filteredUsers.length}
@@ -727,17 +700,17 @@ export default function UsersPage() {
         </div>
       ) : null}
 
-      <div className="admin-shell-card border border-slate-200 bg-white p-5 sm:p-6">
+      <div className="admin-shell-card border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-slate-950">
+            <h2 className="text-lg font-bold tracking-tight text-[var(--ink)]">
               Active invitations
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-[var(--ink-muted)]">
               Manage pending access requests and generated invite links.
             </p>
           </div>
-          <div className="flex h-9 items-center rounded-xl border border-slate-200 bg-slate-100 px-3 text-xs font-bold text-slate-700">
+          <div className="flex h-9 items-center rounded-xl border border-[var(--line)] bg-[var(--surface-2)] px-3 text-xs font-bold text-[var(--ink-soft)]">
             {invitations.filter((item) => item.status === "pending").length}{" "}
             pending
           </div>
@@ -745,14 +718,14 @@ export default function UsersPage() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {invitations.length === 0 ? (
-            <div className="col-span-full py-12 text-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-300 mx-auto mb-3">
+            <div className="col-span-full py-12 text-center rounded-2xl border-2 border-dashed border-[var(--line)] bg-[var(--surface-2)]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface)] text-slate-300 mx-auto mb-3">
                 <MailPlus size={24} />
               </div>
-              <p className="text-sm font-medium text-slate-600">
+              <p className="text-sm font-medium text-[var(--ink-soft)]">
                 No active invitations
               </p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-[var(--ink-muted)] mt-1">
                 Send an invite to add new users to your workspace.
               </p>
             </div>
@@ -760,23 +733,23 @@ export default function UsersPage() {
             invitations.slice(0, 12).map((invitation) => (
               <div
                 key={invitation.id}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm"
               >
                 <div className="flex flex-col gap-4 h-full">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p
-                        className="text-sm font-bold text-slate-900 truncate"
+                        className="text-sm font-bold text-[var(--ink)] truncate"
                         title={invitation.email}
                       >
                         {invitation.email}
                       </p>
-                      <p className="mt-2 text-xs font-medium text-slate-500 flex items-center gap-2">
+                      <p className="mt-2 text-xs font-medium text-[var(--ink-muted)] flex items-center gap-2">
                         <span
                           className={cn(
                             "rounded-full w-2 h-2 block",
                             invitation.status === "pending"
-                              ? "bg-blue-500"
+                              ? "bg-amber-400"
                               : invitation.status === "accepted"
                                 ? "bg-emerald-500"
                                 : "bg-slate-400",
@@ -811,7 +784,7 @@ export default function UsersPage() {
                     <Copy size={14} />
                     Copy Link
                   </AppButton>
-                  <p className="text-[11px] text-slate-400 font-medium">
+                  <p className="text-[11px] text-[var(--ink-muted)] font-medium">
                     Expires{" "}
                     {new Date(invitation.expires_at).toLocaleDateString(
                       undefined,
@@ -866,21 +839,21 @@ export default function UsersPage() {
               event.preventDefault();
             }
           }}
-          className="rounded-[28px] border-slate-200 bg-white p-0 sm:max-w-lg"
+          className="rounded-2xl border-[var(--line)] bg-[var(--surface)] p-0 sm:max-w-lg"
         >
           <div className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-5 sm:p-8">
             <DialogHeader className="mb-8">
-              <DialogTitle className="text-xl font-bold tracking-tight text-slate-950">
+              <DialogTitle className="text-xl font-bold tracking-tight text-[var(--ink)]">
                 Invite user
               </DialogTitle>
-              <DialogDescription className="mt-1 text-xs font-medium text-slate-500">
+              <DialogDescription className="mt-1 text-xs font-medium text-[var(--ink-muted)]">
                 Create a secure entry link for this workspace.
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={createInvitation} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] ml-1">
                   Email Address
                 </label>
                 <Input
@@ -893,17 +866,17 @@ export default function UsersPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] ml-1">
                   Workspace Role
                 </label>
                 <Select
                   value={inviteRole}
                   onValueChange={(value) => setInviteRole(value as AppRole)}
                 >
-                  <SelectTrigger className="admin-input h-12 rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm">
+                  <SelectTrigger className="admin-input h-12 rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm">
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl border-slate-200">
+                  <SelectContent className="rounded-xl border-[var(--line)]">
                     <SelectItem value="viewer">Viewer</SelectItem>
                     <SelectItem value="tenant_admin">
                       Workspace Admin
@@ -913,12 +886,12 @@ export default function UsersPage() {
               </div>
 
               {createdInviteUrl && (
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 space-y-4">
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 space-y-4">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300">
                       Invitation link ready
                     </p>
-                    <p className="mt-2 rounded-lg border border-emerald-100 bg-white/50 p-3 font-mono text-xs text-emerald-800 wrap-anywhere">
+                    <p className="mt-2 rounded-lg border border-emerald-500/30 bg-[var(--surface)] p-3 font-mono text-xs text-emerald-300 wrap-anywhere">
                       {createdInviteUrl}
                     </p>
                   </div>

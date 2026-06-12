@@ -4,26 +4,26 @@ import { LegalSection } from '@/src/components/legal/LegalSection';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | SpringVox Knowledge AI',
-  description: 'How we collect, use, process, and protect your information in SpringVox Knowledge AI.',
+  title: 'Privacy Policy | Rekall-IQ',
+  description: 'How we collect, use, process, and protect your information in Rekall-IQ.',
 };
 
 export default function PrivacyPage() {
   return (
     <LegalPageLayout
       title="Privacy Policy"
-      description="We believe in clarity, privacy, and control over your organisational data. This Privacy Policy details how we handle information in SpringVox Knowledge AI."
+      description="We believe in clarity, privacy, and control over your organisational data. This Privacy Policy details how we handle information in Rekall-IQ."
       lastUpdated="May 2026"
       activePath="/privacy"
     >
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-slate-600">
-          This Privacy Policy explains how SpringVox (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) collects, uses, shares, and protects information from organisations and users who interact with the SpringVox Knowledge AI platform.
+        <p className="text-sm leading-6 text-[var(--ink-soft)]">
+          This Privacy Policy explains how Rekall-IQ (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;) collects, uses, shares, and protects information from organisations and users who interact with the Rekall-IQ platform.
         </p>
 
         <LegalSection id="who-we-are" title="1. Who We Are">
           <p>
-            SpringVox Knowledge AI is a secure, multi-tenant SaaS platform that allows organisations to upload approved company documents and provide their staff with an AI assistant that answers questions based strictly on the context of those uploaded documents.
+            Rekall-IQ is a secure, multi-tenant SaaS platform that allows organisations to upload approved company documents and provide their staff with an AI assistant that answers questions based strictly on the context of those uploaded documents.
           </p>
         </LegalSection>
 
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
         <LegalSection id="how-we-use-information" title="3. How We Use Information">
           <p>We process the information we collect to:</p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li>Provide, maintain, and support the SpringVox Knowledge AI platform.</li>
+            <li>Provide, maintain, and support the Rekall-IQ platform.</li>
             <li>Authenticate users and enforce role-based access permissions.</li>
             <li>Process uploaded documents asynchronously through our background workers.</li>
             <li>Generate context-specific answers from customer documents and display source citations.</li>
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
 
         <LegalSection id="ai-processing" title="4. AI Processing & Document Context">
           <p>
-            SpringVox Knowledge AI utilises advanced language models to generate embeddings and retrieve accurate answers. Specifically:
+            Rekall-IQ utilises advanced language models to generate embeddings and retrieve accurate answers. Specifically:
           </p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
             <li>
@@ -98,7 +98,7 @@ export default function PrivacyPage() {
           <ul className="list-disc pl-5 mt-2 space-y-1">
             <li>With infrastructure processors listed in Section 5 strictly to provide the SaaS service.</li>
             <li>To comply with valid legal processes, law enforcement requests, or applicable statutory laws.</li>
-            <li>To protect and defend the rights, safety, and security of SpringVox, our users, and the public.</li>
+            <li>To protect and defend the rights, safety, and security of Rekall-IQ, our users, and the public.</li>
             <li>With the explicit consent or direction of the customer organisation.</li>
           </ul>
         </LegalSection>
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
 
         <LegalSection id="security-summary" title="9. Security & Trust">
           <p>
-            We take reasonable technical and administrative measures designed to protect information from loss, theft, and unauthorised access. For a detailed breakdown of our security controls, please review our <Link href="/security" className="text-cyan-600 hover:underline font-semibold">Security & Data Protection</Link> page.
+            We take reasonable technical and administrative measures designed to protect information from loss, theft, and unauthorised access. For a detailed breakdown of our security controls, please review our <Link href="/security" className="text-[var(--accent-jade)] hover:underline font-semibold">Security & Data Protection</Link> page.
           </p>
         </LegalSection>
 
@@ -147,7 +147,7 @@ export default function PrivacyPage() {
 
         <LegalSection id="children" title="12. Children and Minors">
           <p>
-            SpringVox Knowledge AI is designed for professional business use and is not directed at children under the age of 13 (or the legal age in your jurisdiction). We do not knowingly collect personal information from children.
+            Rekall-IQ is designed for professional business use and is not directed at children under the age of 13 (or the legal age in your jurisdiction). We do not knowingly collect personal information from children.
           </p>
         </LegalSection>
 
@@ -161,8 +161,8 @@ export default function PrivacyPage() {
           <p>
             For any questions, requests, or concerns regarding your privacy, please reach out to us at:
           </p>
-          <div className="mt-2 bg-slate-50 border border-slate-200/80 p-3 rounded-xl inline-block">
-            <p className="font-semibold text-slate-800">Email: <a href="mailto:privacy@springvox.ai" className="text-cyan-600 hover:underline">privacy@springvox.ai</a></p>
+          <div className="mt-2 bg-[var(--surface-2)] border border-[var(--line)] p-3 rounded-xl inline-block">
+            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:privacy@rekall-iq.com" className="text-[var(--accent-jade)] hover:underline">privacy@rekall-iq.com</a></p>
           </div>
         </LegalSection>
       </div>

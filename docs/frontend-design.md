@@ -1,8 +1,14 @@
 # Frontend Design Documentation
 
+> **Theme note (2026-06-12):** the product is a unified **dark** theme driven by CSS tokens in
+> `app/globals.css` (`--canvas #0a0c0b`, `--surface #141816`, `--ink`, `--line #242a26`, accent
+> `--accent-jade #14b8a6`); `<html class="dark">`. Both sidebars are dark; each page shows one H1
+> (body) with a breadcrumb top bar. The authoritative visual contract is `DESIGN.md` — any
+> light-theme description below is historical.
+
 ## Overview
 
-SpringVox Knowledge AI uses a single Next.js App Router frontend with three clearly separated product surfaces:
+Rekall-IQ uses a single Next.js App Router frontend with three clearly separated product surfaces:
 
 - Public marketing and onboarding pages
 - Tenant workspace experience under `/dashboard`
@@ -97,7 +103,7 @@ The workspace shell adapts based on role:
 
 ### 3. Platform Admin Surface
 
-The platform surface supports SpringVox operators managing many companies.
+The platform surface supports Rekall-IQ operators managing many companies.
 
 Primary route group:
 
@@ -193,7 +199,7 @@ The product relies heavily on hierarchy through weight, spacing, and casing rath
 The UI system is layered:
 
 1. Base primitives in `components/ui`
-2. SpringVox-branded wrappers in `src/components/ui`
+2. Rekall-IQ-branded wrappers in `src/components/ui`
 3. Feature-level compositions in `src/components/*`
 
 Examples:
@@ -348,7 +354,7 @@ Backend enforcement still remains authoritative, but the frontend reduces confus
 When building new UI, prefer this order:
 
 1. Reuse a `components/ui` primitive if it already solves the behavior
-2. Wrap it in a SpringVox-branded `src/components/ui` component if the visual pattern is shared
+2. Wrap it in a Rekall-IQ-branded `src/components/ui` component if the visual pattern is shared
 3. Compose that wrapper into feature-specific views
 
 That preserves consistency while keeping product-specific design decisions centralized.

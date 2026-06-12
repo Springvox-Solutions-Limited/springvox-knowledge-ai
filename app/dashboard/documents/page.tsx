@@ -9,13 +9,22 @@ import {
   CheckCircle2,
   Clock,
   Database,
+  Eye,
   Loader2,
   Upload,
 } from "lucide-react";
+import { FilePreviewDrawer } from "@/src/components/file-preview/FilePreviewDrawer";
 import { cn } from "@/src/lib/utils";
 import { type UserProfile } from "@/src/lib/workspace";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import { MobileCardList } from "@/src/components/layout/MobileCardList";
 import { OverflowGuard } from "@/src/components/layout/OverflowGuard";
@@ -38,6 +47,14 @@ type DocumentRecord = {
   document_summary?: string | null;
   document_keywords?: string[] | null;
   document_category?: string | null;
+  collection_id?: string | null;
+};
+
+type Collection = {
+  id: string;
+  name: string;
+  slug: string;
+  is_default: boolean;
 };
 
 function getDisplayFileType(document: DocumentRecord) {
@@ -76,6 +93,59 @@ export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [collectionFilter, setCollectionFilter] = useState<string>("all");
+  const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ id: string; filename: string; mimeType?: string | null } | null>(null);
+
+  const collectionNameById = new Map(collections.map((c) => [c.id, c.name]));
+
+  const fetchCollections = async () => {
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) return;
+      const res = await fetch("/api/collections", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setCollections(data.collections || []);
+    } catch {
+      // Collections are optional context for this page.
+    }
+  };
+
+  const assignCollection = async (documentId: string, collectionId: string) => {
+    setAssigningId(documentId);
+    setActionError(null);
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("Authentication session expired");
+      const res = await fetch("/api/documents/collection", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          documentId,
+          collectionId: collectionId === "none" ? null : collectionId,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update collection");
+      setDocuments((current) =>
+        current.map((doc) =>
+          doc.id === documentId
+            ? { ...doc, collection_id: collectionId === "none" ? null : collectionId }
+            : doc,
+        ),
+      );
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to update collection");
+    } finally {
+      setAssigningId(null);
+    }
+  };
 
   const fetchDocs = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -99,6 +169,7 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     fetchDocs();
+    fetchCollections();
   }, []);
 
   // Poll while any document is processing
@@ -142,9 +213,17 @@ export default function DocumentsPage() {
     }
   };
 
-  const filteredDocuments = documents.filter((document) =>
-    document.filename.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredDocuments = documents.filter((document) => {
+    const matchesSearch = document.filename
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesCollection =
+      collectionFilter === "all" ||
+      (collectionFilter === "none"
+        ? !document.collection_id
+        : document.collection_id === collectionFilter);
+    return matchesSearch && matchesCollection;
+  });
   const totalPages = Math.max(
     1,
     Math.ceil(filteredDocuments.length / PAGE_SIZE),
@@ -153,11 +232,11 @@ export default function DocumentsPage() {
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE,
   );
-  const hasFilters = Boolean(searchQuery);
+  const hasFilters = Boolean(searchQuery) || collectionFilter !== "all";
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, collectionFilter]);
 
   return (
     <div className="admin-page">
@@ -174,13 +253,30 @@ export default function DocumentsPage() {
           placeholder="Search documents by filename..."
           className="flex-1"
         />
+        <Select value={collectionFilter} onValueChange={setCollectionFilter}>
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)] lg:w-56">
+            <SelectValue placeholder="All collections" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-[var(--line)]">
+            <SelectItem value="all">All collections</SelectItem>
+            <SelectItem value="none">Uncategorized</SelectItem>
+            {collections.map((collection) => (
+              <SelectItem key={collection.id} value={collection.id}>
+                {collection.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {hasFilters ? (
           <AppButton
             tone="secondary"
-            onClick={() => setSearchQuery("")}
+            onClick={() => {
+              setSearchQuery("");
+              setCollectionFilter("all");
+            }}
             className="w-full whitespace-nowrap sm:w-auto"
           >
-            Clear search
+            Clear filters
           </AppButton>
         ) : null}
         <AppButton asChild className="w-full whitespace-nowrap px-6 sm:w-auto">
@@ -192,50 +288,53 @@ export default function DocumentsPage() {
       </ResponsiveToolbar>
 
       {actionError && (
-        <Alert className="rounded-2xl border-red-200 bg-red-50/50 text-red-700">
+        <Alert className="rounded-2xl border-red-500/30 bg-red-500/10 text-red-300">
           <AlertDescription>{actionError}</AlertDescription>
         </Alert>
       )}
 
-      <div className="admin-shell-card border border-slate-200 bg-white">
+      <div className="admin-shell-card overflow-hidden">
         <OverflowGuard mode="scroll" className="hidden lg:block">
           <table className="hidden w-full border-collapse text-left lg:table">
             <thead>
-              <tr className="bg-slate-50/60 border-b border-slate-200">
-                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
+              <tr className="border-b border-[var(--line)] bg-[var(--canvas-soft)]">
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Document
                 </th>
-                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Status
                 </th>
-                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Type
                 </th>
-                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Category
                 </th>
-                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
+                  Collection
+                </th>
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Sections
                 </th>
-                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Uploaded
                 </th>
-                <th className="px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600 text-right">
+                <th className="px-6 py-3 text-right text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--line-soft)]">
               {loading ? (
                 [1, 2, 3].map((i) => (
                   <tr key={i}>
-                    <td colSpan={7} className="px-6 py-16 text-center">
+                    <td colSpan={8} className="px-6 py-16 text-center">
                       <div className="flex items-center justify-center gap-3">
                         <Loader2
                           size={18}
-                          className="animate-spin text-slate-400"
+                          className="animate-spin text-[var(--ink-muted)]"
                         />
-                        <span className="text-sm font-medium text-slate-600">
+                        <span className="text-sm font-medium text-[var(--ink-soft)]">
                           Loading documents...
                         </span>
                       </div>
@@ -244,7 +343,7 @@ export default function DocumentsPage() {
                 ))
               ) : filteredDocuments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-24 text-center">
+                  <td colSpan={8} className="px-6 py-24 text-center">
                     <EmptyState
                       icon={FileText}
                       title={
@@ -265,28 +364,28 @@ export default function DocumentsPage() {
                 pagedDocuments.map((doc) => (
                   <tr
                     key={doc.id}
-                    className="hover:bg-slate-50/60 transition-colors"
+                    className="hover:bg-[var(--canvas-soft)] transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50">
-                          <FileText size={18} className="text-slate-500" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--surface-2)]">
+                          <FileText size={18} className="text-[var(--ink-muted)]" />
                         </div>
                         <span
                           title={doc.filename}
-                          className="max-w-xs truncate text-sm font-semibold text-slate-900"
+                          className="max-w-xs truncate text-sm font-semibold text-[var(--ink)]"
                         >
                           {doc.filename}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <StatusBadge status={doc.status} />
                         {doc.status === "processing" && (
                           <Loader2
                             size={14}
-                            className="animate-spin text-blue-500"
+                            className="animate-spin text-[var(--accent-jade)]"
                           />
                         )}
                       </div>
@@ -294,34 +393,55 @@ export default function DocumentsPage() {
                         title={getParserStatus(doc)}
                         className={cn(
                           "mt-2 max-w-xs truncate text-[11px]",
-                          doc.status === "failed" ? "text-red-600" : "text-slate-500",
+                          doc.status === "failed" ? "text-red-300" : "text-[var(--ink-muted)]",
                         )}
                       >
                         {getParserStatus(doc)}
                       </p>
                     </td>
-                    <td className="px-6 py-5">
-                      <span className="inline-flex rounded-lg bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                    <td className="px-6 py-4">
+                      <span className="inline-flex rounded-lg bg-[var(--surface-2)] px-2.5 py-1 text-xs font-semibold text-[var(--ink-soft)]">
                         {getDisplayFileType(doc)}
                       </span>
                     </td>
-                    <td className="px-6 py-5">
-                      <span className="inline-flex rounded-lg bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
+                    <td className="px-6 py-4">
+                      <span className="inline-flex rounded-lg bg-[var(--accent-jade-50)] px-2.5 py-1 text-xs font-semibold text-[var(--accent-jade)]">
                         {doc.document_category || "Other"}
                       </span>
                       {doc.document_summary ? (
-                        <p className="mt-2 max-w-xs truncate text-[11px] text-slate-500" title={doc.document_summary}>
+                        <p className="mt-2 max-w-xs truncate text-[11px] text-[var(--ink-muted)]" title={doc.document_summary}>
                           {doc.document_summary}
                         </p>
                       ) : null}
                     </td>
-                    <td className="px-6 py-5">
-                      <span className="text-xs font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg inline-block">
+                    <td className="px-6 py-4">
+                      <Select
+                        value={doc.collection_id || "none"}
+                        onValueChange={(value) => assignCollection(doc.id, value)}
+                        disabled={assigningId === doc.id}
+                      >
+                        <SelectTrigger className="h-9 w-40 rounded-lg border-[var(--line)] bg-[var(--surface)] text-xs shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]">
+                          <SelectValue placeholder="Unassigned">
+                            {doc.collection_id ? collectionNameById.get(doc.collection_id) : "Unassigned"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-[var(--line)]">
+                          <SelectItem value="none">Unassigned</SelectItem>
+                          {collections.map((collection) => (
+                            <SelectItem key={collection.id} value={collection.id}>
+                              {collection.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-semibold text-[var(--ink-soft)] bg-[var(--surface-2)] px-2.5 py-1 rounded-lg inline-block">
                         {doc.total_chunks || 0}
                       </span>
                     </td>
-                    <td className="px-6 py-5">
-                      <span className="text-xs font-medium text-slate-500">
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-medium text-[var(--ink-muted)]">
                         {new Date(doc.created_at).toLocaleDateString(
                           undefined,
                           {
@@ -332,20 +452,31 @@ export default function DocumentsPage() {
                         )}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-right">
-                      <button
-                        aria-label={`Delete ${doc.filename}`}
-                        onClick={() => setConfirmDeleteId(doc.id)}
-                        disabled={deletingId === doc.id}
-                        className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-500 transition-all hover:bg-red-50 hover:text-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {deletingId === doc.id ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <Trash2 size={14} />
-                        )}
-                        Delete
-                      </button>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          aria-label={`Preview ${doc.filename}`}
+                          onClick={() => setPreviewDoc({ id: doc.id, filename: doc.filename, mimeType: doc.file_type })}
+                          disabled={doc.status !== "ready"}
+                          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--ink-muted)] transition-all hover:bg-[var(--canvas-soft)] hover:text-[var(--accent-jade)] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Eye size={14} />
+                          Preview
+                        </button>
+                        <button
+                          aria-label={`Delete ${doc.filename}`}
+                          onClick={() => setConfirmDeleteId(doc.id)}
+                          disabled={deletingId === doc.id}
+                          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--ink-muted)] transition-all hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {deletingId === doc.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={14} />
+                          )}
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -359,7 +490,7 @@ export default function DocumentsPage() {
             [1, 2, 3].map((index) => (
               <div
                 key={index}
-                className="h-40 animate-pulse rounded-2xl bg-slate-100"
+                className="h-40 animate-pulse rounded-2xl bg-[var(--surface-2)]"
               />
             ))
           ) : filteredDocuments.length === 0 ? (
@@ -378,25 +509,25 @@ export default function DocumentsPage() {
             pagedDocuments.map((doc) => (
               <div
                 key={doc.id}
-              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="min-w-0 flex-1">
                     <p
                       title={doc.filename}
-                      className="truncate text-sm font-bold text-slate-900"
+                      className="truncate text-sm font-bold text-[var(--ink)]"
                     >
                       {doc.filename}
                     </p>
-                    <p className="mt-2 text-xs font-medium text-slate-500">
+                    <p className="mt-2 text-xs font-medium text-[var(--ink-muted)]">
                       {new Date(doc.created_at).toLocaleDateString()} •{" "}
                       {getDisplayFileType(doc)} • {doc.total_chunks || 0} sections
                     </p>
-                    <p className="mt-2 text-xs font-semibold text-cyan-700">
+                    <p className="mt-2 text-xs font-semibold text-[var(--accent-jade)]">
                       {doc.document_category || "Other"}
                     </p>
                     {doc.document_summary ? (
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--ink-muted)]">
                         {doc.document_summary}
                       </p>
                     ) : null}
@@ -404,7 +535,7 @@ export default function DocumentsPage() {
                       title={getParserStatus(doc)}
                       className={cn(
                         "mt-1 line-clamp-2 text-xs",
-                        doc.status === "failed" ? "text-red-600" : "text-slate-500",
+                        doc.status === "failed" ? "text-red-300" : "text-[var(--ink-muted)]",
                       )}
                     >
                       {getParserStatus(doc)}
@@ -414,7 +545,7 @@ export default function DocumentsPage() {
                     aria-label={`Delete ${doc.filename}`}
                     onClick={() => setConfirmDeleteId(doc.id)}
                     disabled={deletingId === doc.id}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-40"
+                    className="rounded-lg p-2 text-[var(--ink-muted)] hover:bg-red-500/10 hover:text-red-300 transition-colors disabled:opacity-40"
                   >
                     {deletingId === doc.id ? (
                       <Loader2 size={16} className="animate-spin" />
@@ -429,8 +560,8 @@ export default function DocumentsPage() {
           )}
         </MobileCardList>
         {filteredDocuments.length > PAGE_SIZE ? (
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-slate-500">
+          <div className="flex flex-col gap-3 border-t border-[var(--line)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-[var(--ink-muted)]">
               Showing {(currentPage - 1) * PAGE_SIZE + 1}-
               {Math.min(currentPage * PAGE_SIZE, filteredDocuments.length)} of{" "}
               {filteredDocuments.length}
@@ -458,6 +589,14 @@ export default function DocumentsPage() {
           </div>
         ) : null}
       </div>
+      <FilePreviewDrawer
+        open={!!previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        documentId={previewDoc?.id ?? null}
+        filename={previewDoc?.filename ?? ""}
+        mimeType={previewDoc?.mimeType ?? null}
+      />
+
       <ConfirmDialog
         open={Boolean(confirmDeleteId)}
         onOpenChange={(open) => {

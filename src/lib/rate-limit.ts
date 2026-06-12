@@ -65,45 +65,35 @@ export async function checkRateLimit({
   const windowStartIso = windowStart.toISOString();
   const expiresAtIso = expiresAt.toISOString();
 
-  await supabase.from('rate_limits').delete().lt('expires_at', new Date().toISOString());
+  // Best-effort, non-blocking cleanup of expired rows (~5% of calls) so the
+  // table stays small without adding a delete to every hot-path request.
+  if (Math.random() < 0.05) {
+    void supabase
+      .from('rate_limits')
+      .delete()
+      .lt('expires_at', new Date().toISOString())
+      .then(({ error }) => {
+        if (error) console.warn('[RateLimit] cleanup failed:', error.message);
+      });
+  }
 
-  const { data: existing, error: selectError } = await supabase
-    .from('rate_limits')
-    .select('id, count')
-    .eq('key', key)
-    .eq('scope', scope)
-    .eq('window_start', windowStartIso)
-    .maybeSingle();
+  // Atomic increment via SQL upsert (see sql/phase6_atomic_rate_limit.sql).
+  // This avoids the TOCTOU race where two concurrent requests both read the
+  // same count and each believe they are under the limit.
+  const { data: countData, error: rpcError } = await supabase.rpc('check_and_increment_rate_limit', {
+    p_key: key,
+    p_scope: scope,
+    p_window_start: windowStartIso,
+    p_expires_at: expiresAtIso,
+  });
 
-  if (selectError) {
-    console.warn('[RateLimit] select failed:', selectError.message);
+  if (rpcError) {
+    console.warn('[RateLimit] atomic increment failed:', rpcError.message);
+    // Fail open so a transient DB issue never locks legitimate users out.
     return { allowed: true, limit, remaining: limit - 1, retryAfter: windowSeconds };
   }
 
-  const nextCount = (existing?.count || 0) + 1;
-
-  if (existing) {
-    const { error } = await supabase
-      .from('rate_limits')
-      .update({ count: nextCount, expires_at: expiresAtIso })
-      .eq('id', existing.id);
-
-    if (error) {
-      console.warn('[RateLimit] update failed:', error.message);
-    }
-  } else {
-    const { error } = await supabase.from('rate_limits').insert({
-      key,
-      scope,
-      count: nextCount,
-      window_start: windowStartIso,
-      expires_at: expiresAtIso,
-    });
-
-    if (error) {
-      console.warn('[RateLimit] insert failed:', error.message);
-    }
-  }
+  const nextCount = typeof countData === 'number' ? countData : 1;
 
   const retryAfter = Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 1000));
   const result = {

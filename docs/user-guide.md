@@ -1,6 +1,6 @@
-# SpringVox User Guide
+# Rekall-IQ User Guide
 
-SpringVox Knowledge AI lets team members ask questions from approved company documents.
+Rekall-IQ lets team members ask questions from approved company documents.
 
 ## Ask Questions
 
@@ -8,7 +8,7 @@ SpringVox Knowledge AI lets team members ask questions from approved company doc
 2. Ask a question in plain English.
 3. Review the answer, confidence badge, sources, and follow-up suggestions.
 
-If SpringVox cannot find support in uploaded documents, it should say so instead of guessing.
+If Rekall-IQ cannot find support in uploaded documents, it should say so instead of guessing.
 
 ## Notifications
 

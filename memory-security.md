@@ -4,12 +4,12 @@
 > Last updated: never
 
 ## Project Profile
-- detected_stacks: []
-- deployment_platforms: []
-- databases: []
-- has_ai_features: false
-- compliance_mode: none  # none | gdpr | hipaa | pci-dss | soc2
-- environment: unknown   # dev | staging | prod
+- detected_stacks: [next.js-16, supabase, qdrant, gemini, voyage, inngest, resend, llamaparse, vercel]
+- deployment_platforms: [vercel]
+- databases: [supabase-postgres, qdrant-vector]
+- has_ai_features: true  # RAG, Gemini LLM, Voyage embeddings + reranking, LlamaParse
+- compliance_mode: gdpr  # multi-tenant SaaS with EU-facing deployment
+- environment: pre-production  # dev credentials still in .env, not launched yet
 
 ## User Preferences
 - ask_before_modify: true        # Always ask before modifying existing files
@@ -21,7 +21,8 @@
 ## Security Score History
 | Date | Score | Critical | High | Medium | Notes |
 |------|-------|----------|------|--------|-------|
-| Never run | -/100 | - | - | - | No audit run yet |
+| 2026-05-18 | 82/100 | 0 | 2 | 1 | Partial audit — missed Inngest signing key and credentials issues |
+| 2026-05-31 | 58/100 | 2 | 4 | 14 | Grand full-codebase audit — report at docs/security_report.md |
 
 ## Accepted Risks
 # Risks you have reviewed and accepted. Add entries below.

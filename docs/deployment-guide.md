@@ -1,4 +1,4 @@
-# SpringVox Deployment Guide
+# Rekall-IQ Deployment Guide
 
 ## Required Services
 

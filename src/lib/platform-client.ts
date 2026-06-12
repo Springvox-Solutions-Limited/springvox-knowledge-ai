@@ -1,29 +1,9 @@
-import { getAccessToken } from '@/src/lib/auth-client';
+import { apiFetch } from '@/src/lib/api-client';
 
+/**
+ * Thin wrapper kept for backwards compatibility with existing platform pages.
+ * Delegates to the centralized {@link apiFetch} client (auth + token refresh).
+ */
 export async function fetchPlatformJson<T>(input: string, init?: RequestInit): Promise<T> {
-  const accessToken = await getAccessToken();
-
-  if (!accessToken) {
-    throw new Error('Authentication session expired');
-  }
-
-  const headers = new Headers(init?.headers);
-  headers.set('Authorization', `Bearer ${accessToken}`);
-
-  if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-
-  const response = await fetch(input, {
-    ...init,
-    headers,
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.error || 'Request failed');
-  }
-
-  return data as T;
+  return apiFetch<T>(input, init);
 }

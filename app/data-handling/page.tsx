@@ -3,7 +3,7 @@ import { LegalPageLayout } from '@/src/components/legal/LegalPageLayout';
 import { LegalSection } from '@/src/components/legal/LegalSection';
 
 export const metadata: Metadata = {
-  title: 'Data Handling | SpringVox Knowledge AI',
+  title: 'Data Handling | Rekall-IQ',
   description: 'Learn about the lifecycle of your data: how documents are uploaded, processed, embedded, retrieved, and deleted.',
 };
 
@@ -16,8 +16,8 @@ export default function DataHandlingPage() {
       activePath="/data-handling"
     >
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-slate-600">
-          This document describes the step-by-step processing lifecycle of files uploaded to SpringVox Knowledge AI.
+        <p className="text-sm leading-6 text-[var(--ink-soft)]">
+          This document describes the step-by-step processing lifecycle of files uploaded to Rekall-IQ.
         </p>
 
         <LegalSection id="1-upload" title="Step 1: Document Upload">

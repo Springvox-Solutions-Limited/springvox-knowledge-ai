@@ -1,10 +1,11 @@
 export function AppPageHeader({
-  eyebrow,
   title,
   subtitle,
   aside,
 }: {
-  eyebrow: string;
+  // `eyebrow` is intentionally ignored: the top bar already shows the page
+  // name, so rendering it again here created a duplicate title on every page.
+  eyebrow?: string;
   title: string;
   subtitle: string;
   aside?: React.ReactNode;
@@ -13,7 +14,6 @@ export function AppPageHeader({
     <div className="admin-hero-card">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 space-y-1.5">
-          {eyebrow ? <p className="app-section-label">{eyebrow}</p> : null}
           <h1 className="admin-hero-title wrap-anywhere">
             {title}
           </h1>

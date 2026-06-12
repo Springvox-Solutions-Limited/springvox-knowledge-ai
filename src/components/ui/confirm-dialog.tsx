@@ -51,11 +51,11 @@ export function ConfirmDialog({
             event.preventDefault();
           }
         }}
-        className="rounded-[24px] border-slate-200 bg-white sm:max-w-md"
+        className="rounded-[24px] border-[var(--line)] bg-[var(--surface)] sm:max-w-md"
       >
         <DialogHeader>
-          <DialogTitle className="text-slate-950">{title}</DialogTitle>
-          <DialogDescription className="text-slate-600">
+          <DialogTitle className="text-[var(--ink)]">{title}</DialogTitle>
+          <DialogDescription className="text-[var(--ink-soft)]">
             {description}
           </DialogDescription>
         </DialogHeader>

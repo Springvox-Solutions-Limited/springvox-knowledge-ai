@@ -29,27 +29,27 @@ export function FeatureSection() {
   ];
 
   return (
-    <section id="features" className="bg-white py-16 sm:py-24 lg:py-32">
+    <section id="features" className="bg-[var(--surface)] py-16 sm:py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-24">
           <div className="lg:sticky lg:top-40">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">Features</p>
-            <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl lg:leading-[1.1]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--ink-muted)] mb-6">Features</p>
+            <h2 className="text-3xl font-bold tracking-tight text-[var(--ink)] sm:text-4xl lg:text-5xl lg:leading-[1.1]">
               Built for everyday teams, <br />
-              <span className="text-cyan-700">not just technical users.</span>
+              <span className="text-[var(--accent-jade)]">not just technical users.</span>
             </h2>
-            <p className="mt-5 text-base font-medium leading-relaxed text-slate-500 sm:mt-8 sm:text-xl">
-              SpringVox helps people find company answers faster without digging
+            <p className="mt-5 text-base font-medium leading-relaxed text-[var(--ink-muted)] sm:mt-8 sm:text-xl">
+              Rekall-IQ helps people find company answers faster without digging
               through folders, asking around, or relying on inconsistent replies.
             </p>
-            <div className="mt-8 rounded-[28px] border border-[#18304b] bg-[#0d1f35] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:mt-12 sm:p-6">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-200/80">
-                Why teams trust SpringVox
+            <div className="mt-8 rounded-[28px] border border-[#18304b] bg-[var(--accent-jade)] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:mt-12 sm:p-6">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-teal-200/80">
+                Why teams trust Rekall-IQ
               </p>
               <div className="mt-4 space-y-3">
                 {['Admins choose what gets uploaded', 'Users stay inside their own organisation workspace', 'Answers can show document sources when available'].map((trust) => (
                   <div key={trust} className="flex items-start gap-3 text-sm font-medium text-slate-200">
-                    <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-cyan-300" />
+                    <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-teal-300" />
                     <span>{trust}</span>
                   </div>
                 ))}
@@ -61,14 +61,14 @@ export function FeatureSection() {
             {primaryFeatures.map((feature) => (
               <div
                 key={feature.title}
-                className="group rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-all hover:border-cyan-200 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-8 lg:p-10"
+                className="group rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-all hover:border-[var(--accent-jade-100)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-8 lg:p-10"
               >
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-950 transition-colors group-hover:bg-slate-950 group-hover:text-white sm:mb-8 sm:h-14 sm:w-14">
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink)] transition-colors group-hover:bg-slate-950 group-hover:text-white sm:mb-8 sm:h-14 sm:w-14">
                   <feature.icon size={24} />
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">{feature.detail}</p>
-                <h3 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{feature.title}</h3>
-                <p className="mt-4 text-sm leading-relaxed text-slate-500 font-medium">{feature.description}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-2">{feature.detail}</p>
+                <h3 className="text-xl font-black tracking-tight text-[var(--ink)] sm:text-2xl">{feature.title}</h3>
+                <p className="mt-4 text-sm leading-relaxed text-[var(--ink-muted)] font-medium">{feature.description}</p>
               </div>
             ))}
           </div>

@@ -36,7 +36,7 @@ type InviteDetails = {
   assistant_name: string;
 };
 
-export default function WorkspaceOnboardingForm() {
+export default function WorkspaceOnboardingForm({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite") || "";
@@ -333,27 +333,25 @@ export default function WorkspaceOnboardingForm() {
     }
   }
 
-  return (
-    <div className="public-card w-full max-w-5xl min-w-0 p-4 sm:p-6 lg:p-8">
-      <div className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr]">
+  const formColumn = (
         <div className="min-w-0 space-y-5">
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--accent-jade)]">
               Secure onboarding
             </p>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-3xl">
               {mode === "join"
                 ? "Join with invitation"
                 : "Create your company workspace"}
             </h1>
-            <p className="text-sm leading-7 text-slate-700">
+            <p className="text-sm leading-7 text-[var(--ink-soft)]">
               {mode === "join"
                 ? "Create your account and join the workspace."
                 : "Set up a secure workspace for your team to ask questions about company documents."}
             </p>
           </div>
 
-          <div className="rounded-[20px] border border-slate-200 bg-slate-50/80 p-3 sm:p-4">
+          <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-2)] p-3 sm:p-4">
             <div className="grid gap-3 sm:grid-cols-3">
               {stepLabels.map((label, index) => (
                 <div
@@ -361,18 +359,18 @@ export default function WorkspaceOnboardingForm() {
                   className={cn(
                     "relative flex items-center gap-3 rounded-2xl border px-3 py-2.5",
                     index === 0
-                      ? "border-cyan-200 bg-white shadow-sm"
-                      : "border-slate-200 bg-white/80",
+                      ? "border-[var(--accent-jade-100)] bg-[var(--surface)] shadow-sm"
+                      : "border-[var(--line)] bg-[var(--surface)]",
                   )}
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-50 text-xs font-bold text-cyan-700">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-jade-50)] text-xs font-bold text-[var(--accent-jade)]">
                     {index + 1}
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
                       Step {index + 1}
                     </p>
-                    <p className="text-sm font-semibold text-slate-900">
+                    <p className="text-sm font-semibold text-[var(--ink)]">
                       {label}
                     </p>
                   </div>
@@ -381,7 +379,7 @@ export default function WorkspaceOnboardingForm() {
             </div>
           </div>
 
-          <div className="flex gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
+          <div className="flex gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-1">
             <button
               type="button"
               onClick={() => {
@@ -390,8 +388,8 @@ export default function WorkspaceOnboardingForm() {
               }}
               className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 mode === "create"
-                  ? "bg-white text-slate-950 shadow-sm"
-                  : "text-slate-500"
+                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-sm"
+                  : "text-[var(--ink-muted)]"
               }`}
             >
               Create workspace
@@ -401,8 +399,8 @@ export default function WorkspaceOnboardingForm() {
               onClick={() => setMode("join")}
               className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 mode === "join"
-                  ? "bg-white text-slate-950 shadow-sm"
-                  : "text-slate-500"
+                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-sm"
+                  : "text-[var(--ink-muted)]"
               }`}
             >
               Join with invite
@@ -455,10 +453,10 @@ export default function WorkspaceOnboardingForm() {
                     className={cn(
                       "rounded-xl border px-3 py-2 text-xs",
                       slugStatus.available
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
                         : slugStatus.available === false
-                          ? "border-red-200 bg-red-50 text-red-700"
-                          : "border-slate-200 bg-slate-50 text-slate-500",
+                          ? "border-red-500/30 bg-red-500/10 text-red-300"
+                          : "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-muted)]",
                     )}
                   >
                     {slugStatus.message}
@@ -552,10 +550,10 @@ export default function WorkspaceOnboardingForm() {
                 title="Invitation details"
                 description="Confirm the invited workspace and role before creating your account."
               >
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4 text-sm text-[var(--ink-soft)]">
                   {inviteDetails ? (
                     <div className="space-y-2">
-                      <p className="wrap-anywhere font-semibold text-slate-950">
+                      <p className="wrap-anywhere font-semibold text-[var(--ink)]">
                         Joining {inviteDetails.workspace_name}
                       </p>
                       <p className="wrap-anywhere">
@@ -652,25 +650,27 @@ export default function WorkspaceOnboardingForm() {
             <Alert
               className={`rounded-2xl ${
                 error
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  ? "border-red-500/30 bg-red-500/10 text-red-300"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
               }`}
             >
               <AlertDescription>{error || success}</AlertDescription>
             </Alert>
           )}
         </div>
+  );
 
-        <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5 sm:p-6">
+  const summaryColumn = (
+        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface-2)] p-5 sm:p-6">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--surface)] text-[var(--accent-jade)] shadow-sm">
               {mode === "join" ? <Mail size={20} /> : <ShieldCheck size={20} />}
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-950">
+              <p className="text-sm font-bold text-[var(--ink)]">
                 {mode === "join" ? "Invitation overview" : "Setup summary"}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[var(--ink-muted)]">
                 {mode === "join"
                   ? "Stay inside the invited workspace."
                   : "Your first user becomes the workspace admin."}
@@ -679,7 +679,7 @@ export default function WorkspaceOnboardingForm() {
           </div>
 
           {mode === "join" ? (
-            <div className="space-y-3 text-sm text-slate-600">
+            <div className="space-y-3 text-sm text-[var(--ink-soft)]">
               <ChecklistItem>
                 Join your organisation's existing workspace with the role
                 assigned in your invite.
@@ -694,7 +694,7 @@ export default function WorkspaceOnboardingForm() {
               </ChecklistItem>
             </div>
           ) : (
-            <div className="space-y-3 text-sm text-slate-600">
+            <div className="space-y-3 text-sm text-[var(--ink-soft)]">
               <ChecklistItem>
                 After creation, you become the Workspace Admin for your company
                 workspace.
@@ -710,16 +710,16 @@ export default function WorkspaceOnboardingForm() {
             </div>
           )}
 
-          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-jade-50)] text-[var(--accent-jade)]">
                 <CheckCircle2 size={18} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-950">
+                <p className="text-sm font-semibold text-[var(--ink)]">
                   What you will see after setup
                 </p>
-                <p className="mt-1 text-xs leading-6 text-slate-500">
+                <p className="mt-1 text-xs leading-6 text-[var(--ink-muted)]">
                   A clean workspace with documents, users, analytics, and chat
                   ready for your team.
                 </p>
@@ -727,16 +727,40 @@ export default function WorkspaceOnboardingForm() {
             </div>
           </div>
 
-          <div className="mt-8 border-t border-slate-200 pt-6 text-sm text-slate-600">
+          <div className="mt-8 border-t border-[var(--line)] pt-6 text-sm text-[var(--ink-soft)]">
             Already have an account?{" "}
             <Link
               href="/login"
-              className="font-semibold text-cyan-700 hover:underline"
+              className="font-semibold text-[var(--accent-jade)] hover:underline"
             >
               Login
             </Link>
           </div>
         </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className="mx-auto w-full max-w-2xl min-w-0">
+        {formColumn}
+        <div className="mt-8 border-t border-[var(--line)] pt-6 text-sm text-[var(--ink-soft)]">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-semibold text-[var(--accent-jade)] hover:underline"
+          >
+            Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="public-card w-full max-w-5xl min-w-0 p-4 sm:p-6 lg:p-8">
+      <div className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr]">
+        {formColumn}
+        {summaryColumn}
       </div>
     </div>
   );
@@ -754,15 +778,15 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm sm:p-5">
       <div className="mb-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-700">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--accent-jade)]">
           {step}
         </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+        <h2 className="mt-1 text-lg font-bold tracking-tight text-[var(--ink)]">
           {title}
         </h2>
-        <p className="mt-1 text-sm text-slate-500">{description}</p>
+        <p className="mt-1 text-sm text-[var(--ink-muted)]">{description}</p>
       </div>
       <div className="space-y-4">{children}</div>
     </div>
@@ -782,13 +806,13 @@ function Field({
 }) {
   return (
     <label className="block space-y-2">
-      <span className="ml-1 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+      <span className="ml-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
         {label}
-        {required ? <span className="ml-1 text-red-600">*</span> : null}
+        {required ? <span className="ml-1 text-red-300">*</span> : null}
       </span>
       {children}
       {error ? (
-        <span className="ml-1 block text-xs font-medium text-red-600">{error}</span>
+        <span className="ml-1 block text-xs font-medium text-red-300">{error}</span>
       ) : null}
     </label>
   );
@@ -797,7 +821,7 @@ function Field({
 function ChecklistItem({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-cyan-500" />
+      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-teal-500" />
       <p>{children}</p>
     </div>
   );

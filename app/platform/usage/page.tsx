@@ -43,10 +43,10 @@ export default function PlatformUsagePage() {
     <div className="admin-page">
       <PlatformPageHeader
         title="Usage"
-        subtitle="Beta usage metering for future billing, support, and capacity planning."
+        subtitle="Workspace usage metering for billing readiness, support, and capacity planning."
       />
 
-      {error ? <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      {error ? <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</p> : null}
 
       <OverflowGuard mode="scroll">
         <AppCard className="overflow-hidden">
@@ -62,8 +62,8 @@ export default function PlatformUsagePage() {
               {usage.map((row) => (
                 <AppTableRow key={row.workspace_id}>
                   <AppTableCell>
-                    <p className="font-semibold text-slate-950">{row.workspace_name}</p>
-                    <p className="text-xs text-slate-500">{row.slug}</p>
+                    <p className="font-semibold text-[var(--ink)]">{row.workspace_name}</p>
+                    <p className="text-xs text-[var(--ink-muted)]">{row.slug}</p>
                   </AppTableCell>
                   <AppTableCell>{row.questions_today} today · {row.questions_month} month</AppTableCell>
                   <AppTableCell>{row.uploads_today} today · {row.uploads_month} month</AppTableCell>
@@ -71,13 +71,13 @@ export default function PlatformUsagePage() {
                   <AppTableCell>{formatBytes(row.storage_bytes)}</AppTableCell>
                   <AppTableCell>
                     <p>{row.llm_calls} LLM</p>
-                    <p className="text-xs text-slate-500">{row.embedding_calls} embedding · {row.rerank_calls} rerank</p>
+                    <p className="text-xs text-[var(--ink-muted)]">{row.embedding_calls} embedding · {row.rerank_calls} rerank</p>
                   </AppTableCell>
                 </AppTableRow>
               ))}
               {usage.length === 0 ? (
                 <AppTableRow>
-                  <AppTableCell colSpan={6} className="py-10 text-center text-sm text-slate-500">
+                  <AppTableCell colSpan={6} className="py-10 text-center text-sm text-[var(--ink-muted)]">
                     No usage has been recorded yet.
                   </AppTableCell>
                 </AppTableRow>

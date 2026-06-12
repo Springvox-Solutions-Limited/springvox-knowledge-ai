@@ -14,6 +14,7 @@ import {
   MessageSquarePlus,
   Mic,
   MicOff,
+  Pencil,
   RefreshCw,
   Search,
   Send,
@@ -39,10 +40,18 @@ import {
 } from "@/src/lib/workspace";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 import { AppButton } from "@/src/components/ui/app-button";
-import { SpringVoxLogo } from "@/src/components/brand/SpringVoxLogo";
+import { BrandLogo } from "@/src/components/brand/BrandLogo";
 import { ConfirmDialog } from "@/src/components/ui/confirm-dialog";
 import { EmptyState } from "@/src/components/ui/empty-state";
+import { FilePreviewDrawer } from "@/src/components/file-preview/FilePreviewDrawer";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -179,6 +188,7 @@ export default function ChatPage() {
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [selectedSource, setSelectedSource] = useState<Citation | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ id: string; filename: string } | null>(null);
   const [sourceDetails, setSourceDetails] = useState<Citation | null>(null);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [sourceError, setSourceError] = useState<string | null>(null);
@@ -193,6 +203,8 @@ export default function ChatPage() {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const [answerMode, setAnswerMode] = useState<(typeof ANSWER_MODES)[number]["value"]>("detailed");
+  const [collections, setCollections] = useState<Array<{ id: string; name: string }>>([]);
+  const [scopeCollectionId, setScopeCollectionId] = useState<string>("all");
   const [isRecording, setIsRecording] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -331,6 +343,25 @@ export default function ChatPage() {
     }
 
     void loadChatContext();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await getAccessToken();
+        if (!token) return;
+        const res = await fetch("/api/collections", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setCollections(
+          (data.collections || []).map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })),
+        );
+      } catch {
+        // Collection scoping is optional.
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -661,6 +692,7 @@ export default function ChatPage() {
           question,
           session_id: activeSessionId,
           answer_mode: answerMode,
+          collection_id: scopeCollectionId === "all" ? null : scopeCollectionId,
         }),
         signal: controller.signal,
       });
@@ -786,6 +818,28 @@ export default function ChatPage() {
     abortControllerRef.current?.abort();
   };
 
+  // Find the user question that produced a given assistant message and re-ask it.
+  const handleRegenerate = (assistantMessageId: string) => {
+    if (loading) return;
+    const index = messages.findIndex((message) => message.id === assistantMessageId);
+    if (index <= 0) return;
+    const priorQuestion = messages[index - 1];
+    if (!priorQuestion || priorQuestion.role !== "user" || !priorQuestion.content.trim()) {
+      return;
+    }
+    void handleSend(undefined, priorQuestion.content);
+  };
+
+  // Put a previous question back into the composer so the user can revise it.
+  const handleEditQuestion = (content: string) => {
+    if (loading) return;
+    setInput(content);
+    setTimeout(() => {
+      adjustHeight();
+      textareaRef.current?.focus();
+    }, 10);
+  };
+
   const openSource = async (citation: Citation) => {
     setSelectedSource(citation);
     setSourceDetails(citation);
@@ -881,7 +935,7 @@ export default function ChatPage() {
   const isViewer = profile?.role === "viewer";
   const assistantName =
     workspace?.assistant_name ||
-    (isViewer ? "SpringVox Assistant" : "SpringVox Knowledge AI");
+    (isViewer ? "Rekall-IQ Assistant" : "Rekall-IQ");
   const companyName = workspace?.name || "your company";
   const activeSession = sessions.find((session) => session.id === activeSessionId) || null;
   const filteredSessions = sessions.filter((session) =>
@@ -934,7 +988,7 @@ export default function ChatPage() {
                 type="button"
                 onClick={() => setHistoryOpen(true)}
                 aria-label="Open recent chats"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 text-sm font-semibold text-[var(--ink-soft)] shadow-sm transition hover:bg-[var(--surface-2)]"
               >
                 <History size={16} />
                 Recent Chats
@@ -953,25 +1007,17 @@ export default function ChatPage() {
             )}
 
             {historyError ? (
-              <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
                 {historyError}
               </div>
             ) : null}
 
             <div className={cn(
-              "relative isolate flex min-w-0 flex-col overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(248,250,252,0.94)_0%,rgba(255,255,255,0.98)_52%,rgba(248,250,252,0.96)_100%)] shadow-[0_22px_70px_rgba(15,23,42,0.07)]",
+              "relative isolate flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--brand-shadow)]",
               isViewer
                 ? "mx-auto h-[calc(100dvh-155px)] max-w-4xl"
                 : "mx-auto h-[calc(100dvh-165px)] max-w-4xl lg:mx-0 lg:max-w-none sm:h-[calc(100dvh-170px)]"
             )}>
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(rgba(15,23,42,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.045)_1px,transparent_1px)] bg-[size:44px_44px]"
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-0 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-200/30 blur-3xl"
-              />
               <div
                 ref={scrollRef}
                 role="log"
@@ -985,8 +1031,8 @@ export default function ChatPage() {
                 )}
               >
                 {historyLoading ? (
-                  <div className="flex items-center gap-3 pt-10 text-sm text-slate-500">
-                    <Loader2 size={18} className="animate-spin text-teal-600" />
+                  <div className="flex items-center gap-3 pt-10 text-sm text-[var(--ink-muted)]">
+                    <Loader2 size={18} className="animate-spin text-[var(--accent-jade)]" />
                     Loading your chat...
                   </div>
                 ) : messages.length === 0 ? (
@@ -995,9 +1041,9 @@ export default function ChatPage() {
                     isViewer ? "space-y-5 px-4 pt-6" : "space-y-5 px-4 pt-6"
                   )}>
                     <div className={cn(
-                      "flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-[0_18px_40px_rgba(15,23,42,0.10)] backdrop-blur"
+                      "flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3 shadow-[var(--brand-shadow)]"
                     )}>
-                      <SpringVoxLogo
+                      <BrandLogo
                         variant="mark"
                         theme="dark"
                         className="h-10 w-10 rounded-xl"
@@ -1006,19 +1052,19 @@ export default function ChatPage() {
                     </div>
                     <div className="space-y-3">
                       <h2 className={cn(
-                        "font-semibold tracking-tight text-slate-900",
+                        "font-semibold tracking-tight text-[var(--ink)]",
                         isViewer ? "text-2xl sm:text-3xl" : "text-2xl sm:text-3xl"
                       )}>
                         {messages.length === 0 && !activeSessionId ? (
                           <>
-                            Hi, I&apos;m <span className="text-teal-700">{assistantName}</span>.
+                            Hi, I&apos;m <span className="text-[var(--accent-jade)]">{assistantName}</span>.
                           </>
                         ) : (
                           "Ask your first question"
                         )}
                       </h2>
                       <p className={cn(
-                        "max-w-xl leading-7 text-slate-500",
+                        "max-w-xl leading-7 text-[var(--ink-muted)]",
                         isViewer ? "text-sm sm:text-base" : "text-sm sm:text-base"
                       )}>
                         Ask questions from your organisation&apos;s approved documents.
@@ -1034,7 +1080,7 @@ export default function ChatPage() {
                           key={prompt}
                           onClick={() => setInput(prompt)}
                           className={cn(
-                            "rounded-full border border-slate-200 bg-white text-slate-700 transition-all hover:border-cyan-200 hover:bg-cyan-50",
+                            "rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft)] transition-all hover:border-[var(--accent-jade-100)] hover:bg-[var(--accent-jade-50)] hover:text-[var(--accent-jade-hover)]",
                             isViewer ? "px-4 py-2.5 text-sm shadow-sm" : "px-4 py-2.5 text-sm shadow-sm"
                           )}
                         >
@@ -1058,24 +1104,37 @@ export default function ChatPage() {
                         )}
                       >
                         {message.role === "user" ? (
+                          <div className="group/usermsg flex flex-col items-end gap-1">
                             <div className={cn(
-                              "rounded-2xl rounded-br-md bg-slate-900 text-white shadow-sm",
+                              "rounded-2xl rounded-br-md bg-[var(--surface-2)] text-[var(--ink)] shadow-sm",
                               isViewer ? "px-5 py-3.5 text-[15px] leading-7" : "px-5 py-3.5 text-[15px] leading-7"
                             )}>
-                            <div className="whitespace-pre-wrap wrap-anywhere">{message.content}</div>
+                              <div className="whitespace-pre-wrap wrap-anywhere">{message.content}</div>
+                            </div>
+                            {!loading && (
+                              <button
+                                type="button"
+                                onClick={() => handleEditQuestion(message.content)}
+                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] text-[var(--ink-muted)] opacity-0 transition-all hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)] group-hover/usermsg:opacity-100"
+                                aria-label="Edit and resend this question"
+                              >
+                                <Pencil size={11} />
+                                Edit
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            <div className="flex items-center gap-3 text-xs text-slate-500">
-                              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-1.5 shadow-sm">
-                                <SpringVoxLogo
+                            <div className="flex items-center gap-3 text-xs text-[var(--ink-muted)]">
+                              <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-[var(--line)] bg-[var(--surface)] p-1.5 shadow-sm">
+                                <BrandLogo
                                   variant="mark"
                                   theme="dark"
                                   className="h-5 w-5"
                                   imageClassName="h-5"
                                 />
                               </div>
-                              <span className="font-medium text-slate-600">
+                              <span className="font-medium text-[var(--ink-soft)]">
                                 {assistantName}
                               </span>
                             </div>
@@ -1093,7 +1152,7 @@ export default function ChatPage() {
 
                             {!!message.content && (
                               <div className={cn(
-                                "markdown-container overflow-hidden pl-0 text-slate-800",
+                                "markdown-container overflow-hidden pl-0 text-[var(--ink)]",
                                 isViewer ? "text-[15px] leading-8 sm:pl-10" : "text-[15px] leading-8 sm:pl-10"
                               )}>
                                 <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -1103,16 +1162,16 @@ export default function ChatPage() {
                             {(message.statusMessage ||
                               (loading && activeMessageId === message.id)) && (
                               <div className="pl-0 sm:pl-10">
-                                <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 shadow-sm">
+                                <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--ink-muted)] shadow-sm">
                                   {loading && activeMessageId === message.id ? (
                                     <Loader2
                                       size={13}
-                                      className="animate-spin text-teal-600"
+                                      className="animate-spin text-[var(--accent-jade)]"
                                     />
                                   ) : (
                                     <ShieldCheck
                                       size={13}
-                                      className="text-teal-600"
+                                      className="text-[var(--accent-jade)]"
                                     />
                                   )}
                                   <span>
@@ -1123,7 +1182,7 @@ export default function ChatPage() {
                                     )}
                                   </span>
                                   {loading && activeMessageId === message.id && (
-                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-500">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[var(--ink-muted)]">
                                       <ThinkingDots />
                                       {elapsedSeconds.toFixed(1)}s
                                     </span>
@@ -1140,10 +1199,10 @@ export default function ChatPage() {
                                     onClick={() =>
                                       handleCopyAnswer(message.content, message.id)
                                     }
-                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)]"
                                   >
                                     {copiedIndex === message.id ? (
-                                      <Check size={12} className="text-green-600" />
+                                      <Check size={12} className="text-emerald-300" />
                                     ) : (
                                       <Copy size={12} />
                                     )}
@@ -1155,17 +1214,27 @@ export default function ChatPage() {
                                     type="button"
                                     onClick={(event) => handleSend(event, retryQuestion)}
                                     disabled={loading}
-                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)]"
                                   >
                                     <RefreshCw size={12} />
                                     Retry
+                                  </button>
+                                )}
+                                {!message.error && !!message.content && !loading && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRegenerate(message.id)}
+                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)]"
+                                  >
+                                    <RefreshCw size={12} />
+                                    Regenerate
                                   </button>
                                 )}
                                 {loading && activeMessageId === message.id && (
                                   <button
                                     type="button"
                                     onClick={handleStopGenerating}
-                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)]"
                                   >
                                     <Square size={11} className="fill-current" />
                                     Stop
@@ -1220,11 +1289,11 @@ export default function ChatPage() {
               </div>
 
               <div className={cn(
-                  "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(248,250,252,0)_0%,rgba(248,250,252,0.92)_24%,rgba(248,250,252,1)_100%)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6",
-                isViewer ? "px-1 pt-4 sm:px-4 sm:pb-6 sm:pt-5" : "px-0 pt-4 sm:px-2 sm:pb-5 sm:pt-5"
+                  "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(20,24,22,0)_0%,rgba(20,24,22,0.95)_24%,rgba(20,24,22,1)_100%)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6",
+                isViewer ? "px-3 pt-4 sm:px-5 sm:pb-6 sm:pt-5" : "px-3 pt-4 sm:px-5 sm:pb-5 sm:pt-5"
               )}>
                 <div className="mx-auto mb-3 flex max-w-4xl flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
                     Answer mode
                   </span>
                   {ANSWER_MODES.map((mode) => (
@@ -1236,13 +1305,33 @@ export default function ChatPage() {
                       className={cn(
                         "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
                         answerMode === mode.value
-                          ? "border-cyan-300 bg-cyan-50 text-cyan-800"
-                          : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50",
+                          ? "border-[var(--accent-jade-200)] bg-[var(--accent-jade-50)] text-[var(--accent-jade-hover)]"
+                          : "border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)]",
                       )}
                     >
                       {mode.label}
                     </button>
                   ))}
+                  {collections.length > 0 ? (
+                    <div className="ml-auto flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
+                        Scope
+                      </span>
+                      <Select value={scopeCollectionId} onValueChange={setScopeCollectionId} disabled={loading}>
+                        <SelectTrigger className="h-8 w-44 rounded-full border-[var(--line)] bg-[var(--surface)] text-xs shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]">
+                          <SelectValue placeholder="All documents" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-[var(--line)]">
+                          <SelectItem value="all">All documents</SelectItem>
+                          {collections.map((collection) => (
+                            <SelectItem key={collection.id} value={collection.id}>
+                              {collection.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
                 </div>
                 <form onSubmit={handleSend} className={cn(
                   "relative",
@@ -1250,12 +1339,12 @@ export default function ChatPage() {
                 )}>
                   <div
                     className={cn(
-                      "relative rounded-2xl border bg-white/95 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl transition",
+                      "relative rounded-2xl border bg-[var(--surface)] shadow-[var(--brand-shadow)] backdrop-blur-xl transition",
                       inputFocused
-                        ? "border-cyan-400/50 ring-4 ring-cyan-50"
+                        ? "border-[var(--accent-jade)] ring-4 ring-[var(--accent-jade-100)]"
                         : isRecording
-                        ? "border-cyan-400/60 ring-4 ring-cyan-50"
-                        : "border-slate-200/80",
+                        ? "border-[var(--accent-jade)] ring-4 ring-[var(--accent-jade-100)]"
+                        : "border-[var(--line)]",
                     )}
                   >
                     <button
@@ -1267,9 +1356,9 @@ export default function ChatPage() {
                       className={cn(
                         "absolute left-3.5 bottom-2.5 z-10 rounded-full p-2.5 outline-none transition active:scale-95",
                         isRecording
-                          ? "bg-cyan-700 text-white hover:bg-cyan-800 focus-visible:ring-4 focus-visible:ring-cyan-100"
-                          : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-slate-200",
-                        !speechSupported && "opacity-50 cursor-not-allowed hover:bg-slate-50 hover:text-slate-400"
+                          ? "bg-teal-700 text-white hover:bg-teal-800 focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)]"
+                          : "bg-[var(--surface-2)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)] focus-visible:ring-2 focus-visible:ring-slate-200",
+                        !speechSupported && "opacity-50 cursor-not-allowed hover:bg-[var(--surface-2)] hover:text-[var(--ink-muted)]"
                       )}
                     >
                       {isRecording ? <MicOff size={16} className="animate-pulse" /> : <Mic size={16} />}
@@ -1278,7 +1367,7 @@ export default function ChatPage() {
                       ref={textareaRef}
                       rows={1}
                       className={cn(
-                        "max-h-48 w-full resize-none border-0 bg-transparent text-slate-900 shadow-none outline-none placeholder:text-slate-400 focus-visible:ring-0",
+                        "max-h-48 w-full resize-none border-0 bg-transparent text-[var(--ink)] shadow-none outline-none placeholder:text-[var(--ink-muted)] focus-visible:ring-0",
                         isViewer
                           ? "min-h-[58px] py-3.5 pl-14 pr-5 text-[15px] leading-7 sm:pr-28"
                           : "min-h-[56px] py-3.5 pl-12 pr-4 text-sm leading-7 sm:pl-14 sm:pr-28"
@@ -1305,13 +1394,13 @@ export default function ChatPage() {
                       disabled={loading}
                       style={{ overflow: "hidden" }}
                     />
-                    <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-4 py-3 sm:absolute sm:bottom-3 sm:right-3 sm:border-t-0 sm:bg-transparent sm:p-0">
+                    <div className="flex items-center justify-end gap-2 border-t border-[var(--line)] px-4 py-3 sm:absolute sm:bottom-3 sm:right-3 sm:border-t-0 sm:bg-transparent sm:p-0">
                       {loading && (
                         <button
                           aria-label="Stop generating answer"
                           type="button"
                           onClick={handleStopGenerating}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-2 text-[11px] text-slate-500 transition-colors hover:text-slate-800 sm:px-3"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-2 text-[11px] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] sm:px-3"
                         >
                           <Square size={11} className="fill-current" />
                           <span className="hidden sm:inline">Stop</span>
@@ -1321,14 +1410,14 @@ export default function ChatPage() {
                         aria-label="Send message"
                         type="submit"
                         disabled={loading || !input.trim()}
-                        className="rounded-full bg-[#0d1f35] p-2.5 text-white shadow-[0_4px_12px_rgba(15,23,42,0.14)] transition hover:bg-[#132744] focus-visible:ring-4 focus-visible:ring-cyan-100 active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                        className="rounded-full bg-[var(--accent-jade)] p-2.5 text-[#04110e] shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition hover:bg-[var(--accent-jade-hover)] focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)] active:scale-95 disabled:bg-[var(--surface-2)] disabled:text-[var(--ink-muted)] disabled:shadow-none"
                       >
                         <Send size={16} />
                       </button>
                     </div>
                   </div>
                 </form>
-                <p className="mt-3 text-center text-xs text-slate-400">
+                <p className="mt-3 text-center text-xs text-[var(--ink-muted)]">
                   {isViewer
                     ? "Answers use approved documents when support is available."
                     : "Answers use approved company documents and may include sources."}
@@ -1343,9 +1432,9 @@ export default function ChatPage() {
       <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
         <SheetContent
           side="left"
-          className="w-[min(100vw-1rem,22rem)] border-r border-slate-200 bg-white p-0"
+          className="w-[min(100vw-1rem,22rem)] border-r border-[var(--line)] bg-[var(--surface)] p-0"
         >
-          <SheetHeader className="border-b border-slate-200 px-5 py-4">
+          <SheetHeader className="border-b border-[var(--line)] px-5 py-4">
             <SheetTitle>Recent Chats</SheetTitle>
             <SheetDescription className="sr-only">
               Browse, reopen, or delete your recent private chat sessions.
@@ -1393,6 +1482,14 @@ export default function ChatPage() {
         error={sourceError}
         managerView={!!profile && isWorkspaceAdminRole(profile.role)}
         sessionTitle={activeSessionTitle}
+        onViewDocument={(documentId, filename) => setPreviewDoc({ id: documentId, filename })}
+      />
+
+      <FilePreviewDrawer
+        open={!!previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        documentId={previewDoc?.id ?? null}
+        filename={previewDoc?.filename ?? ""}
       />
     </>
   );
@@ -1420,8 +1517,8 @@ function ChatHistoryPanel({
   disabled: boolean;
 }) {
   return (
-    <div className="flex h-full min-h-[24rem] flex-col rounded-[28px] border border-slate-200 bg-white shadow-[0_14px_28px_rgba(15,23,42,0.05)]">
-      <div className="border-b border-slate-200 p-4">
+    <div className="flex h-full min-h-[24rem] flex-col rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--brand-shadow)]">
+      <div className="border-b border-[var(--line)] p-4">
         <AppButton
           type="button"
           onClick={onNewChat}
@@ -1434,25 +1531,25 @@ function ChatHistoryPanel({
         <div className="relative mt-3">
           <Search
             size={15}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]"
           />
           <Input
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search chats..."
             aria-label="Search recent chats"
-            className="h-11 rounded-xl border-slate-200 bg-white pl-9 text-sm shadow-sm"
+            className="h-11 rounded-xl border-[var(--line)] bg-[var(--surface)] pl-9 text-sm shadow-sm"
           />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
-        <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+        <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
           Recent Chats
         </div>
         {loading ? (
-          <div className="flex items-center gap-3 rounded-2xl px-3 py-4 text-sm text-slate-500">
-            <Loader2 size={16} className="animate-spin text-teal-600" />
+          <div className="flex items-center gap-3 rounded-2xl px-3 py-4 text-sm text-[var(--ink-muted)]">
+            <Loader2 size={16} className="animate-spin text-[var(--accent-jade)]" />
             Loading chats...
           </div>
         ) : sessions.length === 0 ? (
@@ -1473,8 +1570,8 @@ function ChatHistoryPanel({
                   className={cn(
                     "group flex items-start gap-2 rounded-2xl border px-3 py-3 transition",
                     active
-                      ? "border-cyan-200 bg-cyan-50/70"
-                      : "border-transparent hover:border-slate-200 hover:bg-slate-50/70",
+                      ? "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)]"
+                      : "border-transparent hover:border-[var(--line)] hover:bg-[var(--surface-2)]",
                   )}
                 >
                   <button
@@ -1485,13 +1582,13 @@ function ChatHistoryPanel({
                     <p
                       className={cn(
                         "truncate text-sm font-semibold",
-                        active ? "text-cyan-900" : "text-slate-900",
+                        active ? "text-[var(--accent-jade)]" : "text-[var(--ink)]",
                       )}
                       title={session.title}
                     >
                       {session.title}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-[var(--ink-muted)]">
                       {formatSessionDate(session.updated_at)}
                     </p>
                   </button>
@@ -1500,7 +1597,7 @@ function ChatHistoryPanel({
                     aria-label={`Delete chat ${session.title}`}
                     title={`Delete ${session.title}`}
                     onClick={() => onDeleteSession(session.id)}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[var(--ink-muted)] transition hover:bg-red-500/10 hover:text-red-300"
                   >
                     <Trash2 size={15} />
                   </button>
@@ -1556,7 +1653,7 @@ function FollowUpChips({
 }) {
   return (
     <div className="pl-0 sm:pl-10">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--ink-muted)]">
         Suggested follow-ups
       </p>
       <div className="flex flex-wrap gap-2">
@@ -1566,7 +1663,7 @@ function FollowUpChips({
             type="button"
             disabled={disabled}
             onClick={() => onSelect(followUp)}
-            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-left text-xs font-medium text-slate-600 shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-left text-xs font-medium text-[var(--ink-soft)] shadow-sm transition hover:border-[var(--accent-jade-100)] hover:bg-[var(--accent-jade-50)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {followUp}
           </button>
@@ -1602,15 +1699,15 @@ function CitationList({
         type="button"
         onClick={() => setExpanded((currentValue) => !currentValue)}
         aria-expanded={expanded}
-        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 shadow-sm"
+        className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-left text-xs text-[var(--ink-soft)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink)] shadow-sm"
       >
-        <ShieldCheck size={12} className="text-teal-600" />
+        <ShieldCheck size={12} className="text-[var(--accent-jade)]" />
         <span>Sources</span>
-        <span className="text-slate-500">· {uniqueCitations.length}</span>
+        <span className="text-[var(--ink-muted)]">· {uniqueCitations.length}</span>
         {expanded ? (
-          <ChevronUp size={14} className="text-slate-500" />
+          <ChevronUp size={14} className="text-[var(--ink-muted)]" />
         ) : (
-          <ChevronDown size={14} className="text-slate-500" />
+          <ChevronDown size={14} className="text-[var(--ink-muted)]" />
         )}
       </button>
 
@@ -1622,27 +1719,27 @@ function CitationList({
               key={`${citation.filename}-${citation.chunk_index}`}
               onClick={() => onOpenSource(citation)}
               aria-label={`Open source ${citation.filename} section ${citation.chunk_index}`}
-              className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-colors hover:border-teal-300 hover:bg-teal-50/30"
+              className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-left shadow-sm transition-colors hover:border-[var(--accent-jade-100)] hover:bg-[var(--accent-jade-50)]"
             >
               <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-teal-200 bg-teal-50">
-                  <FileText size={14} className="text-teal-600" />
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)]">
+                  <FileText size={14} className="text-[var(--accent-jade)]" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900" title={citation.filename}>
+                      <p className="truncate text-sm font-medium text-[var(--ink)]" title={citation.filename}>
                         {citation.filename}
                       </p>
-                      <p className="mt-1 text-[11px] text-slate-500">
+                      <p className="mt-1 text-[11px] text-[var(--ink-muted)]">
                         Section {citation.chunk_index}
                         {citation.document_category ? ` · ${citation.document_category}` : ""}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <span className="text-[11px] text-teal-600">Open</span>
+                      <span className="text-[11px] text-[var(--accent-jade)]">Open</span>
                       {citation.relevance_score ? (
-                        <p className="mt-1 text-[10px] text-slate-400">
+                        <p className="mt-1 text-[10px] text-[var(--ink-muted)]">
                           {(citation.relevance_score * 100).toFixed(0)}% relevance
                         </p>
                       ) : null}
@@ -1656,7 +1753,7 @@ function CitationList({
                       {formatConfidence(citation.confidence)}
                     </span>
                   ) : null}
-                  <p className="mt-2 text-xs leading-6 text-slate-500">
+                  <p className="mt-2 text-xs leading-6 text-[var(--ink-muted)]">
                     {truncate(citation.preview, 120)}
                   </p>
                 </div>
@@ -1667,7 +1764,7 @@ function CitationList({
       )}
 
       {citations.length > uniqueCitations.length && (
-        <p className="mt-2 text-[11px] text-slate-600">
+        <p className="mt-2 text-[11px] text-[var(--ink-soft)]">
           Showing top 5 unique sources
         </p>
       )}
@@ -1681,14 +1778,14 @@ function formatConfidence(confidence: "high" | "medium" | "low") {
 
 function getConfidenceClass(confidence: "high" | "medium" | "low") {
   if (confidence === "high") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
   }
 
   if (confidence === "medium") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-amber-500/30 bg-amber-500/10 text-amber-300";
   }
 
-  return "border-red-200 bg-red-50 text-red-700";
+  return "border-red-500/30 bg-red-500/10 text-red-300";
 }
 
 function FeedbackRow({
@@ -1713,7 +1810,7 @@ function FeedbackRow({
   return (
     <div className="pl-0 sm:pl-10">
       {submitted ? (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--ink-muted)]">
           Thanks for the feedback{rating ? ` · ${rating.replaceAll("_", " ")}` : ""}.
         </p>
       ) : (
@@ -1723,7 +1820,7 @@ function FeedbackRow({
               type="button"
               disabled={loading}
               onClick={onHelpful}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
             >
               <ThumbsUp size={12} />
               Helpful
@@ -1732,7 +1829,7 @@ function FeedbackRow({
               type="button"
               disabled={loading}
               onClick={onNotHelpful}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
             >
               <ThumbsDown size={12} />
               Not helpful
@@ -1743,11 +1840,11 @@ function FeedbackRow({
               onClick={onToggleMore}
               aria-expanded={expanded}
               aria-label="Show more feedback options"
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)]"
             >
               More options
             </button>
-            {loading && <Loader2 size={13} className="animate-spin text-teal-600" />}
+            {loading && <Loader2 size={13} className="animate-spin text-[var(--accent-jade)]" />}
           </div>
 
           {expanded && (
@@ -1757,7 +1854,7 @@ function FeedbackRow({
                   key={option}
                   type="button"
                   onClick={() => onSelectMore(option)}
-                  className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800"
+                  className="rounded-full border border-[var(--line)] px-3 py-1.5 text-xs text-[var(--ink-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
                 >
                   {option.replaceAll("_", " ")}
                 </button>
@@ -1778,6 +1875,7 @@ function SourceDrawer({
   error,
   managerView,
   sessionTitle,
+  onViewDocument,
 }: {
   open: boolean;
   onClose: () => void;
@@ -1786,6 +1884,7 @@ function SourceDrawer({
   error: string | null;
   managerView: boolean;
   sessionTitle: string;
+  onViewDocument: (documentId: string, filename: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -1806,16 +1905,16 @@ function SourceDrawer({
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="w-full max-w-full border-l border-slate-200 bg-white p-0 sm:max-w-xl"
+        className="w-full max-w-full border-l border-[var(--line)] bg-[var(--surface)] p-0 sm:max-w-xl"
       >
         <div className="flex h-full min-w-0 flex-col">
-          <SheetHeader className="border-b border-slate-200 px-4 py-4 sm:px-5">
+          <SheetHeader className="border-b border-[var(--line)] px-4 py-4 sm:px-5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
                   {managerView ? "Document Source" : "Source"}
                 </p>
-                <SheetTitle className="mt-1 wrap-anywhere text-left text-lg font-semibold text-slate-900">
+                <SheetTitle className="mt-1 wrap-anywhere text-left text-lg font-semibold text-[var(--ink)]">
                   {citation?.filename || "Source details"}
                 </SheetTitle>
                 <SheetDescription className="sr-only">
@@ -1826,7 +1925,7 @@ function SourceDrawer({
                 type="button"
                 onClick={onClose}
                 aria-label="Close source panel"
-                className="rounded-xl border border-slate-200 p-2.5 text-slate-400 transition-colors hover:text-slate-700"
+                className="rounded-xl border border-[var(--line)] p-2.5 text-[var(--ink-muted)] transition-colors hover:text-[var(--ink-soft)]"
               >
                 <X size={16} />
               </button>
@@ -1834,38 +1933,49 @@ function SourceDrawer({
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-5">
+            {citation?.document_id ? (
+              <button
+                type="button"
+                onClick={() => onViewDocument(citation.document_id as string, citation.filename || "Document")}
+                className="app-button-primary mb-5 flex w-full justify-center"
+              >
+                <FileText size={15} />
+                View full document
+              </button>
+            ) : null}
+
             {loading && (
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                <Loader2 size={16} className="animate-spin text-teal-600" />
+              <div className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] px-4 py-4 text-sm text-[var(--ink-soft)]">
+                <Loader2 size={16} className="animate-spin text-[var(--accent-jade)]" />
                 Loading source details...
               </div>
             )}
 
             {error && (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-600">
+              <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-4 text-sm text-red-300">
                 {error}
               </div>
             )}
 
             <div className="space-y-5">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
                   Section
                 </p>
-                <p className="mt-2 text-sm text-slate-800">
+                <p className="mt-2 text-sm text-[var(--ink)]">
                   Section {citation?.chunk_index || 0}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
                     Excerpt
                   </p>
                   <button
                     type="button"
                     onClick={handleCopyExcerpt}
-                    className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-slate-800"
+                    className="flex items-center gap-2 rounded-lg border border-[var(--line)] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)]"
                   >
                     {copied ? (
                       <Check size={12} className="text-green-400" />
@@ -1875,25 +1985,25 @@ function SourceDrawer({
                     {copied ? "Copied" : "Copy excerpt"}
                   </button>
                 </div>
-                <p className="mt-3 whitespace-pre-wrap wrap-anywhere text-sm leading-7 text-slate-700">
+                <p className="mt-3 whitespace-pre-wrap wrap-anywhere text-sm leading-7 text-[var(--ink-soft)]">
                   {excerpt || "No excerpt available."}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
                   Preview
                 </p>
-                <p className="mt-3 wrap-anywhere text-sm leading-7 text-slate-600">
+                <p className="mt-3 wrap-anywhere text-sm leading-7 text-[var(--ink-soft)]">
                   {citation?.preview || "No preview available."}
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
                   Uploaded
                 </p>
-                <p className="mt-3 text-sm text-slate-600">
+                <p className="mt-3 text-sm text-[var(--ink-soft)]">
                   {citation?.uploaded_at
                     ? new Date(citation.uploaded_at).toLocaleString()
                     : "Unknown"}
@@ -1901,11 +2011,11 @@ function SourceDrawer({
               </div>
 
               {managerView && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
                     Source metadata
                   </p>
-                  <div className="mt-3 space-y-2 text-sm text-slate-600">
+                  <div className="mt-3 space-y-2 text-sm text-[var(--ink-soft)]">
                     <p className="wrap-anywhere">Document ID: {citation?.document_id || "Unknown"}</p>
                     <p className="wrap-anywhere">Uploaded by: {citation?.uploaded_by || "Unknown"}</p>
                     <p>Section: {citation?.chunk_index || 0}</p>

@@ -93,8 +93,6 @@ export default function PlatformOverviewPage() {
     { label: 'Platform users', value: data.totals.totalUsers, icon: Users },
     { label: 'Uploaded documents', value: data.totals.totalDocuments, icon: FileText },
     { label: 'Questions asked', value: data.totals.totalQuestions, icon: MessageSquare },
-    { label: 'Suspended workspaces', value: data.totals.suspendedWorkspaces, icon: Building2 },
-    { label: 'Trial workspaces', value: data.totals.trialWorkspaces, icon: Building2 },
   ];
 
   return (
@@ -105,12 +103,12 @@ export default function PlatformOverviewPage() {
       />
 
       {error && (
-        <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700">
+        <Alert className="rounded-2xl border-red-500/30 bg-red-500/10 text-red-300">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <StatCard
             key={card.label}
@@ -126,31 +124,31 @@ export default function PlatformOverviewPage() {
         <AppCard className="p-6">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Recent companies</p>
-              <h2 className="mt-1 text-lg font-bold text-slate-950">Newest workspaces</h2>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">Recent companies</p>
+              <h2 className="mt-1 text-lg font-bold text-[var(--ink)]">Newest workspaces</h2>
             </div>
-            <Link href="/platform/companies" className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-700 hover:text-cyan-900">
+            <Link href="/platform/companies" className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--accent-jade)] hover:text-[var(--accent-jade)]">
               View all
             </Link>
           </div>
           <AppCardContent className="space-y-3 px-0 pb-0">
             {data.recentCompanies.length === 0 ? (
-              <p className="text-sm text-slate-500">No companies created yet.</p>
+              <p className="text-sm text-[var(--ink-muted)]">No companies created yet.</p>
             ) : (
               data.recentCompanies.map((company) => (
-                <div key={company.id} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <div key={company.id} className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <Link href={`/platform/companies/${company.id}`} className="text-sm font-semibold text-slate-950 hover:text-cyan-700">
+                      <Link href={`/platform/companies/${company.id}`} className="text-sm font-semibold text-[var(--ink)] hover:text-[var(--accent-jade)]">
                         {company.name}
                       </Link>
-                      <p className="mt-1 text-xs text-slate-500">{company.slug}</p>
+                      <p className="mt-1 text-xs text-[var(--ink-muted)]">{company.slug}</p>
                     </div>
                     <StatusBadge status={company.status} />
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <PlanBadge plan={company.plan} />
-                    <span className="text-xs text-slate-500">{formatDate(company.created_at)}</span>
+                    <span className="text-xs text-[var(--ink-muted)]">{formatDate(company.created_at)}</span>
                   </div>
                 </div>
               ))
@@ -160,7 +158,7 @@ export default function PlatformOverviewPage() {
 
         <div className="space-y-6">
           <AppCard className="p-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Platform activity</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">Platform activity</p>
             <div className="mt-4 space-y-3">
               <MetricRow label="New companies in last 7 days" value={data.totals.newCompaniesLast7Days} />
               <MetricRow label="Questions in last 7 days" value={data.totals.questionsLast7Days} />
@@ -170,19 +168,19 @@ export default function PlatformOverviewPage() {
           </AppCard>
 
           <AppCard className="p-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Status distribution</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">Status distribution</p>
             <div className="mt-4 space-y-3">
               {[
                 { label: 'Active', count: data.totals.activeWorkspaces, status: 'active' },
                 { label: 'Trial', count: data.totals.trialWorkspaces, status: 'trial' },
                 { label: 'Suspended', count: data.totals.suspendedWorkspaces, status: 'suspended' },
               ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
+                <div key={item.label} className="flex items-center justify-between rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] px-4 py-3">
                   <div className="flex items-center gap-3">
                     <StatusBadge status={item.status} />
-                    <span className="text-sm font-medium text-slate-600">{item.label}</span>
+                    <span className="text-sm font-medium text-[var(--ink-soft)]">{item.label}</span>
                   </div>
-                  <span className="text-lg font-bold text-slate-950">{item.count}</span>
+                  <span className="text-lg font-bold text-[var(--ink)]">{item.count}</span>
                 </div>
               ))}
             </div>
@@ -195,9 +193,9 @@ export default function PlatformOverviewPage() {
 
 function MetricRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
-      <span className="text-sm font-medium text-slate-600">{label}</span>
-      <span className="text-lg font-bold text-slate-950">{value}</span>
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] px-4 py-3">
+      <span className="text-sm font-medium text-[var(--ink-soft)]">{label}</span>
+      <span className="text-lg font-bold text-[var(--ink)]">{value}</span>
     </div>
   );
 }

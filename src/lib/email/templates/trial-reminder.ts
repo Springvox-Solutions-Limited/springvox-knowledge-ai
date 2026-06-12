@@ -10,15 +10,15 @@ export function buildTrialReminderEmail({
   const dayLabel = daysRemaining === 1 ? '1 day' : `${daysRemaining} days`;
 
   return {
-    subject: `${dayLabel} left in your SpringVox trial`,
+    subject: `${dayLabel} left in your Rekall-IQ trial`,
     text: [
-      `Your SpringVox trial for ${workspaceName} ends in ${dayLabel}.`,
+      `Your Rekall-IQ trial for ${workspaceName} ends in ${dayLabel}.`,
       '',
       'Upgrade before the trial ends to keep uploads, chat, document search, and team access available.',
       '',
-      `Open SpringVox: ${appUrl}/dashboard`,
+      `Open Rekall-IQ: ${appUrl}/dashboard`,
       '',
-      'SpringVox Team',
+      'Rekall-IQ Team',
     ].join('\n'),
   };
 }

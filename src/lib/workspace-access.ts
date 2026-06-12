@@ -47,7 +47,7 @@ export async function assertWorkspaceOperational(workspaceId: string) {
   const trialEndsAt = workspace.trial_ends_at ? new Date(workspace.trial_ends_at).getTime() : null;
 
   if (workspace.deletion_status === 'scheduled' || workspace.deletion_status === 'deleting' || workspace.deletion_status === 'deleted') {
-    throw new Error('This workspace is scheduled for deletion. Contact SpringVox support if this is unexpected.');
+    throw new Error('This workspace is scheduled for deletion. Contact Rekall-IQ support if this is unexpected.');
   }
 
   if (
@@ -56,7 +56,7 @@ export async function assertWorkspaceOperational(workspaceId: string) {
     Number.isFinite(trialEndsAt) &&
     trialEndsAt <= now
   ) {
-    throw new Error('Your 14-day trial has ended. Please upgrade to continue using SpringVox.');
+    throw new Error('Your 14-day trial has ended. Please upgrade to continue using Rekall-IQ.');
   }
 
   if (

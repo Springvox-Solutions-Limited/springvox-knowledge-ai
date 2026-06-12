@@ -7,7 +7,7 @@ const restrictedMessages = new Set([
   getWorkspaceStatusMessage('past_due'),
   getUserStatusMessage('suspended'),
   getUserStatusMessage('disabled'),
-  'Your 14-day trial has ended. Please upgrade to continue using SpringVox.',
+  'Your 14-day trial has ended. Please upgrade to continue using Rekall-IQ.',
 ]);
 
 export function getRequestErrorStatus(message: string) {

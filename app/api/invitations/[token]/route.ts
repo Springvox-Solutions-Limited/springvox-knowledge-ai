@@ -34,7 +34,7 @@ export async function GET(
         expires_at: invitation.expires_at,
         accepted_at: invitation.accepted_at,
         workspace_name: workspace?.name || 'Workspace',
-        assistant_name: workspace?.assistant_name || 'SpringVox Knowledge AI',
+        assistant_name: workspace?.assistant_name || 'Rekall-IQ',
       },
     });
   } catch (error) {

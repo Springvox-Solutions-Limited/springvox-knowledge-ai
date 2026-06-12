@@ -1,6 +1,6 @@
-# SpringVox Knowledge AI
+# Rekall-IQ
 
-SpringVox Knowledge AI is a secure multi-tenant SaaS platform for company knowledge. Organisations upload approved documents, invite their team, and ask questions in plain English. Answers are grounded in uploaded documents, include sources, and remain scoped to the user’s workspace.
+Rekall-IQ is a secure multi-tenant SaaS platform for company knowledge. Organisations upload approved documents, invite their team, and ask questions in plain English. Answers are grounded in uploaded documents, include sources, and remain scoped to the user’s workspace.
 
 ## Current Platform Status
 
@@ -10,6 +10,27 @@ SpringVox Knowledge AI is a secure multi-tenant SaaS platform for company knowle
 - Phase 4: trial lifecycle, notifications, audit logs, platform operations, user controls, security linter fixes.
 - Phase 5A: Voyage reranking, hybrid search, confidence scoring, answer modes, document intelligence, improved source quality.
 - Phase 5B: beta rate limiting, usage metering, evaluations, diagnostics, workspace deletion lifecycle, support documentation.
+- Phase 6 (in progress):
+  - **Security hardening** — privilege-escalation fix, atomic rate limiter, `xlsx`→`exceljs` (CVE), chat length cap, CSP + security headers.
+  - **6B Centralized API client** (`src/lib/api-client.ts`) — auto-attaches the Supabase token, refreshes on 401, redirects on hard auth failure.
+  - **6E Chat UX** — regenerate response, edit-and-resend question.
+  - **6G Workspace limits** — `workspace_limits` table + platform-admin UI for per-workspace question/upload/storage/token caps.
+  - **6D Department collections** — General/HR/Finance/Legal/Operations/Sales/Support/IT; assign documents to a collection, filter the library, and scope chat retrieval to a collection ("All documents" by default).
+  - **6C In-app file preview + real citations** — a secure, workspace-scoped stream endpoint (`/api/documents/[id]/stream`) plus a preview drawer that renders the actual file (PDF, image, DOCX, XLSX/CSV, Markdown, text) from an authenticated blob URL. Chat citations now open the real document via "View full document"; the Documents page has a "Preview" action.
+  - **6F Document intelligence** — richer, retrieval-friendly summaries/keywords with spreadsheet awareness.
+  - **Unified dark UI** — the entire product (landing, auth, dashboard, platform) is a single token-driven dark theme: near-black olive canvas, jade/teal accent, dark sidebars, one page title per screen (body H1 + breadcrumb top bar). Brand is the inline-SVG Rekall-IQ "R" monogram. See `DESIGN.md`.
+  - **Help center** — in-app `/help/user-guide` and `/help/admin-guide` with step-by-step instructions and visual aids.
+  - **Accurate metering** — LLM token usage is read from the provider's real usage metadata (char estimate only as fallback), feeding workspace usage limits.
+
+> Status: **beta-ready** for controlled testing. Open pre-launch items: legal review of policy pages, a real contact mailbox/domain (currently `hello@rekall-iq.com` placeholder), and live verification of chat scoping + file preview on real data. Post-beta roadmap: source connectors (Google Drive first), SSO/SCIM, document-level permissions, and retrieval upgrades (query transforms, structure-aware chunking).
+
+## Database Migrations
+
+SQL migrations live in `/sql/` and are applied in Supabase. Phase 6 added:
+
+- `sql/phase6_atomic_rate_limit.sql` — atomic rate-limit RPC (the limiter calls this; until applied it fails open).
+- `sql/phase6g_workspace_limits.sql` — per-workspace limits table (platform-admin RLS).
+- `sql/phase6d_collections.sql` — `collections` table, `documents.collection_id`, seeds the 8 default departments per workspace.
 
 ## Architecture Diagram
 
@@ -28,7 +49,7 @@ Browser
 
 ## Authentication
 
-SpringVox uses Supabase Auth. API routes validate bearer tokens server-side before reading workspace data. Service-role access is server-only and must never be exposed through `NEXT_PUBLIC` variables.
+Rekall-IQ uses Supabase Auth. API routes validate bearer tokens server-side before reading workspace data. Service-role access is server-only and must never be exposed through `NEXT_PUBLIC` variables.
 
 ## Workspace Model
 
@@ -124,7 +145,7 @@ Phase 5A reranking:
 - `RAG_RERANK_TOP_K=8`
 - `VOYAGE_RERANK_MODEL=rerank-2-lite`
 
-If reranking fails, SpringVox falls back to vector and keyword ranking.
+If reranking fails, Rekall-IQ falls back to vector and keyword ranking.
 
 ## LlamaParse Advanced Parsing
 
@@ -134,7 +155,7 @@ LlamaParse is optional and disabled by default:
 - `LLAMAPARSE_MODE=fallback`
 - `LLAMAPARSE_COMPLEX_ONLY=true`
 
-Recommended production mode is `fallback`: SpringVox tries the local parser first, then uses LlamaParse only when extraction is weak or empty. `force` sends supported files to LlamaParse first and falls back locally if possible. If `LLAMAPARSE_API_KEY` is missing, the app logs a safe warning and continues with local parsers.
+Recommended production mode is `fallback`: Rekall-IQ tries the local parser first, then uses LlamaParse only when extraction is weak or empty. `force` sends supported files to LlamaParse first and falls back locally if possible. If `LLAMAPARSE_API_KEY` is missing, the app logs a safe warning and continues with local parsers.
 
 With `LLAMAPARSE_COMPLEX_ONLY=true`, LlamaParse is considered only for PDF, DOCX, PPTX, and XLSX. TXT and CSV stay local.
 
@@ -173,7 +194,7 @@ The selected mode changes answer style while preserving strict source-grounding.
 
 ## Answer Intelligence Layer
 
-SpringVox builds deterministic answer guidance before Gemini responds. It uses query intent, answer mode, document categories, source types, table metadata, and preliminary confidence to shape the response.
+Rekall-IQ builds deterministic answer guidance before Gemini responds. It uses query intent, answer mode, document categories, source types, table metadata, and preliminary confidence to shape the response.
 
 For spreadsheets and reports, answers prefer executive summaries, key findings, important numbers, risks, recommendations, and caveats. For manuals and technical guides, answers prefer direct answers, steps, relevant notes, caveats, and follow-ups. Low-confidence answers include what is missing and safer next questions instead of guessing.
 
@@ -277,7 +298,7 @@ RAG_QDRANT_FETCH_K=30
 
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=
-EMAIL_FROM="SpringVox <no-reply@yourdomain.com>"
+EMAIL_FROM="Rekall-IQ <no-reply@yourdomain.com>"
 NEXT_PUBLIC_APP_URL=
 
 MAX_UPLOAD_MB=20

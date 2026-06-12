@@ -1,0 +1,38 @@
+ACME CORPORATION — REMOTE WORK POLICY
+Document owner: People Operations
+Effective date: 1 January 2026
+Version: 2.1
+
+1. PURPOSE
+This policy defines who may work remotely at Acme Corporation, how often, and the
+conditions that apply. It exists to balance flexibility with collaboration and security.
+
+2. ELIGIBILITY
+Employees become eligible for remote work after completing 90 days of continuous employment.
+Contractors and employees on a performance improvement plan are not eligible.
+
+3. REMOTE WORK ALLOWANCE
+Eligible employees may work remotely up to 3 days per week with prior manager approval.
+Approval is granted per quarter and may be revoked if collaboration or output is affected.
+
+4. CORE HOURS
+Regardless of location, all employees must be reachable and online during core hours of
+10:00 to 15:00 in their assigned office time zone.
+
+5. EQUIPMENT AND STIPEND
+The company provides a laptop to all remote-eligible employees. After 90 days, employees
+may claim a one-time home-office stipend of USD 500. An external monitor is reimbursable up
+to USD 250 with a valid receipt. Chairs and desks are not reimbursed.
+
+6. LOCATION AND TRAVEL
+Remote work must be performed from the employee's country of employment. Working from another
+country for more than 20 consecutive days requires written approval from HR and may have tax
+implications that the employee is responsible for declaring.
+
+7. SECURITY
+Remote employees must follow the IT Acceptable Use Policy, including mandatory VPN use when
+accessing internal systems and multi-factor authentication on all company accounts.
+
+8. EXCEPTIONS
+Exceptions to this policy require approval from both the employee's department head and the
+Head of People Operations. Exceptions are reviewed every six months.

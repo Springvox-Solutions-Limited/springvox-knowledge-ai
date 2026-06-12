@@ -1,4 +1,4 @@
-# SpringVox Admin Guide
+# Rekall-IQ Admin Guide
 
 Workspace admins can manage documents, users, analytics, evaluations, and workspace settings.
 

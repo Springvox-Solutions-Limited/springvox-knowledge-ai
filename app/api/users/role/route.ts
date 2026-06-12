@@ -43,6 +43,11 @@ export async function PATCH(req: Request) {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // A workspace admin must never be able to modify a platform admin's role.
+    if (targetUser.role === 'platform_admin' && !isPlatformAdminRole(profile.role)) {
+      return Response.json({ error: 'Cannot modify a platform admin' }, { status: 403 });
+    }
+
     if (!isPlatformAdminRole(profile.role) && nextRole === 'platform_admin') {
       return Response.json({ error: 'Only the platform owner can assign platform admin' }, { status: 403 });
     }

@@ -30,7 +30,7 @@ export function getChatProvider(): ChatProvider {
   const provider = (process.env.SPRINGVOX_CHAT_PROVIDER || 'gemini').toLowerCase();
 
   if (provider !== 'gemini') {
-    throw new Error(`Unsupported chat provider "${provider}". SpringVox currently supports Gemini for chat generation.`);
+    throw new Error(`Unsupported chat provider "${provider}". Rekall-IQ currently supports Gemini for chat generation.`);
   }
 
   return 'gemini';

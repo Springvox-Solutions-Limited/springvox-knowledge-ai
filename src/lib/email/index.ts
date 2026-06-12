@@ -9,7 +9,7 @@ type SendEmailInput = {
 };
 
 function getEmailFrom() {
-  return process.env.EMAIL_FROM || 'SpringVox <no-reply@example.com>';
+  return process.env.EMAIL_FROM || 'Rekall-IQ <no-reply@example.com>';
 }
 
 export async function sendEmail({ to, subject, text }: SendEmailInput) {

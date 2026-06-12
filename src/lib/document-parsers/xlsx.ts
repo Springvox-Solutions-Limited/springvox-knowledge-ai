@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import {
   assertReadableText,
   countWords,
@@ -8,11 +8,42 @@ import {
   toNodeBuffer,
 } from './types';
 
+const MAX_SHEET_ROWS = 500;
+
+// ExcelJS cell values can be primitives or rich objects (formula results,
+// hyperlinks, rich text). Normalize any of those to a plain string.
+function cellToString(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (value instanceof Date) return value.toISOString();
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    if (typeof record.text === 'string') return record.text;
+    if (typeof record.result === 'string' || typeof record.result === 'number') {
+      return String(record.result);
+    }
+    if (typeof record.hyperlink === 'string') return record.hyperlink;
+    if (Array.isArray(record.richText)) {
+      return record.richText.map((part) => (part as { text?: string }).text || '').join('');
+    }
+  }
+
+  return String(value);
+}
+
+function escapeCell(value: unknown): string {
+  return cellToString(value).replace(/\|/g, '\\|').replace(/\n/g, ' ').trim();
+}
+
 export class XlsxParser implements DocumentParser {
-  async parse(input: DocumentParserInput, filename: string): Promise<ParsedDocument> {
+  async parse(input: DocumentParserInput, _filename: string): Promise<ParsedDocument> {
     try {
       const buffer = toNodeBuffer(input);
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+
       let markdown = '';
       const warnings: string[] = [];
       const sheets: Array<{
@@ -22,55 +53,52 @@ export class XlsxParser implements DocumentParser {
         columns: string[];
         truncated?: boolean;
       }> = [];
-      const MAX_SHEET_ROWS = 500;
 
-      const escapeCell = (cell: any) => {
-        if (cell === null || cell === undefined) return '';
-        return String(cell).replace(/\|/g, '\\|').replace(/\n/g, ' ').trim();
-      };
+      workbook.eachSheet((worksheet) => {
+        // Collect rows as plain arrays (ExcelJS row.values is 1-indexed).
+        const rows: unknown[][] = [];
+        worksheet.eachRow({ includeEmpty: false }, (row) => {
+          const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+          rows.push(values);
+        });
 
-      workbook.SheetNames.forEach((sheetName) => {
-        const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+        if (rows.length === 0) return;
 
-        if (!data || data.length === 0) return;
+        markdown += `### Sheet: ${worksheet.name}\n\n`;
 
-        markdown += `### Sheet: ${sheetName}\n\n`;
+        const isTruncated = rows.length > MAX_SHEET_ROWS;
+        const rowsToProcess = rows.slice(0, MAX_SHEET_ROWS);
+        const headers = rowsToProcess[0] || [];
+        const formattedHeaders = headers.map((cell, index) => {
+          const text = cellToString(cell);
+          return text !== '' ? text : `Column ${index + 1}`;
+        });
 
-        const isTruncated = data.length > MAX_SHEET_ROWS;
-        const rowsToProcess = data.slice(0, MAX_SHEET_ROWS);
+        sheets.push({
+          name: worksheet.name,
+          rowCount: rows.length,
+          columnCount: formattedHeaders.length,
+          columns: formattedHeaders,
+          truncated: isTruncated || undefined,
+        });
 
-        if (rowsToProcess.length > 0) {
-          const headers = rowsToProcess[0];
-          const formattedHeaders = headers.map((h, i) =>
-            h !== undefined && h !== null && h !== '' ? String(h) : `Column ${i + 1}`
+        markdown += `| ${formattedHeaders.map(escapeCell).join(' | ')} |\n`;
+        markdown += `| ${formattedHeaders.map(() => '---').join(' | ')} |\n`;
+
+        for (let i = 1; i < rowsToProcess.length; i++) {
+          const row = rowsToProcess[i] || [];
+          const rowData = Array.from(
+            { length: formattedHeaders.length },
+            (_, colIdx) => row[colIdx],
           );
-          sheets.push({
-            name: sheetName,
-            rowCount: data.length,
-            columnCount: formattedHeaders.length,
-            columns: formattedHeaders.map(String),
-            truncated: isTruncated || undefined,
-          });
-
-          markdown += `| ${formattedHeaders.map(escapeCell).join(' | ')} |\n`;
-          markdown += `| ${formattedHeaders.map(() => '---').join(' | ')} |\n`;
-
-          for (let i = 1; i < rowsToProcess.length; i++) {
-            const row = rowsToProcess[i] || [];
-            const rowData = Array.from(
-              { length: formattedHeaders.length },
-              (_, colIdx) => row[colIdx]
-            );
-            markdown += `| ${rowData.map(escapeCell).join(' | ')} |\n`;
-          }
+          markdown += `| ${rowData.map(escapeCell).join(' | ')} |\n`;
         }
 
         markdown += '\n';
 
         if (isTruncated) {
-          markdown += `*Note: Sheet "${sheetName}" was truncated. Only the first ${MAX_SHEET_ROWS} rows were processed.*\n\n`;
-          warnings.push(`Sheet "${sheetName}" was truncated to ${MAX_SHEET_ROWS} rows.`);
+          markdown += `*Note: Sheet "${worksheet.name}" was truncated. Only the first ${MAX_SHEET_ROWS} rows were processed.*\n\n`;
+          warnings.push(`Sheet "${worksheet.name}" was truncated to ${MAX_SHEET_ROWS} rows.`);
         }
       });
 
@@ -79,8 +107,8 @@ export class XlsxParser implements DocumentParser {
       return {
         text: markdown.trim(),
         metadata: {
-          parser: 'sheetjs-xlsx',
-          sheetCount: workbook.SheetNames.length,
+          parser: 'exceljs-xlsx',
+          sheetCount: workbook.worksheets.length,
           wordCount: countWords(markdown),
           warnings: warnings.length > 0 ? warnings : undefined,
           tableMetadata: {
@@ -90,7 +118,7 @@ export class XlsxParser implements DocumentParser {
       };
     } catch (err) {
       throw new Error(
-        `Failed to parse Excel file: ${err instanceof Error ? err.message : String(err)}`
+        `Failed to parse Excel file: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }

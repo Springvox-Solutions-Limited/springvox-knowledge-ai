@@ -1,0 +1,19 @@
+Month,Region,Product,Units,Revenue_USD
+January,North America,Starter,120,11880
+January,North America,Business,60,17940
+January,EMEA,Starter,80,7920
+January,EMEA,Business,45,13455
+January,APAC,Starter,50,4950
+January,APAC,Business,20,5980
+February,North America,Starter,135,13365
+February,North America,Business,72,21528
+February,EMEA,Starter,95,9405
+February,EMEA,Business,52,15548
+February,APAC,Starter,61,6039
+February,APAC,Business,28,8372
+March,North America,Starter,150,14850
+March,North America,Business,88,26312
+March,EMEA,Starter,110,10890
+March,EMEA,Business,63,18837
+March,APAC,Starter,77,7623
+March,APAC,Business,35,10465

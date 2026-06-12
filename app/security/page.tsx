@@ -4,7 +4,7 @@ import { LegalSection } from '@/src/components/legal/LegalSection';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Security & Data Protection | SpringVox Knowledge AI',
+  title: 'Security & Data Protection | Rekall-IQ',
   description: 'Learn about our security controls, workspace isolation, data protection practices, and privacy boundaries.',
 };
 
@@ -17,13 +17,13 @@ export default function SecurityPage() {
       activePath="/security"
     >
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-slate-600">
+        <p className="text-sm leading-6 text-[var(--ink-soft)]">
           This page provides transparent information regarding our security practices, architectural design, data isolation, and our security roadmap.
         </p>
 
         <LegalSection id="security-overview" title="1. Security Overview">
           <p>
-            SpringVox Knowledge AI is engineered to protect customer knowledge. Our core architecture focuses on strict workspace isolation, role-based access controls, private document storage, and scoping AI processing strictly to retrieved context from your approved files.
+            Rekall-IQ is engineered to protect customer knowledge. Our core architecture focuses on strict workspace isolation, role-based access controls, private document storage, and scoping AI processing strictly to retrieved context from your approved files.
           </p>
         </LegalSection>
 
@@ -63,7 +63,7 @@ export default function SecurityPage() {
 
         <LegalSection id="admin-boundary" title="4. Platform Admin Privacy Boundary">
           <p>
-            SpringVox operators holding the Platform Admin role can manage system health, view workspace metadata (such as document counts and plan status), and suspend or reactivate workspaces.
+            Rekall-IQ operators holding the Platform Admin role can manage system health, view workspace metadata (such as document counts and plan status), and suspend or reactivate workspaces.
           </p>
           <p className="mt-2 font-semibold">
             By default, Platform Admins do not view the text content of your uploaded documents or browse full user chat conversations in cleartext.
@@ -135,8 +135,8 @@ export default function SecurityPage() {
           <p>
             To report a suspected vulnerability or discuss enterprise security requirements, please email:
           </p>
-          <div className="mt-2 bg-slate-50 border border-slate-200/80 p-3 rounded-xl inline-block">
-            <p className="font-semibold text-slate-800">Email: <a href="mailto:security@springvox.ai" className="text-cyan-600 hover:underline">security@springvox.ai</a></p>
+          <div className="mt-2 bg-[var(--surface-2)] border border-[var(--line)] p-3 rounded-xl inline-block">
+            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:security@rekall-iq.com" className="text-[var(--accent-jade)] hover:underline">security@rekall-iq.com</a></p>
           </div>
         </LegalSection>
       </div>

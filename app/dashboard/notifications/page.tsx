@@ -154,22 +154,19 @@ export default function DashboardNotificationsPage() {
     <div className="admin-page">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-700">
-            Workspace Notices
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--ink)] sm:text-3xl">
             Notifications
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Review SpringVox announcements, maintenance notes, billing reminders, and security updates for your workspace.
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-[var(--ink-soft)]">
+            Review Rekall-IQ announcements, maintenance notes, billing reminders, and security updates for your workspace.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-11 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100 sm:w-52">
+            <SelectTrigger className="h-11 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)] sm:w-52">
               <SelectValue placeholder="All types" />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-slate-200">
+            <SelectContent className="rounded-xl border-[var(--line)]">
               {typeOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -191,35 +188,35 @@ export default function DashboardNotificationsPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <AppCard className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
             Unread
           </p>
-          <p className="mt-2 text-3xl font-semibold text-slate-950">{unreadCount}</p>
+          <p className="mt-2 text-3xl font-semibold text-[var(--ink)]">{unreadCount}</p>
         </AppCard>
         <AppCard className="p-5 sm:col-span-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
             Notification scope
           </p>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            This center includes notifications sent directly to your workspace and global SpringVox notices.
+          <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
+            This center includes notifications sent directly to your workspace and global Rekall-IQ notices.
           </p>
         </AppCard>
       </div>
 
       {error ? (
-        <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700">
+        <Alert className="rounded-2xl border-red-500/30 bg-red-500/10 text-red-300">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
 
       <div className="space-y-3">
         {loading ? (
-          <AppCard className="p-6 text-sm text-slate-500">Loading notifications...</AppCard>
+          <AppCard className="p-6 text-sm text-[var(--ink-muted)]">Loading notifications...</AppCard>
         ) : notifications.length === 0 ? (
           <EmptyState
             icon={Inbox}
             title="No notifications yet"
-            description="Workspace and global notices from SpringVox will appear here."
+            description="Workspace and global notices from Rekall-IQ will appear here."
           />
         ) : (
           notifications.map((notification) => (
@@ -227,7 +224,7 @@ export default function DashboardNotificationsPage() {
               key={notification.id}
               className={cn(
                 "p-5 transition",
-                !notification.is_read && "border-cyan-200 bg-cyan-50/30",
+                !notification.is_read && "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)]",
               )}
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -240,22 +237,22 @@ export default function DashboardNotificationsPage() {
                       {formatNotificationType(notification.type)}
                     </span>
                     {!notification.is_read ? (
-                      <span className="rounded-full bg-cyan-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                      <span className="rounded-full bg-teal-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
                         Unread
                       </span>
                     ) : (
-                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+                      <span className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)]">
                         Read
                       </span>
                     )}
-                    <span className="text-xs font-medium text-slate-400">
+                    <span className="text-xs font-medium text-[var(--ink-muted)]">
                       {formatDate(notification.created_at)}
                     </span>
                   </div>
-                  <h2 className="mt-3 text-base font-semibold text-slate-950">
+                  <h2 className="mt-3 text-base font-semibold text-[var(--ink)]">
                     {notification.title}
                   </h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                  <p className="mt-2 text-sm leading-6 text-[var(--ink-soft)]">
                     {notification.message}
                   </p>
                 </div>
@@ -295,16 +292,16 @@ function formatNotificationType(type: string) {
 
 function getNotificationTypeClass(type: string) {
   if (type === "maintenance") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-amber-500/30 bg-amber-500/10 text-amber-300";
   }
 
   if (type === "billing_reminder" || type === "trial_notice") {
-    return "border-cyan-200 bg-cyan-50 text-cyan-700";
+    return "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] text-[var(--accent-jade)]";
   }
 
   if (type === "security_notice") {
-    return "border-red-200 bg-red-50 text-red-700";
+    return "border-red-500/30 bg-red-500/10 text-red-300";
   }
 
-  return "border-slate-200 bg-white text-slate-600";
+  return "border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft)]";
 }

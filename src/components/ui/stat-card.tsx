@@ -24,22 +24,22 @@ export function StatCard({
       <AppCardContent className="p-4 sm:p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           {Icon ? (
-            <div className="rounded-lg border border-cyan-100 bg-cyan-50 p-2 text-cyan-800">
+            <div className="rounded-lg border border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] p-2 text-[var(--accent-jade)]">
               <Icon size={16} />
             </div>
           ) : (
             <div />
           )}
           {meta ? (
-            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
               {meta}
             </div>
           ) : null}
         </div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
           {label}
         </p>
-        <h3 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+        <h3 className="mt-1 text-2xl font-bold tracking-tight text-[var(--ink)]">
           {value}
         </h3>
       </AppCardContent>

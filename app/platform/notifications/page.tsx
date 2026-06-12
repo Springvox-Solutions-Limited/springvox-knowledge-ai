@@ -113,31 +113,31 @@ export default function PlatformNotificationsPage() {
     <div className="admin-page">
       <PlatformPageHeader title="Notifications" subtitle="Send workspace or global notices through in-app and email channels." />
 
-      {error ? <Alert className="border-red-200 bg-red-50 text-red-700"><AlertDescription>{error}</AlertDescription></Alert> : null}
-      {notice ? <Alert className="border-emerald-200 bg-emerald-50 text-emerald-700"><AlertDescription>{notice}</AlertDescription></Alert> : null}
+      {error ? <Alert className="border-red-500/30 bg-red-500/10 text-red-300"><AlertDescription>{error}</AlertDescription></Alert> : null}
+      {notice ? <Alert className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300"><AlertDescription>{notice}</AlertDescription></Alert> : null}
 
       <AppCard className="p-5">
         <form onSubmit={sendNotification} className="space-y-4">
           <ResponsiveToolbar className="xl:grid xl:grid-cols-4">
             <Select value={workspaceId} onValueChange={setWorkspaceId}>
-              <SelectTrigger className="h-12 rounded-xl border-slate-200"><SelectValue placeholder="Target workspace" /></SelectTrigger>
+              <SelectTrigger className="h-12 rounded-xl border-[var(--line)]"><SelectValue placeholder="Target workspace" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All workspaces</SelectItem>
                 {workspaces.map((workspace) => <SelectItem key={workspace.id} value={workspace.id}>{workspace.name}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="h-12 rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-12 rounded-xl border-[var(--line)]"><SelectValue /></SelectTrigger>
               <SelectContent>{TYPES.map((item) => <SelectItem key={item} value={item}>{item.replaceAll("_", " ")}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={channel} onValueChange={setChannel}>
-              <SelectTrigger className="h-12 rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-12 rounded-xl border-[var(--line)]"><SelectValue /></SelectTrigger>
               <SelectContent>{CHANNELS.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
             </Select>
-            <Input type="datetime-local" value={scheduledFor} onChange={(event) => setScheduledFor(event.target.value)} className="h-12 rounded-xl border-slate-200" />
+            <Input type="datetime-local" value={scheduledFor} onChange={(event) => setScheduledFor(event.target.value)} className="h-12 rounded-xl border-[var(--line)]" />
           </ResponsiveToolbar>
-          <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Notification title" required className="h-12 rounded-xl border-slate-200" />
-          <Textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write a clear, professional message..." required className="min-h-28 rounded-xl border-slate-200" />
+          <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Notification title" required className="h-12 rounded-xl border-[var(--line)]" />
+          <Textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write a clear, professional message..." required className="min-h-28 rounded-xl border-[var(--line)]" />
           <AppButton type="submit" disabled={saving}>{saving ? "Saving..." : "Send now / queue"}</AppButton>
         </form>
       </AppCard>
@@ -150,16 +150,16 @@ export default function PlatformNotificationsPage() {
             </AppTableHeader>
             <AppTableBody>
               {notifications.length === 0 ? (
-                <AppTableRow><AppTableCell colSpan={7} className="py-12 text-center text-sm text-slate-500">No notifications yet.</AppTableCell></AppTableRow>
+                <AppTableRow><AppTableCell colSpan={7} className="py-12 text-center text-sm text-[var(--ink-muted)]">No notifications yet.</AppTableCell></AppTableRow>
               ) : notifications.map((item) => (
                 <AppTableRow key={item.id}>
-                  <AppTableCell className="max-w-[18rem]"><p className="truncate font-semibold text-slate-950">{item.title}</p><p className="truncate text-xs text-slate-500">{item.message}</p></AppTableCell>
-                  <AppTableCell className="text-sm text-slate-600">{item.workspaces?.name || "All workspaces"}</AppTableCell>
-                  <AppTableCell className="text-sm text-slate-600">{item.type}</AppTableCell>
-                  <AppTableCell className="text-sm text-slate-600">{item.channel}</AppTableCell>
-                  <AppTableCell className="text-sm text-slate-600">{item.status}</AppTableCell>
-                  <AppTableCell className="text-sm text-slate-600">{new Date(item.created_at).toLocaleDateString()}</AppTableCell>
-                  <AppTableCell>{item.status === "queued" ? <AppButton tone="destructive" className="h-8 px-3 text-xs" onClick={() => cancelNotification(item.id)}>Cancel</AppButton> : <span className="text-xs text-slate-400">No action</span>}</AppTableCell>
+                  <AppTableCell className="max-w-[18rem]"><p className="truncate font-semibold text-[var(--ink)]">{item.title}</p><p className="truncate text-xs text-[var(--ink-muted)]">{item.message}</p></AppTableCell>
+                  <AppTableCell className="text-sm text-[var(--ink-soft)]">{item.workspaces?.name || "All workspaces"}</AppTableCell>
+                  <AppTableCell className="text-sm text-[var(--ink-soft)]">{item.type}</AppTableCell>
+                  <AppTableCell className="text-sm text-[var(--ink-soft)]">{item.channel}</AppTableCell>
+                  <AppTableCell className="text-sm text-[var(--ink-soft)]">{item.status}</AppTableCell>
+                  <AppTableCell className="text-sm text-[var(--ink-soft)]">{new Date(item.created_at).toLocaleDateString()}</AppTableCell>
+                  <AppTableCell>{item.status === "queued" ? <AppButton tone="destructive" className="h-8 px-3 text-xs" onClick={() => cancelNotification(item.id)}>Cancel</AppButton> : <span className="text-xs text-[var(--ink-muted)]">No action</span>}</AppTableCell>
                 </AppTableRow>
               ))}
             </AppTableBody>

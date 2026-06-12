@@ -179,19 +179,19 @@ export function ViewerChatSidebarHistory({
     <>
       <div className="mt-6 flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mb-3 px-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
             Recent Chats
           </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto pr-1">
           {loading ? (
-            <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-400">
-              <Loader2 size={14} className="animate-spin text-cyan-300" />
+            <div className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--ink-muted)]">
+              <Loader2 size={14} className="animate-spin text-teal-300" />
               Loading chats...
             </div>
           ) : sessions.length === 0 ? (
-            <p className="px-3 text-sm text-slate-500">No chats yet</p>
+            <p className="px-3 text-sm text-[var(--ink-muted)]">No chats yet</p>
           ) : (
             <div className="space-y-1.5">
               {sessions.map((session) => {
@@ -214,7 +214,7 @@ export function ViewerChatSidebarHistory({
                         <span
                           className={cn(
                             "mt-[0.42rem] h-1.5 w-1.5 shrink-0 rounded-full",
-                            isActive ? "bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.45)]" : "bg-slate-500",
+                            isActive ? "bg-teal-300 shadow-[0_0_10px_rgba(103,232,249,0.45)]" : "bg-slate-500",
                           )}
                         />
                         <span
@@ -233,7 +233,7 @@ export function ViewerChatSidebarHistory({
                       type="button"
                       aria-label={`Delete chat ${session.title}`}
                       onClick={() => setDeleteSessionId(session.id)}
-                      className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 opacity-0 transition hover:bg-red-500/10 hover:text-red-300 group-hover:opacity-100"
+                      className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--ink-muted)] opacity-0 transition hover:bg-red-500/10 hover:text-red-300 group-hover:opacity-100"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -252,7 +252,7 @@ export function ViewerChatSidebarHistory({
           <button
             type="button"
             onClick={handleNewChat}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/20 bg-[#132744] text-sm font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] transition hover:bg-[#18314f]"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-teal-400/20 bg-[var(--accent-jade-hover)] text-sm font-semibold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] transition hover:bg-[#18314f]"
           >
             <MessageSquarePlus size={16} />
             New Chat

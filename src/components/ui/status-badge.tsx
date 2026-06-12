@@ -14,6 +14,10 @@ export function StatusBadge({ status }: { status: string | null | undefined }) {
           ? "Inactive"
           : value === "ready"
             ? "Completed"
+            : value === "trialing"
+              ? "Trial"
+              : value === "pilot"
+                ? "Essential"
             : value === "processing"
               ? "Processing"
               : value === "failed"
@@ -45,6 +49,6 @@ export function StatusBadge({ status }: { status: string | null | undefined }) {
 
 export function PlanBadge({ plan }: { plan: string | null | undefined }) {
   const value = plan || "unknown";
-  const label = value.charAt(0).toUpperCase() + value.slice(1);
+  const label = value === "pilot" ? "Essential" : value.charAt(0).toUpperCase() + value.slice(1);
   return <AppBadge>{label}</AppBadge>;
 }

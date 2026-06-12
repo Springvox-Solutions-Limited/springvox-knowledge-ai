@@ -6,15 +6,15 @@ export function buildTrialExpiredEmail({
   appUrl: string;
 }) {
   return {
-    subject: `Your SpringVox trial has ended`,
+    subject: `Your Rekall-IQ trial has ended`,
     text: [
-      `Your 14-day SpringVox trial for ${workspaceName} has ended.`,
+      `Your 14-day Rekall-IQ trial for ${workspaceName} has ended.`,
       '',
       'Workspace access is paused until the workspace is upgraded or reactivated.',
       '',
-      `Open SpringVox: ${appUrl}/login`,
+      `Open Rekall-IQ: ${appUrl}/login`,
       '',
-      'SpringVox Team',
+      'Rekall-IQ Team',
     ].join('\n'),
   };
 }

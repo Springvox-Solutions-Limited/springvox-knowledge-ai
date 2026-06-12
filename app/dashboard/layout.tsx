@@ -15,8 +15,9 @@ import {
   LogOut, 
   PanelLeftOpen,
   Bell,
+  BookOpen,
 } from 'lucide-react';
-import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
+import { BrandLogo } from '@/src/components/brand/BrandLogo';
 import { ViewerChatSidebarHistory } from '@/src/components/dashboard/ViewerChatSidebarHistory';
 import { getAccessToken, getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
@@ -38,15 +39,6 @@ import {
   type WorkspaceSettings,
 } from '@/src/lib/workspace';
 
-type DashboardNotification = {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  created_at: string;
-  is_read: boolean;
-};
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -55,7 +47,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [workspace, setWorkspace] = useState<WorkspaceSettings | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   useEffect(() => {
@@ -94,12 +85,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             if (response.ok) {
               const result = await response.json();
-              setNotifications(result.notifications || []);
               setUnreadNotificationCount(result.unreadCount || 0);
             }
           }
         } catch {
-          setNotifications([]);
           setUnreadNotificationCount(0);
         }
       } finally {
@@ -108,7 +97,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
 
     loadAuthContext();
-  }, [pathname, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const navItems = profile ? getNavItems(profile.role) : [];
   const visibleNavItems = navItems;
@@ -119,7 +109,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   if (authLoading || !user || !profile) {
-    return <div className="flex h-screen w-screen items-center justify-center bg-white text-sm font-medium text-slate-500">Loading workspace...</div>;
+    return <div className="flex h-screen w-screen items-center justify-center bg-[var(--surface)] text-sm font-medium text-[var(--ink-muted)]">Loading workspace...</div>;
   }
 
   const workspaceStatusMessage = workspace ? getWorkspaceStatusMessage(workspace.status) : null;
@@ -138,45 +128,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ) &&
     !isPlatformAdminRole(profile.role);
   const isViewerRole = !isWorkspaceAdminRole(profile.role);
-  const currentPageTitle =
-    navItems.find((item) => item.href === pathname)?.name ||
-    pathname.split('/').pop()?.replace('-', ' ') ||
-    'Dashboard';
-
   const navContent = (
     <>
       <div className={cn("flex h-full flex-col", isViewerRole && "gap-6")}>
         <div className={cn("px-2", !isViewerRole && "mb-8")}>
-          <SpringVoxLogo
+          <BrandLogo
             variant="full"
             theme="light"
             className="h-11"
             imageClassName="h-10 w-auto max-w-[190px] object-contain object-left"
           />
-          <div className={cn("mt-5 flex items-center gap-2 px-1", isViewerRole && "mt-6")}>
-            <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.45)]" />
-            <span className="block truncate text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">
-              {workspace?.name || 'Workspace'}
-            </span>
+          <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-2.5 py-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-jade-50)] text-[11px] font-bold text-[var(--accent-jade)]">
+              {(workspace?.name || 'W').slice(0, 1).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-[var(--ink)]">
+                {workspace?.name || 'Workspace'}
+              </p>
+              <p className="text-[10px] text-[var(--ink-muted)]">Workspace</p>
+            </div>
           </div>
         </div>
 
-        <nav className={cn("space-y-1.5 overflow-y-auto", isViewerRole ? "flex-1" : "flex-1")}>
-          <p className={cn(
-            "text-[10px] font-bold uppercase tracking-widest text-slate-500",
-            isViewerRole ? "mb-4 ml-3" : "mb-4 ml-6"
-          )}>
-            {isWorkspaceAdminRole(profile.role) ? 'Workspace Admin' : 'Workspace User'}
-          </p>
+        <nav className="flex-1 space-y-1 overflow-y-auto">
           {isPlatformAdminRole(profile.role) && (
-            <div className="mb-4 rounded-2xl border border-white/5 bg-white/[0.02] p-3 shadow-inner">
-              <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-cyan-200/80">
+            <div className="mb-4 rounded-xl border border-[var(--line)] bg-[var(--canvas-soft)] p-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
                 Quick Switch
               </p>
               <Link
                 href="/platform"
                 onClick={() => setSidebarOpen(false)}
-                className="mt-3 flex items-center justify-between rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-100 transition hover:bg-cyan-400/15"
+                className="mt-2.5 flex items-center justify-between rounded-lg border border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] px-3 py-2 text-xs font-bold text-[var(--accent-jade-hover)] transition hover:bg-[var(--accent-jade-100)]"
               >
                 <span>Platform Console</span>
                 <span>→</span>
@@ -192,20 +176,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  "group flex items-center gap-3 rounded-xl border transition",
-                  isViewerRole
-                    ? isActive
-                      ? "border-cyan-400/25 bg-cyan-400/10 px-4 py-3.5 text-white"
-                      : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
-                    : isActive
-                      ? "border-cyan-400/25 bg-cyan-400/10 px-4 py-3.5 text-white"
-                      : "border-transparent px-4 py-3.5 text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
+                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  isActive
+                    ? "bg-[var(--accent-jade-50)] text-[var(--accent-jade-hover)]"
+                    : "text-[var(--ink-soft)] hover:bg-[var(--canvas-soft)] hover:text-[var(--ink)]",
                 )}
               >
-                <item.icon size={18} className={cn("transition-all duration-300", isActive ? "text-cyan-200" : "text-slate-500 group-hover:text-slate-300")} />
-                <span className={cn("min-w-0 flex-1 text-sm font-bold transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{item.name}</span>
+                <item.icon size={18} className={cn("shrink-0 transition-colors", isActive ? "text-[var(--accent-jade)]" : "text-[var(--ink-muted)] group-hover:text-[var(--ink-soft)]")} />
+                <span className="min-w-0 flex-1">{item.name}</span>
                 {showNotificationBadge ? (
-                  <span className="rounded-full bg-cyan-400 px-2 py-0.5 text-[10px] font-bold text-slate-950">
+                  <span className="rounded-full bg-[var(--accent-jade)] px-2 py-0.5 text-[10px] font-bold text-white">
                     {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                   </span>
                 ) : null}
@@ -218,29 +198,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </nav>
 
-        <div className={cn("border-t border-white/5", isViewerRole ? "pt-5" : "mt-6 pt-6")}>
+        <div className={cn("border-t border-[var(--line)]", isViewerRole ? "pt-5" : "mt-6 pt-6")}>
           <div className="flex flex-col gap-3">
-            <div className={cn(
-              "flex items-center gap-3 border border-white/5 transition-all duration-300",
-              isViewerRole
-                ? "rounded-2xl bg-white/[0.03] px-4 py-3"
-                : "rounded-2xl bg-slate-900 px-4 py-3"
-            )}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E3A5F] text-[11px] font-bold text-white shadow-sm border border-white/5">
+            <Link
+              href={isViewerRole ? "/help/user-guide" : "/help/admin-guide"}
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--ink-soft)] transition hover:bg-[var(--canvas-soft)] hover:text-[var(--ink)]"
+            >
+              <BookOpen size={18} className="shrink-0 text-[var(--ink-muted)]" />
+              <span>Help &amp; Guides</span>
+            </Link>
+            <div className="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--canvas-soft)] px-3 py-2.5">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-jade)] text-[11px] font-bold text-white shadow-sm">
                 {(workspace?.name || user.email || 'S').slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-bold text-white" title={user.email || ''}>
+                <p className="truncate text-xs font-bold text-[var(--ink)]" title={user.email || ''}>
                   {user.email?.split('@')[0]}
                 </p>
-                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                <p className="mt-0.5 text-[11px] font-medium text-[var(--ink-muted)]">
                   {getRoleLabel(profile.role)}
                 </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={handleLogout}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/5 bg-transparent text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-all hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] transition-all hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400"
             >
               <LogOut size={14} />
               <span>Sign Out</span>
@@ -252,9 +235,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50/50 text-slate-900">
+    <div className="flex min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
       <aside className={cn(
-        "hidden min-h-screen shrink-0 bg-[#0F172A] text-white shadow-[10px_0_30px_rgba(15,23,42,0.03)] lg:flex border-r border-white/5",
+        "hidden min-h-screen shrink-0 bg-[var(--brand-sidebar)] lg:flex border-r border-[var(--line)]",
         isViewerRole ? "w-[17.5rem]" : "w-64"
       )}>
         <div className="flex flex-1 flex-col p-6">
@@ -266,7 +249,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SheetContent
           side="left"
           aria-describedby={undefined}
-          className="w-[min(100vw-1rem,20rem)] border-r-0 bg-[#0F172A] p-0 text-white"
+          className="w-[min(100vw-1rem,20rem)] border-r-0 bg-[var(--brand-sidebar)] p-0"
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Workspace navigation</SheetTitle>
@@ -277,7 +260,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <main className="flex min-h-screen min-w-0 flex-1 flex-col overflow-hidden">
         <header className={cn(
-          "sticky top-0 z-20 flex w-full items-center justify-between gap-3 border-b border-slate-200 bg-white/80 backdrop-blur-xl",
+          "sticky top-0 z-20 flex w-full items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface)] backdrop-blur-xl",
           isViewerRole ? "min-h-[4.75rem] px-5 py-4 md:px-8" : "min-h-16 px-4 py-3 md:px-8"
         )}>
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
@@ -285,34 +268,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 type="button"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open workspace navigation"
-                className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 transition-all hover:bg-slate-50 lg:hidden"
+                className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-2.5 text-[var(--ink-muted)] transition-all hover:bg-[var(--surface-2)] lg:hidden"
               >
                 <PanelLeftOpen size={18} />
               </button>
               <Link href="/dashboard" className="flex items-center lg:hidden">
-                <SpringVoxLogo
+                <BrandLogo
                   variant="full"
                   theme="light"
                   imageClassName="h-8 w-auto max-w-[120px] object-contain object-left"
                 />
               </Link>
               <div className="min-w-0">
-                <p className="truncate text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
+                <p className="truncate text-sm font-semibold text-[var(--ink)]">
                   {workspace?.name || 'Workspace'}
                 </p>
-                <h1 className={cn(
-                  "truncate font-semibold capitalize text-slate-950",
-                  isViewerRole ? "text-base sm:text-[1.05rem]" : "text-sm sm:text-base"
-                )}>
-                  {currentPageTitle}
-                </h1>
               </div>
             </div>
             <div className="flex items-center gap-3 sm:gap-4">
                 {isPlatformAdminRole(profile.role) && (
                   <Link
                     href="/platform"
-                    className="hidden rounded-full border border-cyan-200 bg-cyan-50 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 sm:inline-flex"
+                    className="hidden rounded-full border border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--accent-jade-hover)] transition hover:bg-[var(--accent-jade-100)] sm:inline-flex"
                   >
                     Platform Console
                   </Link>
@@ -320,59 +297,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link
                   href="/dashboard/notifications"
                   aria-label={`${unreadNotificationCount} unread notifications`}
-                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-700"
+                  className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)] transition hover:border-[var(--accent-jade-100)] hover:bg-[var(--accent-jade-50)] hover:text-[var(--accent-jade-hover)]"
                 >
                   <Bell size={16} />
                   {unreadNotificationCount > 0 ? (
-                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-cyan-500 px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">
+                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-[var(--accent-jade)] px-1.5 py-0.5 text-center text-[10px] font-bold leading-none text-white">
                       {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                     </span>
                   ) : null}
                 </Link>
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600 sm:px-4">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                    Online
-                </div>
             </div>
         </header>
 
-        {notifications.length > 0 ? (
-          <section className="border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-xl md:px-8">
-            <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                <Bell size={14} className="text-cyan-600" />
-                Notices
-              </div>
-              <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
-                {notifications.map((notification) => (
-                  <Link
-                    href="/dashboard/notifications"
-                    key={notification.id}
-                    className="flex min-w-[16rem] max-w-full items-start gap-3 rounded-2xl border border-cyan-200 bg-cyan-50/70 px-3 py-2 text-sm shadow-sm transition hover:bg-cyan-50 sm:min-w-0 sm:max-w-[28rem]"
-                  >
-                    <span className={cn(
-                      "mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em]",
-                      getNotificationTypeClass(notification.type),
-                    )}>
-                      {formatNotificationType(notification.type)}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-slate-950">
-                        {notification.title}
-                      </p>
-                      <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-slate-600">
-                        {notification.message}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-        ) : null}
         
         <div className={cn(
-          "hidden overflow-hidden border-b border-slate-200 bg-white px-4 py-3 sm:block lg:hidden",
+          "hidden overflow-hidden border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3 sm:block lg:hidden",
           isViewerRole && "sm:hidden"
         )}>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -383,10 +322,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "whitespace-nowrap rounded-xl border px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all",
+                    "whitespace-nowrap rounded-lg border px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all",
                     isActive
-                      ? "border-cyan-300 bg-cyan-50 text-cyan-800 shadow-sm"
-                      : "bg-slate-50 text-slate-500 border border-slate-100"
+                      ? "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] text-[var(--accent-jade-hover)]"
+                      : "border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)]"
                   )}
                 >
                   {item.name}
@@ -396,35 +335,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-[#f8fafc]">
+        <div className="flex-1 overflow-y-auto bg-[var(--canvas)]">
           <div className="mx-auto w-full max-w-7xl min-w-0 p-4 sm:p-6 md:p-10">
               {workspaceBlocked ? (
                 <div className="admin-page">
-                  <div className="admin-hero-card border border-amber-200 bg-gradient-to-br from-white via-amber-50/70 to-slate-50">
+                  <div className="admin-hero-card rounded-xl border border-amber-500/30 bg-amber-500/10 p-5">
                     <div className="space-y-3">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-700/70">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-400/80">
                         Workspace Access Restricted
                       </p>
-                      <h1 className="admin-hero-title text-slate-950">
+                      <h1 className="admin-hero-title text-[var(--ink)]">
                         {userStatusMessage
                           ? 'Account access is suspended.'
                           : trialExpired
                             ? 'Your 14-day trial has ended.'
                             : `${workspace?.name} is currently ${workspace?.status}.`}
                       </h1>
-                      <p className="max-w-2xl text-sm font-medium leading-7 text-slate-600 sm:text-base">
+                      <p className="max-w-2xl text-sm font-medium leading-7 text-[var(--ink-soft)] sm:text-base">
                         {userStatusMessage ||
                           (trialExpired
-                            ? 'Your 14-day trial has ended. Please upgrade to continue using SpringVox.'
+                            ? 'Your 14-day trial has ended. Please upgrade to continue using Rekall-IQ.'
                             : workspaceStatusMessage)}
                       </p>
-                      <p className="text-xs font-medium text-slate-500">
-                        Tenant uploads, chat, invites, settings updates, and document management are blocked until SpringVox reactivates this workspace.
+                      <p className="text-xs font-medium text-[var(--ink-muted)]">
+                        Tenant uploads, chat, invites, settings updates, and document management are blocked until Rekall-IQ reactivates this workspace.
                       </p>
                       {trialExpired ? (
                         <Link
                           href="/billing-required"
-                          className="inline-flex h-11 items-center justify-center rounded-xl bg-[#0d1f35] px-5 text-sm font-semibold text-white transition hover:bg-[#132744]"
+                          className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--accent-jade)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--accent-jade-hover)]"
                         >
                           View payment required details
                         </Link>
@@ -442,25 +381,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 }
 
-function formatNotificationType(type: string) {
-  return type.replace(/_/g, ' ');
-}
-
-function getNotificationTypeClass(type: string) {
-  if (type === 'maintenance') {
-    return 'border-amber-200 bg-amber-50 text-amber-700';
-  }
-
-  if (type === 'billing_reminder' || type === 'trial_notice') {
-    return 'border-cyan-200 bg-cyan-50 text-cyan-700';
-  }
-
-  if (type === 'security_notice') {
-    return 'border-red-200 bg-red-50 text-red-700';
-  }
-
-  return 'border-slate-200 bg-white text-slate-600';
-}
 
 function getDefaultPathForRole(role: UserProfile['role']) {
   return isWorkspaceAdminRole(role) ? '/dashboard' : '/dashboard/chat';

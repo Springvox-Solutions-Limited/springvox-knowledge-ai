@@ -10,16 +10,16 @@ export function buildWelcomeEmail({
   const greeting = name ? `Hi ${name},` : 'Hello,';
 
   return {
-    subject: `Welcome to SpringVox, ${workspaceName}`,
+    subject: `Welcome to Rekall-IQ, ${workspaceName}`,
     text: [
       greeting,
       '',
-      `Your SpringVox workspace for ${workspaceName} is ready.`,
+      `Your Rekall-IQ workspace for ${workspaceName} is ready.`,
       'You can now upload approved documents, invite your team, and ask questions from company knowledge with sources.',
       '',
-      `Open SpringVox: ${appUrl}/login`,
+      `Open Rekall-IQ: ${appUrl}/login`,
       '',
-      'SpringVox Team',
+      'Rekall-IQ Team',
     ].join('\n'),
   };
 }

@@ -13,11 +13,11 @@ type AppBadgeTone =
   | "danger";
 
 const toneClasses: Record<AppBadgeTone, string> = {
-  neutral: "border-slate-200 bg-slate-50 text-slate-700",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  info: "border-cyan-200 bg-cyan-50 text-cyan-700",
-  warning: "border-amber-200 bg-amber-50 text-amber-700",
-  danger: "border-red-200 bg-red-50 text-red-700",
+  neutral: "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-soft)]",
+  success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+  info: "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] text-[var(--accent-jade)]",
+  warning: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+  danger: "border-red-500/30 bg-red-500/10 text-red-300",
 };
 
 export function AppBadge({

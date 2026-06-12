@@ -112,10 +112,10 @@ export default function PlatformCompaniesPage() {
           className="h-12 px-4"
         />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-slate-200">
+          <SelectContent className="rounded-xl border-[var(--line)]">
             <SelectItem value="all">All statuses</SelectItem>
             {WORKSPACE_STATUSES.map((status) => (
               <SelectItem key={status} value={status}>
@@ -125,10 +125,10 @@ export default function PlatformCompaniesPage() {
           </SelectContent>
         </Select>
         <Select value={planFilter} onValueChange={setPlanFilter}>
-          <SelectTrigger className="h-12 w-full rounded-xl border-slate-200 bg-white px-4 text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100">
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]">
             <SelectValue placeholder="All plans" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl border-slate-200">
+          <SelectContent className="rounded-xl border-[var(--line)]">
             <SelectItem value="all">All plans</SelectItem>
             {WORKSPACE_PLANS.map((plan) => (
               <SelectItem key={plan} value={plan}>
@@ -155,7 +155,7 @@ export default function PlatformCompaniesPage() {
       ) : null}
 
       {error && (
-        <Alert className="rounded-2xl border-red-200 bg-red-50 text-red-700">
+        <Alert className="rounded-2xl border-red-500/30 bg-red-500/10 text-red-300">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -196,7 +196,7 @@ export default function PlatformCompaniesPage() {
                 <AppTableRow>
                   <AppTableCell
                     colSpan={9}
-                    className="py-12 text-center text-sm text-slate-500"
+                    className="py-12 text-center text-sm text-[var(--ink-muted)]"
                   >
                     Loading companies...
                   </AppTableCell>
@@ -205,7 +205,7 @@ export default function PlatformCompaniesPage() {
                 <AppTableRow>
                   <AppTableCell
                     colSpan={9}
-                    className="py-12 text-center text-sm text-slate-500"
+                    className="py-12 text-center text-sm text-[var(--ink-muted)]"
                   >
                     No workspaces matched your filters.
                   </AppTableCell>
@@ -216,13 +216,13 @@ export default function PlatformCompaniesPage() {
                     <AppTableCell className="max-w-[16rem]">
                       <Link
                         href={`/platform/companies/${company.id}`}
-                        className="block truncate font-semibold text-slate-950 hover:text-cyan-700"
+                        className="block truncate font-semibold text-[var(--ink)] hover:text-[var(--accent-jade)]"
                         title={company.name}
                       >
                         {company.name}
                       </Link>
                       <p
-                        className="mt-1 truncate text-xs text-slate-500"
+                        className="mt-1 truncate text-xs text-[var(--ink-muted)]"
                         title={company.slug}
                       >
                         {company.slug}
@@ -234,7 +234,7 @@ export default function PlatformCompaniesPage() {
                     <AppTableCell>
                       <PlanBadge plan={company.plan} />
                     </AppTableCell>
-                    <AppTableCell className="max-w-[16rem] text-sm text-slate-600">
+                    <AppTableCell className="max-w-[16rem] text-sm text-[var(--ink-soft)]">
                       <span
                         className="block truncate"
                         title={company.tenant_admin_email || ""}
@@ -242,23 +242,23 @@ export default function PlatformCompaniesPage() {
                         {company.tenant_admin_email || "Not assigned"}
                       </span>
                     </AppTableCell>
-                    <AppTableCell className="text-sm font-semibold text-slate-800">
+                    <AppTableCell className="text-sm font-semibold text-[var(--ink)]">
                       {company.total_users}
                     </AppTableCell>
-                    <AppTableCell className="text-sm font-semibold text-slate-800">
+                    <AppTableCell className="text-sm font-semibold text-[var(--ink)]">
                       {company.total_documents}
                     </AppTableCell>
-                    <AppTableCell className="text-sm font-semibold text-slate-800">
+                    <AppTableCell className="text-sm font-semibold text-[var(--ink)]">
                       {company.total_questions}
                     </AppTableCell>
-                    <AppTableCell className="text-sm text-slate-600">
+                    <AppTableCell className="text-sm text-[var(--ink-soft)]">
                       {formatDate(company.created_at)}
                     </AppTableCell>
                     <AppTableCell>
                       <AppButton
                         asChild
                         tone="secondary"
-                        className="h-9 rounded-lg px-3 text-xs text-cyan-700 hover:text-cyan-900"
+                        className="h-9 rounded-lg px-3 text-xs text-[var(--accent-jade)] hover:text-[var(--accent-jade)]"
                       >
                         <Link href={`/platform/companies/${company.id}`}>
                           View
@@ -281,13 +281,13 @@ export default function PlatformCompaniesPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p
-                      className="truncate font-semibold text-slate-950"
+                      className="truncate font-semibold text-[var(--ink)]"
                       title={company.name}
                     >
                       {company.name}
                     </p>
                     <p
-                      className="mt-1 truncate text-xs text-slate-500"
+                      className="mt-1 truncate text-xs text-[var(--ink-muted)]"
                       title={company.slug}
                     >
                       {company.slug}
@@ -295,20 +295,20 @@ export default function PlatformCompaniesPage() {
                   </div>
                   <StatusBadge status={company.status} />
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ink-muted)]">
                   <PlanBadge plan={company.plan} />
                   <span>{company.total_users} users</span>
                   <span>{company.total_documents} documents</span>
                   <span>{company.total_questions} questions</span>
                 </div>
                 <p
-                  className="truncate text-sm text-slate-600"
+                  className="truncate text-sm text-[var(--ink-soft)]"
                   title={company.tenant_admin_email || ""}
                 >
                   {company.tenant_admin_email || "No workspace admin assigned"}
                 </p>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-[var(--ink-muted)]">
                     Created {formatDate(company.created_at)}
                   </span>
                   <AppButton
@@ -326,7 +326,7 @@ export default function PlatformCompaniesPage() {
       ) : null}
       {rows.length > PAGE_SIZE ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[var(--ink-muted)]">
             Showing {(currentPage - 1) * PAGE_SIZE + 1}-
             {Math.min(currentPage * PAGE_SIZE, rows.length)} of {rows.length}
           </p>

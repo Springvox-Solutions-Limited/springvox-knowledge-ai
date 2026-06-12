@@ -12,13 +12,13 @@ export function buildPlatformNotificationEmail({
   return {
     subject: title,
     text: [
-      workspaceName ? `Workspace: ${workspaceName}` : 'SpringVox platform notice',
+      workspaceName ? `Workspace: ${workspaceName}` : 'Rekall-IQ platform notice',
       '',
       message,
       '',
-      `Open SpringVox: ${appUrl}/dashboard`,
+      `Open Rekall-IQ: ${appUrl}/dashboard`,
       '',
-      'SpringVox Team',
+      'Rekall-IQ Team',
     ].join('\n'),
   };
 }

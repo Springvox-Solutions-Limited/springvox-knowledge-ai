@@ -6,9 +6,9 @@ export default function LandingPage() {
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'SpringVox',
-    url: 'https://springvox-knowledge-ai.vercel.app',
-    logo: 'https://springvox-knowledge-ai.vercel.app/brand/logo.png',
+    name: 'Rekall-IQ',
+    url: 'https://rekall-iq.com',
+    logo: 'https://rekall-iq.com/brand/logo.png',
     description: 'Enterprise AI knowledge platform that turns documents into instant answers.',
     sameAs: [
       'https://twitter.com/springvox',
@@ -19,9 +19,9 @@ export default function LandingPage() {
   const softwareAppSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'SpringVox Knowledge AI',
+    name: 'Rekall-IQ',
     description: 'Turn your company documents into instant AI answers. Secure, source-grounded knowledge for enterprise teams.',
-    url: 'https://springvox-knowledge-ai.vercel.app',
+    url: 'https://rekall-iq.com',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     offers: {
@@ -43,10 +43,10 @@ export default function LandingPage() {
     mainEntity: [
       {
         '@type': 'Question',
-        name: 'How is SpringVox different from ChatGPT or Claude?',
+        name: 'How is Rekall-IQ different from ChatGPT or Claude?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'SpringVox uses ONLY your approved documents — not the public internet. Your answers stay grounded in company sources with full citations. No hallucinations, no external data leakage.',
+          text: 'Rekall-IQ uses ONLY your approved documents — not the public internet. Your answers stay grounded in company sources with full citations. No hallucinations, no external data leakage.',
         },
       },
       {
@@ -85,7 +85,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="selection:bg-cyan-300 selection:text-slate-950">
+    <div className="selection:bg-[var(--accent-jade)] selection:text-[#04110e]">
       <Script
         id="organization-schema"
         type="application/ld+json"

@@ -97,44 +97,44 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   };
 
   return (
-    <div className="public-shell px-4 py-10 text-slate-900 sm:py-16">
+    <div className="public-shell px-4 py-10 text-[var(--ink)] sm:py-16">
       <div className="public-card mx-auto max-w-2xl p-5 sm:p-8">
         {loading ? (
-          <div className="flex items-center gap-3 text-sm text-slate-500">
-            <Loader2 size={18} className="animate-spin text-cyan-700" />
+          <div className="flex items-center gap-3 text-sm text-[var(--ink-muted)]">
+            <Loader2 size={18} className="animate-spin text-[var(--accent-jade)]" />
             Loading invitation...
           </div>
         ) : details ? (
           <div className="space-y-6">
             <div className="space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-700">Workspace Invitation</p>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent-jade)]">Workspace Invitation</p>
+              <h1 className="text-3xl font-bold tracking-tight text-[var(--ink)]">
                 Join {details.workspace_name}
               </h1>
-              <p className="text-sm leading-7 text-slate-600">
+              <p className="text-sm leading-7 text-[var(--ink-soft)]">
                 {details.assistant_name} is ready for invited users in this workspace.
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Invited email</p>
-                <p className="mt-2 text-sm text-slate-900">{details.email}</p>
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--ink-muted)]">Invited email</p>
+                <p className="mt-2 text-sm text-[var(--ink)]">{details.email}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Role</p>
-                <p className="mt-2 text-sm text-slate-900">{getRoleLabel(details.role as AnyAppRole)}</p>
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--ink-muted)]">Role</p>
+                <p className="mt-2 text-sm text-[var(--ink)]">{getRoleLabel(details.role as AnyAppRole)}</p>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--ink-soft)]">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={16} className="text-cyan-700" />
+                <ShieldCheck size={16} className="text-[var(--accent-jade)]" />
                 <span>Sign in with the invited email to accept this workspace invitation.</span>
               </div>
               {userEmail ? (
-                <p className="mt-3 text-slate-600">
-                  Signed in as <span className="font-semibold text-slate-950">{userEmail}</span>
+                <p className="mt-3 text-[var(--ink-soft)]">
+                  Signed in as <span className="font-semibold text-[var(--ink)]">{userEmail}</span>
                 </p>
               ) : (
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -149,13 +149,13 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
             </div>
 
             {(message || error) && (
-              <Alert className={error ? 'rounded-2xl border-red-200 bg-red-50 text-red-700' : 'rounded-2xl border-emerald-200 bg-emerald-50 text-emerald-700'}>
+              <Alert className={error ? 'rounded-2xl border-red-500/30 bg-red-500/10 text-red-300' : 'rounded-2xl border-emerald-500/30 bg-emerald-500/10 text-emerald-300'}>
                 <AlertDescription>{error || message}</AlertDescription>
               </Alert>
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-[var(--ink-muted)]">
                 Expires {new Date(details.expires_at).toLocaleString()}
               </div>
               <div className="flex gap-3">

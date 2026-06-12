@@ -33,7 +33,7 @@ export function AppTableHeader({
 }: React.ComponentProps<typeof TableHeader>) {
   return (
     <TableHeader
-      className={cn("bg-slate-50/70 [&_tr]:border-slate-200", className)}
+      className={cn("bg-[var(--canvas-soft)] [&_tr]:border-[var(--line)]", className)}
       {...props}
     />
   );
@@ -45,7 +45,7 @@ export function AppTableBody({
 }: React.ComponentProps<typeof TableBody>) {
   return (
     <TableBody
-      className={cn("[&_tr]:border-slate-100", className)}
+      className={cn("[&_tr]:border-[var(--line-soft)]", className)}
       {...props}
     />
   );
@@ -56,7 +56,7 @@ export function AppTableRow({
   ...props
 }: React.ComponentProps<typeof TableRow>) {
   return (
-    <TableRow className={cn("hover:bg-slate-50/60", className)} {...props} />
+    <TableRow className={cn("transition-colors hover:bg-[var(--canvas-soft)]", className)} {...props} />
   );
 }
 
@@ -67,7 +67,7 @@ export function AppTableHead({
   return (
     <TableHead
       className={cn(
-        "px-5 py-3 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600",
+        "px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--ink-muted)]",
         className,
       )}
       {...props}
@@ -80,6 +80,6 @@ export function AppTableCell({
   ...props
 }: React.ComponentProps<typeof TableCell>) {
   return (
-    <TableCell className={cn("px-5 py-3 align-middle", className)} {...props} />
+    <TableCell className={cn("px-5 py-3 align-middle text-[var(--ink)]", className)} {...props} />
   );
 }

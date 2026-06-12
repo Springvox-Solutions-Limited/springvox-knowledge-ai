@@ -30,7 +30,7 @@ export function LegalPageLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 selection:bg-slate-900 selection:text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-[var(--surface-2)] selection:bg-[var(--accent-jade)] selection:text-[#04110e] flex flex-col font-sans">
       <LandingNavbar />
 
       {/* Main Container */}
@@ -38,19 +38,19 @@ export function LegalPageLayout({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           
           {/* Header section */}
-          <div className="border-b border-slate-200 pb-8 mb-10">
-            <div className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-600 mb-2">
-              Springvox Legal Hub & Trust Center
+          <div className="border-b border-[var(--line)] pb-8 mb-10">
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-jade)] mb-2">
+              Rekall-IQ Legal Hub & Trust Center
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            <h1 className="text-3xl font-extrabold tracking-tight text-[var(--ink)] sm:text-4xl">
               {title}
             </h1>
-            <p className="mt-3 text-lg text-slate-600 max-w-3xl leading-relaxed">
+            <p className="mt-3 text-lg text-[var(--ink-soft)] max-w-3xl leading-relaxed">
               {description}
             </p>
-            <div className="mt-4 flex items-center gap-2 text-xs font-medium text-slate-400">
+            <div className="mt-4 flex items-center gap-2 text-xs font-medium text-[var(--ink-muted)]">
               <span>Last updated:</span>
-              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">
+              <span className="bg-[var(--surface-2)] text-[var(--ink-soft)] px-2 py-0.5 rounded-full font-semibold">
                 {lastUpdated}
               </span>
             </div>
@@ -61,8 +61,8 @@ export function LegalPageLayout({
             
             {/* Sidebar Navigation */}
             <aside className="lg:sticky lg:top-28 lg:h-fit">
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
-                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400 px-3 mb-3">
+              <div className="bg-[var(--surface)] rounded-2xl border border-[var(--line)] p-4 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[var(--ink-muted)] px-3 mb-3">
                   Legal Documents
                 </p>
                 <nav className="space-y-1">
@@ -75,11 +75,11 @@ export function LegalPageLayout({
                         href={item.href}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                           isActive
-                            ? 'bg-slate-900 text-white shadow-sm shadow-slate-900/10'
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            ? 'bg-[var(--accent-jade-50)] text-[var(--accent-jade-hover)] ring-1 ring-inset ring-[var(--accent-jade-100)]'
+                            : 'text-[var(--ink-soft)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]'
                         }`}
                       >
-                        <Icon size={16} className={isActive ? 'text-cyan-400' : 'text-slate-400'} />
+                        <Icon size={16} className={isActive ? 'text-teal-400' : 'text-[var(--ink-muted)]'} />
                         <span>{item.label}</span>
                       </Link>
                     );
@@ -88,14 +88,14 @@ export function LegalPageLayout({
               </div>
 
               {/* Legal disclaimer card */}
-              <div className="mt-5 bg-cyan-50/50 border border-cyan-100/70 rounded-2xl p-4 text-xs leading-5 text-slate-600 shadow-sm">
-                <p className="font-bold text-cyan-800 mb-1">Disclaimer</p>
+              <div className="mt-5 bg-[var(--accent-jade-50)] border border-[var(--accent-jade-100)] rounded-2xl p-4 text-xs leading-5 text-[var(--ink-soft)] shadow-sm">
+                <p className="font-bold text-[var(--accent-jade)] mb-1">Disclaimer</p>
                 The information provided on these legal pages is for general informational purposes and does not constitute formal legal advice. Please consult with qualified legal counsel regarding your organisation&apos;s specific regulatory obligations.
               </div>
             </aside>
 
             {/* Document Body */}
-            <article className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-10 shadow-sm max-w-4xl">
+            <article className="bg-[var(--surface)] rounded-3xl border border-[var(--line)] p-6 sm:p-10 shadow-sm max-w-4xl">
               {children}
             </article>
 

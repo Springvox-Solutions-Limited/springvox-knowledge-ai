@@ -112,19 +112,29 @@ export async function searchQdrantVector({
   workspaceId,
   limit,
   scoreThreshold,
+  documentIds,
 }: {
   vector: number[];
   workspaceId: string;
   limit: number;
   scoreThreshold?: number;
+  /** Optional: restrict results to these document ids (e.g. a collection scope). */
+  documentIds?: string[];
 }) {
-  const filter = {
-    must: [{ key: 'workspace_id', match: { value: workspaceId } }],
-  };
+  // The workspace_id filter is mandatory and never removed (tenant isolation).
+  const must: Array<Record<string, unknown>> = [
+    { key: 'workspace_id', match: { value: workspaceId } },
+  ];
+
+  // When documentIds is provided (a collection scope), always apply it — even
+  // if empty, which correctly matches nothing for an empty collection.
+  if (Array.isArray(documentIds)) {
+    must.push({ key: 'document_id', match: { any: documentIds } });
+  }
 
   return qdrant.search(COLLECTION_NAME, {
     vector,
-    filter,
+    filter: { must },
     limit,
     score_threshold: scoreThreshold,
     with_payload: true,

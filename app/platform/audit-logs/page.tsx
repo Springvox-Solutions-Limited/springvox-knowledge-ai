@@ -67,17 +67,17 @@ export default function PlatformAuditLogsPage() {
       <PlatformPageHeader title="Audit Logs" subtitle="Review platform and workspace administration actions." />
 
       <ResponsiveToolbar className="xl:grid xl:grid-cols-5">
-        <Input value={action} onChange={(event) => setAction(event.target.value)} placeholder="Action contains..." className="h-12 rounded-xl border-slate-200" />
-        <Input value={workspaceId} onChange={(event) => setWorkspaceId(event.target.value)} placeholder="Workspace ID" className="h-12 rounded-xl border-slate-200" />
-        <Input value={targetUserId} onChange={(event) => setTargetUserId(event.target.value)} placeholder="Target user ID" className="h-12 rounded-xl border-slate-200" />
-        <Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="h-12 rounded-xl border-slate-200" />
-        <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} className="h-12 rounded-xl border-slate-200" />
+        <Input value={action} onChange={(event) => setAction(event.target.value)} placeholder="Action contains..." className="h-12 rounded-xl border-[var(--line)]" />
+        <Input value={workspaceId} onChange={(event) => setWorkspaceId(event.target.value)} placeholder="Workspace ID" className="h-12 rounded-xl border-[var(--line)]" />
+        <Input value={targetUserId} onChange={(event) => setTargetUserId(event.target.value)} placeholder="Target user ID" className="h-12 rounded-xl border-[var(--line)]" />
+        <Input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className="h-12 rounded-xl border-[var(--line)]" />
+        <Input type="date" value={to} onChange={(event) => setTo(event.target.value)} className="h-12 rounded-xl border-[var(--line)]" />
       </ResponsiveToolbar>
       <div className="flex justify-end">
         <AppButton tone="secondary" onClick={load} className="h-10 px-4 text-xs">Apply filters</AppButton>
       </div>
 
-      {error ? <Alert className="border-red-200 bg-red-50 text-red-700"><AlertDescription>{error}</AlertDescription></Alert> : null}
+      {error ? <Alert className="border-red-500/30 bg-red-500/10 text-red-300"><AlertDescription>{error}</AlertDescription></Alert> : null}
 
       <OverflowGuard mode="scroll">
         <AppCard className="overflow-hidden">
@@ -89,17 +89,17 @@ export default function PlatformAuditLogsPage() {
             </AppTableHeader>
             <AppTableBody>
               {loading ? (
-                <AppTableRow><AppTableCell colSpan={6} className="py-12 text-center text-sm text-slate-500">Loading audit logs...</AppTableCell></AppTableRow>
+                <AppTableRow><AppTableCell colSpan={6} className="py-12 text-center text-sm text-[var(--ink-muted)]">Loading audit logs...</AppTableCell></AppTableRow>
               ) : logs.length === 0 ? (
-                <AppTableRow><AppTableCell colSpan={6} className="py-12 text-center text-sm text-slate-500">No audit logs found.</AppTableCell></AppTableRow>
+                <AppTableRow><AppTableCell colSpan={6} className="py-12 text-center text-sm text-[var(--ink-muted)]">No audit logs found.</AppTableCell></AppTableRow>
               ) : logs.map((log) => (
                 <AppTableRow key={log.id}>
-                  <AppTableCell className="text-sm text-slate-600">{new Date(log.created_at).toLocaleString()}</AppTableCell>
-                  <AppTableCell className="max-w-[14rem] truncate text-sm text-slate-600" title={log.actor_email || ""}>{log.actor_email || "System"}</AppTableCell>
-                  <AppTableCell className="max-w-[14rem] truncate text-sm text-slate-600" title={log.workspace_name || ""}>{log.workspace_name || log.workspace_id || "Global"}</AppTableCell>
-                  <AppTableCell className="max-w-[14rem] truncate text-sm text-slate-600" title={log.target_email || ""}>{log.target_email || "None"}</AppTableCell>
-                  <AppTableCell className="text-sm font-semibold text-slate-800">{log.action}</AppTableCell>
-                  <AppTableCell className="max-w-[24rem] truncate text-xs text-slate-500" title={JSON.stringify(log.metadata)}>{JSON.stringify(log.metadata)}</AppTableCell>
+                  <AppTableCell className="text-sm text-[var(--ink-soft)]">{new Date(log.created_at).toLocaleString()}</AppTableCell>
+                  <AppTableCell className="max-w-[14rem] truncate text-sm text-[var(--ink-soft)]" title={log.actor_email || ""}>{log.actor_email || "System"}</AppTableCell>
+                  <AppTableCell className="max-w-[14rem] truncate text-sm text-[var(--ink-soft)]" title={log.workspace_name || ""}>{log.workspace_name || log.workspace_id || "Global"}</AppTableCell>
+                  <AppTableCell className="max-w-[14rem] truncate text-sm text-[var(--ink-soft)]" title={log.target_email || ""}>{log.target_email || "None"}</AppTableCell>
+                  <AppTableCell className="text-sm font-semibold text-[var(--ink)]">{log.action}</AppTableCell>
+                  <AppTableCell className="max-w-[24rem] truncate text-xs text-[var(--ink-muted)]" title={JSON.stringify(log.metadata)}>{JSON.stringify(log.metadata)}</AppTableCell>
                 </AppTableRow>
               ))}
             </AppTableBody>

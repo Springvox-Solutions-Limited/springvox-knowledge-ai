@@ -31,9 +31,12 @@ import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/sup
 import { logSystemEvent } from '@/src/lib/system-events';
 import { estimateTokens, incrementWorkspaceUsage } from '@/src/lib/usage-metering';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
+import { assertWorkspaceLimit, maybeLimitResponse } from '@/src/lib/workspace-limits';
 import { ALL_ROLES, isWorkspaceAdminRole, type AnyAppRole } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
+
+const MAX_QUESTION_LENGTH = 2000;
 
 type Citation = {
   filename: string;
@@ -146,11 +149,13 @@ async function keywordSearch({
   workspaceId,
   question,
   limit,
+  documentIds,
 }: {
   supabase: ReturnType<typeof getSupabaseAdmin>;
   workspaceId: string;
   question: string;
   limit: number;
+  documentIds?: string[];
 }): Promise<RetrievalCandidate[]> {
   const terms = extractKeywordTerms(question).map(escapeIlikeTerm).filter(Boolean);
 
@@ -158,19 +163,28 @@ async function keywordSearch({
     return [];
   }
 
-  const { data, error } = await supabase
+  // When a collection scope is active but it has no documents, return nothing.
+  const scoped = Array.isArray(documentIds);
+  if (scoped && documentIds!.length === 0) {
+    return [];
+  }
+
+  let chunkQuery = supabase
     .from('document_chunks')
     .select('document_id, chunk_index, chunk_text, table_metadata, documents!inner(filename, document_category, document_keywords, document_summary)')
     .eq('workspace_id', workspaceId)
-    .or(terms.map((term) => `chunk_text.ilike.%${term}%`).join(','))
-    .limit(limit);
+    .or(terms.map((term) => `chunk_text.ilike.%${term}%`).join(','));
+  if (scoped) {
+    chunkQuery = chunkQuery.in('document_id', documentIds!);
+  }
+  const { data, error } = await chunkQuery.limit(limit);
 
   if (error) {
     console.warn('[RAG] keyword search skipped', error);
   }
 
   const chunkRows = error ? [] : data || [];
-  const { data: matchingDocuments } = await supabase
+  let docQuery = supabase
     .from('documents')
     .select('id, filename, document_category, document_keywords, document_summary')
     .eq('workspace_id', workspaceId)
@@ -178,8 +192,11 @@ async function keywordSearch({
       terms
         .map((term) => `filename.ilike.%${term}%,document_category.ilike.%${term}%,document_summary.ilike.%${term}%`)
         .join(','),
-    )
-    .limit(6);
+    );
+  if (scoped) {
+    docQuery = docQuery.in('id', documentIds!);
+  }
+  const { data: matchingDocuments } = await docQuery.limit(6);
   const matchingDocumentIds = (matchingDocuments || []).map((document: any) => document.id);
   const { data: documentChunkRows } = matchingDocumentIds.length
     ? await supabase
@@ -237,11 +254,18 @@ async function streamTextFallback(
 export async function POST(req: Request) {
   try {
     const { user, profile } = await getAuthenticatedUserWithProfile(req, ALL_ROLES);
-    const { question, session_id, answer_mode } = await req.json();
+    const { question, session_id, answer_mode, collection_id } = await req.json();
     await assertWorkspaceOperational(profile.workspace_id!);
 
     if (typeof question !== 'string' || !question.trim()) {
       return Response.json({ error: 'Question is required' }, { status: 400 });
+    }
+
+    if (question.length > MAX_QUESTION_LENGTH) {
+      return Response.json(
+        { error: `Question is too long. Please keep it under ${MAX_QUESTION_LENGTH} characters.` },
+        { status: 400 },
+      );
     }
 
     if (session_id !== undefined && session_id !== null && typeof session_id !== 'string') {
@@ -257,7 +281,25 @@ export async function POST(req: Request) {
       userId: user.id,
       workspaceId: profile.workspace_id,
     });
+    // Enforce configured per-workspace caps (no-op if unset / fails open).
+    await assertWorkspaceLimit(profile.workspace_id!, 'questions');
+    await assertWorkspaceLimit(profile.workspace_id!, 'llm_tokens');
     const supabase = getSupabaseAdmin();
+
+    // Optional collection scope: resolve the document ids that belong to the
+    // selected collection (workspace-scoped). When a collection is chosen but
+    // contains no documents, retrieval is intentionally limited to nothing.
+    const scopeCollectionId = typeof collection_id === 'string' && collection_id ? collection_id : null;
+    let scopeDocumentIds: string[] | undefined;
+    if (scopeCollectionId) {
+      const { data: scopedDocs } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('workspace_id', profile.workspace_id!)
+        .eq('collection_id', scopeCollectionId);
+      scopeDocumentIds = (scopedDocs || []).map((doc) => doc.id as string);
+    }
+
     const chatSession = await resolveOwnedChatSession(supabase, {
       sessionId: session_id,
       workspaceId: profile.workspace_id!,
@@ -331,12 +373,14 @@ export async function POST(req: Request) {
             workspaceId: profile.workspace_id!,
             limit: fetchK,
             scoreThreshold: retrievalSettings.scoreThreshold,
+            documentIds: scopeDocumentIds,
           });
           const keywordResults = await keywordSearch({
             supabase,
             workspaceId: profile.workspace_id!,
             question: normalizedQuestion,
             limit: 12,
+            documentIds: scopeDocumentIds,
           });
           let searchResults = mergeRetrievalCandidates(vectorResults, keywordResults);
           const retrievalMs = Date.now() - retrievalStartedAt;
@@ -359,6 +403,7 @@ export async function POST(req: Request) {
               vector: queryVector,
               workspaceId: profile.workspace_id!,
               limit: fetchK,
+              documentIds: scopeDocumentIds,
             });
             searchResults = mergeRetrievalCandidates(vectorResults, keywordResults);
 
@@ -540,10 +585,27 @@ export async function POST(req: Request) {
             }
 
             answer = generatedAnswer.trim() || STRICT_NO_ANSWER;
+
+            // Prefer Gemini's real token usage; fall back to a char estimate only
+            // if the provider didn't return usage metadata.
+            let llmInputTokens = estimateTokens(`${compressedContext.context}\n${normalizedQuestion}`);
+            let llmOutputTokens = estimateTokens(answer);
+            try {
+              const usage = (await streamResult.response)?.usageMetadata;
+              if (typeof usage?.promptTokenCount === 'number') {
+                llmInputTokens = usage.promptTokenCount;
+              }
+              if (typeof usage?.candidatesTokenCount === 'number') {
+                llmOutputTokens = usage.candidatesTokenCount;
+              }
+            } catch {
+              // Keep the estimate if usage metadata is unavailable.
+            }
+
             await incrementWorkspaceUsage(profile.workspace_id!, {
               llm_calls: 1,
-              llm_input_tokens: estimateTokens(`${compressedContext.context}\n${normalizedQuestion}`),
-              llm_output_tokens: estimateTokens(answer),
+              llm_input_tokens: llmInputTokens,
+              llm_output_tokens: llmOutputTokens,
             });
           } else {
             answer = buildNoAnswerMessage(retrievedFilenames);
@@ -682,6 +744,8 @@ export async function POST(req: Request) {
   } catch (error) {
     const rateLimit = maybeRateLimitResponse(error);
     if (rateLimit) return rateLimit;
+    const limit = maybeLimitResponse(error);
+    if (limit) return limit;
 
     const message = error instanceof Error ? error.message : 'Unexpected chat error';
     const status = getRequestErrorStatus(message);

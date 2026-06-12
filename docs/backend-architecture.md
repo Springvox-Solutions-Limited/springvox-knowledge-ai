@@ -2,7 +2,7 @@
 
 ## Overview
 
-SpringVox Knowledge AI uses a server-backed SaaS architecture built around:
+Rekall-IQ uses a server-backed SaaS architecture built around:
 
 - Next.js route handlers for application APIs
 - Supabase for authentication, relational data, storage, and row-level security
@@ -238,35 +238,39 @@ The upload pipeline is implemented in [app/api/documents/upload/route.ts](/home/
 
 ### Ingestion Flow
 
-1. Authenticate the user and require workspace-admin privileges
-2. Verify workspace operational status
-3. Validate uploaded file type and size
-4. Create a `documents` row with `processing` status
-5. Upload the raw file to Supabase Storage
-6. Extract text from PDF or TXT
-7. Chunk the document text
-8. Generate embeddings per chunk with Gemini
-9. Insert chunk metadata into `document_chunks`
-10. Upsert vectors and payloads into Qdrant
-11. Mark the document `completed`
+Ingestion is split between a fast synchronous upload route and an asynchronous **Inngest** worker, so large files never block the request.
 
-If any stage fails, the route attempts cleanup across:
+**Upload route** ([app/api/documents/upload/route.ts](/home/water/Downloads/springvox-knowledge-ai/app/api/documents/upload/route.ts)):
 
-- `document_chunks`
-- Qdrant vectors
-- Supabase Storage file
-- `documents` status/error metadata
+1. Authenticate and require workspace-admin privileges
+2. Verify workspace operational status (`assertWorkspaceOperational`)
+3. Enforce rate limits and configured workspace limits (daily uploads, storage bytes)
+4. Validate file type and size; optionally bind a target collection
+5. Create a `documents` row with `processing` status
+6. Upload the raw file to Supabase Storage
+7. Emit the `document/process.started` Inngest event and return immediately
+
+**Inngest worker** ([src/lib/inngest/functions.ts](/home/water/Downloads/springvox-knowledge-ai/src/lib/inngest/functions.ts)):
+
+8. Parse text via the parser router (PDF/DOCX/PPTX/XLSX/CSV/TXT), with **LlamaParse** as a quality fallback for complex files
+9. Chunk the extracted text (1000 chars / 200 overlap)
+10. Embed chunks in batches with **Voyage** (Gemini optional via env)
+11. Insert chunk rows into `document_chunks` and upsert vectors + payloads into Qdrant
+12. Generate **document intelligence** (summary, keywords, category) so files are findable by meaning
+13. Mark the document `ready` (or `failed` with an error message)
+
+On failure the worker/route clean up `document_chunks`, Qdrant vectors, the Storage file, and set the document to `failed` with the reason.
 
 ### Document Utility Rules
 
 Document constraints are defined in [src/lib/documents.ts](/home/water/Downloads/springvox-knowledge-ai/src/lib/documents.ts):
 
-- supported types: PDF and TXT
-- maximum size: 4 MB
-- chunk size: 1000 characters
-- overlap: 200 characters
+- supported types: PDF, DOCX, PPTX, XLSX, CSV, TXT
+- maximum size: configurable via env (default ~20 MB) — see `getMaxUploadMb` / `getMaxUploadBytes`
+- chunk size: 1000 characters; overlap: 200 characters
+- complex files (scanned PDFs, dense tables) fall back to LlamaParse when local extraction is weak
 
-This is a straightforward but effective chunking model for an MVP-stage enterprise document assistant.
+The XLSX parser uses `exceljs` (the `xlsx`/SheetJS package was removed for a HIGH-severity CVE).
 
 ## Retrieval-Augmented Generation Flow
 
@@ -275,37 +279,39 @@ The core chat pipeline is implemented in [app/api/chat/route.ts](/home/water/Dow
 ### Request Flow
 
 1. Authenticate the request and load the user profile
-2. Check that the workspace is operational
-3. Resolve or create the owned chat session
-4. Generate an embedding for the user question
-5. Search Qdrant using `workspace_id` as a filter
-6. Load document metadata for matched chunks
-7. Build a textual context bundle from the matched chunks
-8. Stream a Gemini answer constrained by the system prompt
-9. Persist the chat message with citations
-10. If unsupported, store or update a knowledge gap record
+2. Check that the workspace is operational; enforce monthly question + LLM-token limits
+3. Resolve or create the user's owned chat session
+4. Embed the question (Voyage by default) and resolve any collection scope to document ids
+5. Retrieve in parallel — Qdrant vector search (fetch ~30) **and** Postgres keyword search — both filtered by `workspace_id`
+6. Merge + dedupe candidates, then **rerank with Voyage** down to the top ~8
+7. Build a compressed context bundle and stream a grounded Gemini answer
+8. Compute answer **confidence** (high/medium/low) and generate follow-up suggestions
+9. Persist the message with citations; meter **real** LLM token usage from the provider
+10. If unsupported, record or increment a knowledge-gap entry
 
 ### Retrieval Controls
 
-The search behavior is configurable through environment variables:
+Retrieval is tuned through environment variables ([src/lib/rag/retrieval.ts](/home/water/Downloads/springvox-knowledge-ai/src/lib/rag/retrieval.ts)):
 
-- `RAG_TOP_K`
-- `RAG_SCORE_THRESHOLD`
+- `RAG_QDRANT_FETCH_K` — candidates pulled from Qdrant before rerank (default 30)
+- `RAG_RERANK_TOP_K` — chunks kept after rerank (default 8)
+- `RAG_RERANK_ENABLED` — set `false` to skip reranking (falls back to vector/keyword order)
 
 Qdrant search uses:
 
-- collection: `springvox_knowledge`
-- vector size: `3072`
+- collection: `springvox_knowledge` (env `QDRANT_COLLECTION`)
+- vector size: matches the embedding provider (Voyage default; 3072 for Gemini)
 - distance: cosine
-- payload filters on `workspace_id`
+- a mandatory `workspace_id` payload filter (tenant isolation), plus an optional `document_id` filter for collection scope
 
-Relevant integration:
+Relevant integrations:
 
-- [src/lib/qdrant.ts](/home/water/Downloads/springvox-knowledge-ai/src/lib/qdrant.ts)
+- [src/lib/qdrant.ts](/home/water/Downloads/springvox-knowledge-ai/src/lib/qdrant.ts) — vector store
+- [src/lib/ai/providers/voyage.ts](/home/water/Downloads/springvox-knowledge-ai/src/lib/ai/providers/voyage.ts) — embeddings + rerank (degrades gracefully if rerank is unavailable)
 
 ### LLM Safety Posture
 
-Gemini integration in [src/lib/gemini.ts](/home/water/Downloads/springvox-knowledge-ai/src/lib/gemini.ts) uses a strict system prompt that tells the model to:
+Gemini integration in [src/lib/ai/providers/gemini.ts](/home/water/Downloads/springvox-knowledge-ai/src/lib/ai/providers/gemini.ts) uses a strict system prompt that tells the model to:
 
 - answer only from provided context
 - avoid outside knowledge
@@ -441,28 +447,31 @@ The code correctly keeps Gemini, Qdrant, and admin Supabase usage inside server-
 
 ## Current Risks Or Constraints
 
-- Document ingestion currently processes embeddings serially per chunk, which may become slow as file sizes or throughput increase
-- The app relies on route handlers as the main orchestration layer, so very large future feature growth may require more explicit service boundaries
-- Platform aggregation appears to read broad datasets into memory for summary building, which is acceptable now but may need more database-side aggregation later
-- There is no queue-based async ingestion worker yet; upload processing is still request-bound
+- Ingestion runs on Inngest with batched/concurrent Voyage embeddings, but very large bulk uploads can still queue behind one another under default concurrency.
+- The app relies on route handlers as the main orchestration layer, so very large future feature growth may require more explicit service boundaries.
+- Platform aggregation reads broad datasets into memory for summary building, which is acceptable at current scale but should move to database-side aggregation as workspace counts grow.
+- Chat generation is single-provider (Gemini); there is no automatic model fallback if Gemini is unavailable.
+- Document access is workspace-scoped only — there is no per-document/source-permission model yet.
 
 ## Recommended Next Backend Evolutions
 
-- Move heavy document ingestion into background jobs when upload volume increases
-- Add explicit observability around upload failures, retrieval quality, and model latency
-- Introduce structured service modules for analytics and workspace management as those domains expand
-- Add stronger idempotency patterns for long-running upload and vectorization flows
-- Consider batched or parallel embedding strategies if ingestion latency becomes a problem
-- Add architecture decision records when platform privacy constraints become more formalized
+- **Source connectors** (Google Drive first) with scheduled incremental sync through Inngest, reusing the `document/process.started` pipeline.
+- **Enterprise identity** — SAML/OIDC SSO and SCIM provisioning.
+- **Document-level permissions** mirrored from source systems, enforced as an extra Qdrant payload filter.
+- **Retrieval upgrades** — query transformation (multi-query/HyDE), conversational query rewriting, and structure-aware chunking.
+- Move platform summary aggregation database-side; add observability around retrieval quality and model latency.
+- Multi-provider chat with automatic fallback.
 
 ## Summary
 
 The backend architecture is a solid applied SaaS RAG design for a workspace-scoped enterprise assistant:
 
 - Supabase is the system of record and auth authority
-- Qdrant is the retrieval engine
-- Gemini provides embeddings and constrained answer generation
+- Inngest runs asynchronous document ingestion
+- Voyage provides embeddings and reranking (Gemini embeddings optional via env)
+- Qdrant is the vector retrieval engine, paired with Postgres keyword search (hybrid)
+- Gemini provides constrained, grounded answer generation
 - Next.js route handlers orchestrate business workflows
 - RLS and role checks preserve tenant and user privacy
 
-That combination matches the current product well and leaves a clean path for later background processing, analytics hardening, and operational scale improvements.
+That combination matches the current product well and leaves a clean path for connectors, identity, retrieval quality, and operational scale improvements.

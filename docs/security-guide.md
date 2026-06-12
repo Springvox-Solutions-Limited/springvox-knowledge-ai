@@ -1,4 +1,4 @@
-# SpringVox Security Guide
+# Rekall-IQ Security Guide
 
 ## Core Controls
 

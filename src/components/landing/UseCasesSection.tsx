@@ -11,32 +11,32 @@ export function UseCasesSection() {
   ];
 
   return (
-    <section id="use-cases" className="bg-white py-16 sm:py-24 lg:py-32">
+    <section id="use-cases" className="bg-[var(--surface)] py-16 sm:py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center sm:mb-20">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400 mb-6">Who it is for</p>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-            Helpful across many <span className="text-cyan-700">types of organisations.</span>
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--ink-muted)] mb-6">Who it is for</p>
+          <h2 className="text-3xl font-bold tracking-tight text-[var(--ink)] sm:text-4xl">
+            Helpful across many <span className="text-[var(--accent-jade)]">types of organisations.</span>
           </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-relaxed text-slate-500 sm:mt-6 sm:text-xl">
-            SpringVox is designed for organisations that want staff to find
+          <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-relaxed text-[var(--ink-muted)] sm:mt-6 sm:text-xl">
+            Rekall-IQ is designed for organisations that want staff to find
             answers from approved documents without needing a technical team to explain the system.
           </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8">
           {sectors.map((sector) => (
-            <div key={sector.name} className="group relative rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-all hover:border-cyan-200 sm:rounded-[32px] sm:p-8">
-              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-950 shadow-sm border border-slate-100 group-hover:bg-slate-950 group-hover:text-white transition-colors">
+            <div key={sector.name} className="group relative rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.06)] transition-all hover:border-[var(--accent-jade-100)] sm:rounded-[32px] sm:p-8">
+              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface)] text-[var(--ink)] shadow-sm border border-[var(--line)] group-hover:bg-slate-950 group-hover:text-white transition-colors">
                 <sector.icon size={20} />
               </div>
-              <h3 className="text-xl font-black text-slate-950 tracking-tight mb-4">{sector.name}</h3>
-              <p className="text-sm leading-relaxed text-slate-500 font-medium mb-6">
+              <h3 className="text-xl font-black text-[var(--ink)] tracking-tight mb-4">{sector.name}</h3>
+              <p className="text-sm leading-relaxed text-[var(--ink-muted)] font-medium mb-6">
                 {sector.desc}
               </p>
               <div className="flex flex-wrap gap-2">
                 {sector.tags.map((tag) => (
-                  <span key={tag} className="rounded-full border border-slate-200 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                  <span key={tag} className="rounded-full border border-[var(--line)] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
                     {tag}
                   </span>
                 ))}

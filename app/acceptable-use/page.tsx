@@ -3,20 +3,20 @@ import { LegalPageLayout } from '@/src/components/legal/LegalPageLayout';
 import { LegalSection } from '@/src/components/legal/LegalSection';
 
 export const metadata: Metadata = {
-  title: 'Acceptable Use Policy | SpringVox Knowledge AI',
-  description: 'Rules and guidelines for the acceptable use of the SpringVox Knowledge AI platform.',
+  title: 'Acceptable Use Policy | Rekall-IQ',
+  description: 'Rules and guidelines for the acceptable use of the Rekall-IQ platform.',
 };
 
 export default function AcceptableUsePage() {
   return (
     <LegalPageLayout
       title="Acceptable Use Policy"
-      description="This Acceptable Use Policy outlines the standards and restrictions that apply when you interact with the SpringVox Knowledge AI platform."
+      description="This Acceptable Use Policy outlines the standards and restrictions that apply when you interact with the Rekall-IQ platform."
       lastUpdated="May 2026"
       activePath="/acceptable-use"
     >
       <div className="space-y-4">
-        <p className="text-sm leading-6 text-slate-600">
+        <p className="text-sm leading-6 text-[var(--ink-soft)]">
           We want to maintain a secure, reliable, and respectful platform for all tenants. By using the platform, you agree to adhere to these guidelines.
         </p>
 
@@ -73,8 +73,8 @@ export default function AcceptableUsePage() {
           <p className="mt-2">
             If you witness or suspect any violations, please report them to:
           </p>
-          <div className="mt-2 bg-slate-50 border border-slate-200/80 p-3 rounded-xl inline-block">
-            <p className="font-semibold text-slate-800">Email: <a href="mailto:support@springvox.ai" className="text-cyan-600 hover:underline">support@springvox.ai</a></p>
+          <div className="mt-2 bg-[var(--surface-2)] border border-[var(--line)] p-3 rounded-xl inline-block">
+            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:support@rekall-iq.com" className="text-[var(--accent-jade)] hover:underline">support@rekall-iq.com</a></p>
           </div>
         </LegalSection>
       </div>

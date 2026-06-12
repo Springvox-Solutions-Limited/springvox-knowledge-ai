@@ -34,7 +34,7 @@ const EMPTY_SETTINGS: WorkspaceSettings = {
 };
 
 const fieldClassName =
-  "h-12 rounded-xl border-slate-200 bg-white text-sm shadow-sm focus-visible:border-cyan-400 focus-visible:ring-cyan-100";
+  "h-12 rounded-xl border-[var(--line)] bg-[var(--surface)] text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -140,23 +140,23 @@ export default function SettingsPage() {
       />
 
       {loading ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-8 text-sm text-slate-600 font-medium">
-          <Loader2 size={18} className="animate-spin text-slate-400" />
+        <div className="flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-6 py-8 text-sm text-[var(--ink-soft)] font-medium">
+          <Loader2 size={18} className="animate-spin text-[var(--ink-muted)]" />
           Loading workspace settings...
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-8">
           <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-            <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8">
+            <div className="admin-shell-card border border-[var(--line)] bg-[var(--surface)] p-6 sm:p-8">
               <div className="mb-8 flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-50 text-slate-950 border border-slate-100">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--surface-2)] text-[var(--ink)] border border-[var(--line)]">
                   <Settings2 size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold tracking-tight text-slate-950">
+                  <h2 className="text-lg font-bold tracking-tight text-[var(--ink)]">
                     Workspace Profile
                   </h2>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-xs text-[var(--ink-muted)] font-medium">
                     Core metadata used across the platform.
                   </p>
                 </div>
@@ -175,7 +175,7 @@ export default function SettingsPage() {
                   <Input
                     value={settings.slug || ""}
                     disabled
-                    className={`${fieldClassName} bg-slate-50 text-slate-400 border-dashed`}
+                    className={`${fieldClassName} bg-[var(--surface-2)] text-[var(--ink-muted)] border-dashed`}
                   />
                 </Field>
                 <Field label="Assistant Persona">
@@ -185,7 +185,7 @@ export default function SettingsPage() {
                       handleChange("assistant_name", e.target.value)
                     }
                     className={fieldClassName}
-                    placeholder="SpringVox AI"
+                    placeholder="Rekall-IQ AI"
                   />
                 </Field>
                 <Field label="Primary Brand Color">
@@ -199,7 +199,7 @@ export default function SettingsPage() {
                       placeholder="#1e293b"
                     />
                     <div
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md border border-slate-200"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md border border-[var(--line)]"
                       style={{
                         backgroundColor: settings.primary_color || "#000",
                       }}
@@ -258,17 +258,17 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-6">
-              <div className="admin-shell-card border border-slate-200 bg-white p-6 sm:p-8">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 mb-6">
+              <div className="admin-shell-card border border-[var(--line)] bg-[var(--surface)] p-6 sm:p-8">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)] mb-6">
                   Interface Preview
                 </p>
-                <div className="rounded-3xl border border-slate-100 bg-slate-50/50 p-6">
+                <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface-2)] p-6">
                   <div className="flex items-center gap-4">
                     {settings.logo_url ? (
                       <img
                         src={settings.logo_url}
                         alt={settings.name || "Workspace logo"}
-                        className="h-12 w-12 rounded-2xl object-cover border border-slate-200 shadow-sm"
+                        className="h-12 w-12 rounded-2xl object-cover border border-[var(--line)] shadow-sm"
                       />
                     ) : (
                       <div
@@ -281,21 +281,21 @@ export default function SettingsPage() {
                       </div>
                     )}
                     <div>
-                      <p className="text-sm font-bold text-slate-950 leading-tight">
+                      <p className="text-sm font-bold text-[var(--ink)] leading-tight">
                         {settings.name || "Enterprise Workspace"}
                       </p>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-0.5">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] mt-0.5">
                         {settings.assistant_name || "System Assistant"}
                       </p>
                     </div>
                   </div>
 
                   <div className="mt-8 space-y-4">
-                    <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                    <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] mb-2">
                         Greeting Simulation
                       </p>
-                      <p className="text-sm leading-relaxed text-slate-700 italic">
+                      <p className="text-sm leading-relaxed text-[var(--ink-soft)] italic">
                         "
                         {settings.welcome_message ||
                           "Ask questions from your approved company documents."}
@@ -304,19 +304,19 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                      <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] mb-1">
                           Support
                         </p>
-                        <p className="text-[11px] font-bold text-slate-950 truncate">
+                        <p className="text-[11px] font-bold text-[var(--ink)] truncate">
                           {settings.support_email || "Not configured"}
                         </p>
                       </div>
-                      <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                      <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] mb-1">
                           Sector
                         </p>
-                        <p className="text-[11px] font-bold text-slate-950 truncate">
+                        <p className="text-[11px] font-bold text-[var(--ink)] truncate">
                           {settings.industry || "Global"}
                         </p>
                       </div>
@@ -324,8 +324,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 rounded-xl border border-cyan-100 bg-cyan-50 p-4">
-                  <p className="text-[10px] font-bold leading-relaxed text-cyan-800">
+                <div className="mt-6 rounded-xl border border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] p-4">
+                  <p className="text-[10px] font-bold leading-relaxed text-[var(--accent-jade)]">
                     Changes made here will propagate across all user sessions
                     immediately upon saving.
                   </p>
@@ -339,8 +339,8 @@ export default function SettingsPage() {
               className={cn(
                 "rounded-2xl",
                 error
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-700",
+                  ? "border-red-500/30 bg-red-500/10 text-red-300"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
               )}
             >
               <AlertDescription>{error || message}</AlertDescription>
@@ -376,7 +376,7 @@ function Field({
 }) {
   return (
     <div className="space-y-2">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] ml-1">
         {label}
       </span>
       {children}

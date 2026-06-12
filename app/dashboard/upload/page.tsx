@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useDropzone } from "react-dropzone";
 import {
@@ -20,8 +20,18 @@ import {
 import { getAccessToken } from "@/src/lib/auth-client";
 import { supabase } from "@/src/lib/supabase";
 import { cn } from "@/src/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AppPageHeader } from "@/src/components/shared/AppPageHeader";
 import { AppButton } from "@/src/components/ui/app-button";
+import { StatCard } from "@/src/components/ui/stat-card";
+
+type UploadCollection = { id: string; name: string };
 
 const MAX_UPLOAD_MB = Number.parseInt(process.env.NEXT_PUBLIC_MAX_UPLOAD_MB || "20", 10) || 20;
 const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
@@ -56,27 +66,27 @@ const statusConfig: Record<
 > = {
   queued: {
     label: "Waiting",
-    className: "border-slate-200 bg-slate-50 text-slate-600",
+    className: "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-soft)]",
     icon: Clock,
   },
   uploading: {
     label: "Uploading",
-    className: "border-cyan-200 bg-cyan-50 text-cyan-700",
+    className: "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] text-[var(--accent-jade)]",
     icon: Loader2,
   },
   processing: {
     label: "Processing",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
     icon: Loader2,
   },
   completed: {
     label: "Completed",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
     icon: CheckCircle2,
   },
   failed: {
     label: "Failed",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-red-500/30 bg-red-500/10 text-red-300",
     icon: AlertCircle,
   },
 };
@@ -131,6 +141,32 @@ export default function UploadPage() {
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [queueMessage, setQueueMessage] = useState<string | null>(null);
   const [isUploadingQueue, setIsUploadingQueue] = useState(false);
+  const [collections, setCollections] = useState<UploadCollection[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>("none");
+  const selectedCollectionRef = useRef<string>("none");
+
+  useEffect(() => {
+    selectedCollectionRef.current = selectedCollectionId;
+  }, [selectedCollectionId]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) return;
+        const res = await fetch("/api/collections", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setCollections(
+          (data.collections || []).map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })),
+        );
+      } catch {
+        // Collections are optional at upload time.
+      }
+    })();
+  }, []);
 
   const queuedCount = queue.filter((item) => item.status === "queued").length;
   const activeCount = queue.filter((item) => item.status === "uploading" || item.status === "processing").length;
@@ -255,6 +291,9 @@ export default function UploadPage() {
 
         const formData = new FormData();
         formData.append("file", item.file);
+        if (selectedCollectionRef.current && selectedCollectionRef.current !== "none") {
+          formData.append("collectionId", selectedCollectionRef.current);
+        }
 
         const response = await fetch("/api/documents/upload", {
           method: "POST",
@@ -346,39 +385,60 @@ export default function UploadPage() {
         subtitle={`Add one or many approved documents your team can ask questions from. ${SUPPORTED_UPLOAD_COPY}.`}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {queueSummary.map((item) => (
-          <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-            <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">{item.value}</p>
-          </div>
+          <StatCard key={item.label} label={item.label} value={item.value} />
         ))}
       </div>
+
+      {collections.length > 0 ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--brand-shadow)] sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[var(--ink)]">Upload to collection</p>
+            <p className="mt-0.5 text-xs text-[var(--ink-muted)]">
+              New files in this batch are added to the chosen department collection.
+            </p>
+          </div>
+          <Select value={selectedCollectionId} onValueChange={setSelectedCollectionId}>
+            <SelectTrigger className="h-11 w-full rounded-lg border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)] sm:w-60">
+              <SelectValue placeholder="Unassigned" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-[var(--line)]">
+              <SelectItem value="none">Unassigned</SelectItem>
+              {collections.map((collection) => (
+                <SelectItem key={collection.id} value={collection.id}>
+                  {collection.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr] xl:gap-8">
         <div className="space-y-5">
           <div
             {...getRootProps()}
             className={cn(
-              "group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed bg-white p-5 text-center transition sm:min-h-[250px] sm:p-8",
-              isDragActive ? "border-cyan-300 bg-cyan-50/40" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50",
+              "group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed bg-[var(--surface)] p-5 text-center transition sm:min-h-[250px] sm:p-8",
+              isDragActive ? "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)]" : "border-[var(--line)] hover:border-[var(--line)] hover:bg-[var(--surface-2)]",
             )}
           >
             <input {...getInputProps()} aria-label="Select documents to upload" />
-            <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-3 text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400 sm:inset-x-6 sm:top-6 sm:text-[10px] sm:tracking-[0.18em]">
+            <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-3 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--ink-muted)] sm:inset-x-6 sm:top-6 sm:text-[10px] sm:tracking-[0.18em]">
               <span>PDF · TXT · DOCX · CSV · XLSX · PPTX</span>
               <span>MAX {MAX_UPLOAD_MB}MB each</span>
             </div>
 
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-400 transition group-hover:text-slate-600">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-muted)] transition group-hover:text-[var(--ink-soft)]">
               <Upload size={28} strokeWidth={1.5} />
             </div>
 
             <div className="space-y-2">
-              <p className="text-base font-semibold text-slate-900">
+              <p className="text-base font-semibold text-[var(--ink)]">
                 {isDragActive ? "Release to add documents" : "Drag documents here"}
               </p>
-              <p className="mx-auto max-w-sm text-xs leading-relaxed text-slate-500">
+              <p className="mx-auto max-w-sm text-xs leading-relaxed text-[var(--ink-muted)]">
                 Select multiple files at once. Uploads run in small batches, and each document continues processing in the background.
               </p>
             </div>
@@ -390,24 +450,24 @@ export default function UploadPage() {
           </div>
 
           {duplicateWarning ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
               <AlertCircle size={17} className="mt-0.5 shrink-0" />
               <p>{duplicateWarning}</p>
             </div>
           ) : null}
 
           {queueMessage ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="flex items-start gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
               <AlertCircle size={17} className="mt-0.5 shrink-0" />
               <p>{queueMessage}</p>
             </div>
           ) : null}
 
-          <div className="admin-shell-card overflow-hidden border border-slate-200 bg-white">
-            <div className="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="admin-shell-card overflow-hidden border border-[var(--line)] bg-[var(--surface)]">
+            <div className="flex flex-col gap-3 border-b border-[var(--line)] p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-bold text-slate-950">Upload queue</p>
-                <p className="mt-1 text-xs text-slate-500">Each file uploads and processes independently.</p>
+                <p className="text-sm font-bold text-[var(--ink)]">Upload queue</p>
+                <p className="mt-1 text-xs text-[var(--ink-muted)]">Each file uploads and processes independently.</p>
               </div>
               <div className="grid grid-cols-2 gap-2 sm:flex">
                 {completedCount > 0 ? (
@@ -429,14 +489,14 @@ export default function UploadPage() {
 
             {queue.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50">
-                  <File size={20} className="text-slate-400" />
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-2)]">
+                  <File size={20} className="text-[var(--ink-muted)]" />
                 </div>
-                <p className="mt-3 text-sm font-semibold text-slate-900">No files selected</p>
-                <p className="mt-1 text-xs text-slate-500">Choose or drag files to build an upload queue.</p>
+                <p className="mt-3 text-sm font-semibold text-[var(--ink)]">No files selected</p>
+                <p className="mt-1 text-xs text-[var(--ink-muted)]">Choose or drag files to build an upload queue.</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-[var(--line)]">
                 {queue.map((item) => (
                   <QueueRow
                     key={item.id}
@@ -451,14 +511,14 @@ export default function UploadPage() {
           </div>
 
           {completedCount > 0 ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5">
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 text-emerald-600" size={18} />
+                <CheckCircle2 className="mt-0.5 text-emerald-300" size={18} />
                 <div className="space-y-1">
                   <p className="text-sm font-bold text-emerald-900">
                     {completedCount} {completedCount === 1 ? "document is" : "documents are"} ready.
                   </p>
-                  <p className="text-xs leading-relaxed text-emerald-700/80">
+                  <p className="text-xs leading-relaxed text-emerald-300/80">
                     Your team can ask questions from completed documents.
                   </p>
                   <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:gap-5">
@@ -475,11 +535,11 @@ export default function UploadPage() {
           ) : null}
         </div>
 
-        <div className="admin-shell-card border border-slate-200 bg-white p-5 sm:p-6">
+        <div className="admin-shell-card border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6">
           <div className="space-y-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Bulk upload flow</p>
-            <h2 className="text-xl font-bold tracking-tight text-slate-950">What happens after upload</h2>
-            <p className="text-xs leading-6 text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">Bulk upload flow</p>
+            <h2 className="text-xl font-bold tracking-tight text-[var(--ink)]">What happens after upload</h2>
+            <p className="text-xs leading-6 text-[var(--ink-muted)]">
               Each file is handled separately, so one failed document will not stop the rest of the queue.
             </p>
           </div>
@@ -493,14 +553,14 @@ export default function UploadPage() {
             ].map((step, index) => (
               <div key={step.title} className="flex gap-4">
                 <div className="flex flex-col items-center">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
-                    <step.icon size={14} className="text-slate-500" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface-2)]">
+                    <step.icon size={14} className="text-[var(--ink-muted)]" />
                   </div>
-                  {index < 3 && <div className="mt-2 h-6 w-px bg-slate-100" />}
+                  {index < 3 && <div className="mt-2 h-6 w-px bg-[var(--surface-2)]" />}
                 </div>
                 <div className="pt-0.5">
-                  <p className="text-xs font-bold text-slate-900">{step.title}</p>
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{step.copy}</p>
+                  <p className="text-xs font-bold text-[var(--ink)]">{step.title}</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--ink-muted)]">{step.copy}</p>
                 </div>
               </div>
             ))}
@@ -530,14 +590,14 @@ function QueueRow({
   return (
     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
-          <File size={18} className="text-slate-500" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface-2)]">
+          <File size={18} className="text-[var(--ink-muted)]" />
         </div>
         <div className="min-w-0 space-y-1">
-          <p title={item.file.name} className="truncate text-sm font-semibold text-slate-900">
+          <p title={item.file.name} className="truncate text-sm font-semibold text-[var(--ink)]">
             {item.file.name}
           </p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
             {formatFileSize(item.file.size)} · {getFileExtension(item.file.name).replace(".", "").toUpperCase() || "FILE"}
           </p>
           {item.message ? (
@@ -545,7 +605,7 @@ function QueueRow({
               title={item.message}
               className={cn(
                 "line-clamp-2 text-xs leading-5",
-                item.status === "failed" ? "text-red-600" : "text-slate-500",
+                item.status === "failed" ? "text-red-300" : "text-[var(--ink-muted)]",
               )}
             >
               {item.message}
@@ -569,7 +629,7 @@ function QueueRow({
             onClick={onRetry}
             disabled={disableActions}
             aria-label={`Retry upload for ${item.file.name}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-cyan-50 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--ink-muted)] transition hover:bg-[var(--accent-jade-50)] hover:text-[var(--accent-jade)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <RotateCcw size={15} />
           </button>
@@ -580,7 +640,7 @@ function QueueRow({
           onClick={onRemove}
           disabled={!canRemove}
           aria-label={`Remove ${item.file.name} from upload queue`}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--ink-muted)] transition hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30"
         >
           {canRemove ? <X size={16} /> : <Trash2 size={15} />}
         </button>

@@ -12,6 +12,7 @@ import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/sup
 import { logSystemEvent } from '@/src/lib/system-events';
 import { incrementWorkspaceUsage } from '@/src/lib/usage-metering';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
+import { assertWorkspaceLimit, maybeLimitResponse } from '@/src/lib/workspace-limits';
 import { WORKSPACE_ADMIN_ROLES } from '@/src/lib/workspace';
 
 export const maxDuration = 60;
@@ -39,9 +40,26 @@ export async function POST(req: Request) {
     const supabase = getSupabaseAdmin();
     const formData = await req.formData();
     const file = formData.get('file');
+    const collectionIdRaw = formData.get('collectionId');
+    const requestedCollectionId =
+      typeof collectionIdRaw === 'string' && collectionIdRaw && collectionIdRaw !== 'none'
+        ? collectionIdRaw
+        : null;
 
     if (!(file instanceof File)) {
       return Response.json({ error: 'A supported document file (PDF, TXT, DOCX, CSV, XLSX, PPTX) is required' }, { status: 400 });
+    }
+
+    // Validate the collection belongs to this workspace before assigning.
+    let collectionId: string | null = null;
+    if (requestedCollectionId) {
+      const { data: collection } = await supabase
+        .from('collections')
+        .select('id')
+        .eq('id', requestedCollectionId)
+        .eq('workspace_id', profile.workspace_id)
+        .maybeSingle();
+      collectionId = collection?.id ?? null;
     }
 
     const maxUploadMb = getMaxUploadMb();
@@ -65,6 +83,10 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid filename' }, { status: 400 });
     }
 
+    // Enforce configured per-workspace caps (no-op if unset / fails open).
+    await assertWorkspaceLimit(profile.workspace_id!, 'uploads');
+    await assertWorkspaceLimit(profile.workspace_id!, 'storage', file.size);
+
     documentId = crypto.randomUUID();
     uploadedFilePath = `${user.id}/${documentId}/${filename}`;
 
@@ -85,6 +107,7 @@ export async function POST(req: Request) {
         status: 'processing',
         error_message: null,
         total_chunks: 0,
+        collection_id: collectionId,
       });
 
     if (documentError) {
@@ -127,6 +150,8 @@ export async function POST(req: Request) {
   } catch (error) {
     const rateLimit = maybeRateLimitResponse(error);
     if (rateLimit) return rateLimit;
+    const limit = maybeLimitResponse(error);
+    if (limit) return limit;
 
     const message = error instanceof Error ? error.message : 'Unexpected upload error';
     const status =

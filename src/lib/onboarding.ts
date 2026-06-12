@@ -8,6 +8,17 @@ const RESERVED_WORKSPACE_SLUGS = new Set([
   'register',
   'springvox',
   'www',
+  'invite',
+  'blog',
+  'security',
+  'privacy',
+  'terms',
+  'get-started',
+  'billing-required',
+  'acceptable-use',
+  'data-handling',
+  'settings',
+  'support',
 ]);
 
 export function slugifyWorkspaceName(value: string) {

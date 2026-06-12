@@ -14,11 +14,12 @@ import {
   Monitor,
   ReceiptText,
   ScrollText,
+  Server,
   Wrench,
   Users,
 } from 'lucide-react';
 
-import { SpringVoxLogo } from '@/src/components/brand/SpringVoxLogo';
+import { BrandLogo } from '@/src/components/brand/BrandLogo';
 import { getCurrentUserProfile, getCurrentWorkspaceSettings } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
 import { cn } from '@/src/lib/utils';
@@ -33,7 +34,7 @@ import {
 const platformNavItems = [
   { name: 'Overview', href: '/platform', icon: LayoutGrid },
   { name: 'Companies', href: '/platform/companies', icon: Building2 },
-  { name: 'Workspaces', href: '/platform/workspaces', icon: Building2 },
+  { name: 'Workspaces', href: '/platform/workspaces', icon: Server },
   { name: 'Users', href: '/platform/users', icon: Users },
   { name: 'Notifications', href: '/platform/notifications', icon: Bell },
   { name: 'Audit Logs', href: '/platform/audit-logs', icon: ScrollText },
@@ -100,34 +101,29 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   if (authLoading || !profile) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 text-sm font-medium text-slate-500">
+      <div className="flex h-screen items-center justify-center bg-[var(--surface-2)] text-sm font-medium text-[var(--ink-muted)]">
         Loading platform...
       </div>
     );
   }
 
-  const currentPageTitle =
-    platformNavItems.find(
-      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-    )?.name || 'Platform';
-
   const navContent = (
     <>
       <div className="mb-8 flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <SpringVoxLogo
+          <BrandLogo
             variant="full"
             theme="light"
             className="h-11"
             imageClassName="h-10 w-auto max-w-[190px] object-contain object-left"
           />
-          <p className="mt-4 px-1 text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-200/80">
+          <p className="mt-4 px-1 text-[10px] font-bold uppercase tracking-[0.28em] text-teal-300/80">
             Platform Admin
           </p>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1.5 overflow-y-auto">
+      <nav className="flex-1 space-y-1 overflow-y-auto">
         {platformNavItems.map((item) => {
           const active =
             pathname === item.href ||
@@ -138,13 +134,13 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
               href={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                'flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                'flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition',
                 active
-                  ? 'border-cyan-400/30 bg-cyan-400/12 text-white shadow-[inset_0_0_0_1px_rgba(34,211,238,0.08)]'
-                  : 'border-transparent text-slate-300 hover:border-white/8 hover:bg-white/6 hover:text-white',
+                  ? 'bg-teal-400/15 text-white'
+                  : 'text-[var(--ink-muted)] hover:bg-white/5 hover:text-white',
               )}
             >
-              <item.icon size={18} className={active ? 'text-cyan-200' : 'text-slate-400'} />
+              <item.icon size={18} className={active ? 'text-teal-300' : 'text-[var(--ink-muted)]'} />
               <span>{item.name}</span>
             </Link>
           );
@@ -155,17 +151,17 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         <Link
           href="/dashboard"
           onClick={() => setSidebarOpen(false)}
-          className="mb-4 flex items-center gap-3 rounded-xl border border-white/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/20 hover:bg-white/5 hover:text-white"
+          className="mb-4 flex items-center gap-3 rounded-lg border border-white/10 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:border-teal-400/20 hover:bg-white/5 hover:text-white"
         >
-          <Monitor size={16} className="text-cyan-200" />
+          <Monitor size={16} className="text-teal-300" />
           <span>My Workspace</span>
         </Link>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <p className="truncate text-sm font-semibold text-white">{profile.email}</p>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
+          <p className="mt-1 text-[11px] font-medium text-[var(--ink-muted)]">
             {getRoleLabel(profile.role)}
           </p>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-[var(--ink-muted)]">
             Workspace: {workspace?.name || 'Default workspace'}
           </p>
         </div>
@@ -181,8 +177,8 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   );
 
   return (
-    <div className="flex min-h-screen bg-[#f4f7fb] text-slate-900">
-      <aside className="hidden min-h-screen w-72 shrink-0 bg-[#0d1f35] text-white shadow-2xl lg:flex">
+    <div className="flex min-h-screen bg-[var(--canvas)] text-[var(--ink)]">
+      <aside className="hidden min-h-screen w-72 shrink-0 bg-[var(--brand-sidebar)] text-white lg:flex border-r border-white/5">
         <div className="flex h-full flex-1 flex-col p-6">
           {navContent}
         </div>
@@ -192,7 +188,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         <SheetContent
           side="left"
           aria-describedby={undefined}
-          className="w-[min(100vw-1rem,20rem)] border-r-0 bg-[#0d1f35] p-0 text-white"
+          className="w-[min(100vw-1rem,20rem)] border-r-0 bg-[var(--brand-sidebar)] p-0 text-white"
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Platform navigation</SheetTitle>
@@ -202,36 +198,29 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
       </Sheet>
 
       <main className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/92 backdrop-blur-xl">
+        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)] backdrop-blur-xl">
           <div className="flex min-h-16 items-center justify-between gap-3 px-4 py-3 md:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open platform navigation"
-                className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 lg:hidden"
+                className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-2.5 text-[var(--ink-muted)] lg:hidden"
               >
                 <Menu size={18} />
               </button>
               <Link href="/platform" className="flex items-center lg:hidden">
-                <SpringVoxLogo
+                <BrandLogo
                   variant="full"
                   theme="light"
                   imageClassName="h-8 w-auto max-w-[120px] object-contain object-left"
                 />
               </Link>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">
-                  Platform Admin
+                <p className="truncate text-sm font-semibold text-[var(--ink)]">
+                  Platform admin
                 </p>
-                <h1 className="truncate text-sm font-semibold text-slate-950 sm:text-base">
-                  {currentPageTitle}
-                </h1>
               </div>
-            </div>
-            <div className="hidden items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 sm:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Online
             </div>
           </div>
         </header>

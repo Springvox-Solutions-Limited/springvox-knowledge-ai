@@ -7,15 +7,15 @@ import { cn } from "@/src/lib/utils";
 
 const faqs = [
   {
-    q: "How does SpringVox keep my company data private?",
+    q: "How does Rekall-IQ keep my company data private?",
     a: "Each organisation gets its own isolated workspace. Data is stored in your private vector index, and answers are generated only from documents you upload. We never train on your data or share it across tenants.",
   },
   {
-    q: "What file types does SpringVox support?",
-    a: "SpringVox supports PDF, DOCX, XLSX, CSV, PPTX, and TXT files. You can upload them directly through the workspace dashboard, and our parser extracts the text for secure indexing.",
+    q: "What file types does Rekall-IQ support?",
+    a: "Rekall-IQ supports PDF, DOCX, XLSX, CSV, PPTX, and TXT files. You can upload them directly through the workspace dashboard, and our parser extracts the text for secure indexing.",
   },
   {
-    q: "Can I try SpringVox before committing?",
+    q: "Can I try Rekall-IQ before committing?",
     a: "Yes. The Free plan gives you a full workspace setup with document uploads and chat capabilities. No credit card is required to start.",
   },
   {
@@ -45,20 +45,20 @@ function FAQItem({
   onToggle: () => void;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
+    <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="flex w-full items-center justify-between px-6 py-5 text-left transition hover:bg-slate-50/50"
+        className="flex w-full items-center justify-between px-6 py-5 text-left transition hover:bg-[var(--surface-2)]"
       >
-        <span className="pr-4 text-sm font-semibold text-slate-950 sm:text-base">
+        <span className="pr-4 text-sm font-semibold text-[var(--ink)] sm:text-base">
           {faq.q}
         </span>
         <ChevronDown
           size={18}
           className={cn(
-            "shrink-0 text-slate-400 transition duration-200",
+            "shrink-0 text-[var(--ink-muted)] transition duration-200",
             isOpen && "rotate-180",
           )}
         />
@@ -73,8 +73,8 @@ function FAQItem({
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-t border-slate-100 px-6 pb-5 pt-4">
-              <p className="text-sm leading-7 text-slate-600">{faq.a}</p>
+            <div className="border-t border-[var(--line)] px-6 pb-5 pt-4">
+              <p className="text-sm leading-7 text-[var(--ink-soft)]">{faq.a}</p>
             </div>
           </motion.div>
         )}
@@ -87,17 +87,17 @@ export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
-    <section className="bg-white py-20 sm:py-28">
+    <section className="bg-[var(--surface)] py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div {...reveal} className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-700">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent-jade)]">
             FAQs
           </p>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl">
+          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-5xl">
             Frequently asked questions.
           </h2>
-          <p className="mt-5 text-base leading-8 text-slate-600">
-            Everything you need to know about SpringVox.
+          <p className="mt-5 text-base leading-8 text-[var(--ink-soft)]">
+            Everything you need to know about Rekall-IQ.
           </p>
         </motion.div>
 

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run lint)",
+      "Bash(npm run build)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(npm audit)",
+      "Bash(npm audit fix)",
+      "Bash(find . -type f*)",
+      "Bash(ls*)",
+      "Bash(cat package.json)",
+      "Bash(cat tsconfig.json)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(curl * | bash*)",
+      "Bash(wget * | sh*)",
+      "Bash(cat .env*)",
+      "Bash(echo * > .env*)"
+    ]
+  }
+}

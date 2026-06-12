@@ -5,6 +5,13 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { getAccessToken, getCurrentUserProfile } from "@/src/lib/auth-client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AdminSearchInput } from "@/src/components/dashboard/AdminSearchInput";
 import { cn, truncate } from "@/src/lib/utils";
 import { isWorkspaceAdminRole, type UserProfile } from "@/src/lib/workspace";
@@ -148,26 +155,26 @@ export default function KnowledgeGapsPage() {
           placeholder="Search by question or topic..."
           className="flex-1 lg:min-w-[20rem]"
         />
-        <select
+        <Select
           value={statusFilter}
-          onChange={(event) =>
-            setStatusFilter(
-              event.target.value as "all" | KnowledgeGap["status"],
-            )
-          }
-          className="admin-input shrink-0 px-4 py-3 text-sm font-medium transition-colors hover:border-slate-300 lg:min-w-[11rem] lg:w-auto"
+          onValueChange={(value) => setStatusFilter(value as "all" | KnowledgeGap["status"])}
         >
-          <option value="all">All statuses</option>
-          {STATUS_OPTIONS.map((status) => (
-            <option key={status} value={status}>
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="h-12 w-full rounded-xl border-[var(--line)] bg-[var(--surface)] px-4 text-sm shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)] lg:w-44">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl border-[var(--line)]">
+            <SelectItem value="all">All statuses</SelectItem>
+            {STATUS_OPTIONS.map((status) => (
+              <SelectItem key={status} value={status}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50/50 p-5 text-sm text-red-700 font-medium flex items-start gap-3">
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-300 font-medium flex items-start gap-3">
           <AlertTriangle size={18} className="shrink-0 mt-0.5" />
           <div>
             <p className="font-bold">Error loading gaps</p>
@@ -176,13 +183,13 @@ export default function KnowledgeGapsPage() {
         </div>
       )}
 
-      <div className="admin-shell-card border border-slate-200 bg-white overflow-hidden">
+      <div className="admin-shell-card border border-[var(--line)] bg-[var(--surface)] overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 px-6 py-24">
             <div className="relative w-12 h-12">
-              <Loader2 size={24} className="animate-spin text-slate-400" />
+              <Loader2 size={24} className="animate-spin text-[var(--ink-muted)]" />
             </div>
-            <p className="text-sm font-medium text-slate-600">
+            <p className="text-sm font-medium text-[var(--ink-soft)]">
               Loading unanswered questions...
             </p>
           </div>
@@ -196,11 +203,11 @@ export default function KnowledgeGapsPage() {
             />
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {filteredKnowledgeGaps.map((gap, idx) => (
+          <div className="divide-y divide-[var(--line)]">
+            {filteredKnowledgeGaps.map((gap) => (
               <div
                 key={gap.id}
-                className="p-6 lg:p-8 transition-all hover:bg-slate-50/50 group"
+                className="p-6 lg:p-8 transition-all hover:bg-[var(--surface-2)] group"
               >
                 <div className="flex flex-col gap-6 lg:gap-8">
                   <div className="space-y-4 flex-1">
@@ -209,31 +216,31 @@ export default function KnowledgeGapsPage() {
                         className={cn(
                           "rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider border transition-colors",
                           gap.status === "open"
-                            ? "bg-red-50 text-red-700 border-red-200"
+                            ? "bg-red-500/10 text-red-300 border-red-500/30"
                             : gap.status === "resolved"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
                               : gap.status === "ignored"
-                                ? "bg-slate-100 text-slate-600 border-slate-200"
-                                : "bg-blue-50 text-blue-700 border-blue-200",
+                                ? "bg-[var(--surface-2)] text-[var(--ink-soft)] border-[var(--line)]"
+                                : "bg-[var(--surface-2)] text-[var(--ink-soft)] border-[var(--line)]",
                         )}
                       >
                         {gap.status}
                       </span>
-                      <div className="h-6 w-px bg-slate-200" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        <span className="font-black text-slate-900">
+                      <div className="h-6 w-px bg-[var(--surface-2)]" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+                        <span className="font-bold text-[var(--ink)]">
                           {gap.occurrence_count}
                         </span>{" "}
                         {gap.occurrence_count === 1 ? "ask" : "asks"}
                       </span>
                     </div>
-                    <p className="text-lg lg:text-xl font-semibold tracking-tight text-slate-950 leading-snug">
+                    <p className="text-lg lg:text-xl font-semibold tracking-tight text-[var(--ink)] leading-snug">
                       {gap.question}
                     </p>
-                    <div className="flex flex-wrap gap-x-8 gap-y-3 text-xs font-medium text-slate-500 pt-2">
+                    <div className="flex flex-wrap gap-x-8 gap-y-3 text-xs font-medium text-[var(--ink-muted)] pt-2">
                       <span className="flex items-center gap-2">
                         <span className="text-slate-300">•</span>
-                        <span className="text-slate-400">Reported:</span>{" "}
+                        <span className="text-[var(--ink-muted)]">Reported:</span>{" "}
                         {new Date(gap.created_at).toLocaleDateString(
                           undefined,
                           { month: "short", day: "numeric", year: "numeric" },
@@ -241,7 +248,7 @@ export default function KnowledgeGapsPage() {
                       </span>
                       <span className="flex items-center gap-2">
                         <span className="text-slate-300">•</span>
-                        <span className="text-slate-400">Last seen:</span>{" "}
+                        <span className="text-[var(--ink-muted)]">Last seen:</span>{" "}
                         {new Date(gap.last_asked_at).toLocaleDateString(
                           undefined,
                           { month: "short", day: "numeric", year: "numeric" },
@@ -249,18 +256,18 @@ export default function KnowledgeGapsPage() {
                       </span>
                     </div>
                     {gap.sample_answer && (
-                      <div className="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-4 mt-3">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                      <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] px-4 py-4 mt-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-muted)] mb-2">
                           No answer found
                         </p>
-                        <p className="text-sm leading-relaxed text-slate-700">
+                        <p className="text-sm leading-relaxed text-[var(--ink-soft)]">
                           "{truncate(gap.sample_answer, 180)}"
                         </p>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 lg:flex-nowrap pt-2 border-t border-slate-100">
+                  <div className="flex flex-wrap gap-2 lg:flex-nowrap pt-2 border-t border-[var(--line)]">
                     <div className="pt-2 flex items-center gap-2 w-full lg:w-auto">
                       {STATUS_OPTIONS.map((status) => (
                         <button
@@ -272,7 +279,7 @@ export default function KnowledgeGapsPage() {
                             "rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all border",
                             status === gap.status
                               ? "bg-slate-950 text-white border-slate-950 shadow-lg shadow-slate-950/20"
-                              : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed",
+                              : "bg-[var(--surface)] text-[var(--ink-soft)] border-[var(--line)] hover:border-[var(--line)] hover:text-[var(--ink)] hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed",
                           )}
                         >
                           {savingId === gap.id && status === gap.status ? (
