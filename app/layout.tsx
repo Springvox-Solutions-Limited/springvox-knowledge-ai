@@ -16,16 +16,19 @@ export const metadata: Metadata = {
   description:
     "Turn approved company documents into a secure AI assistant. Teams get instant, sourced answers from policies, handbooks, and procedures. No credit card required.",
   icons: {
-    icon: [{ url: "/brand/rekall-icon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/brand/rekall-icon.svg", type: "image/svg+xml" },
+      { url: "/brand/rekall-mark.png", type: "image/png", sizes: "512x512" },
+    ],
     shortcut: ["/brand/rekall-icon.svg"],
-    apple: [{ url: "/brand/rekall-icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/brand/rekall-mark.png", type: "image/png" }],
   },
   openGraph: {
     title:
       "Rekall-IQ | Your Company Knowledge. AI-Powered Answers.",
     description:
       "Stop wasting hours searching for policies. Rekall-IQ gives every team a secure AI assistant that answers instantly from approved company documents.",
-    url: "https://rekall-iq.com",
+    url: "https://rekalliq.springvoxsl.com",
     siteName: "Rekall-IQ",
     locale: "en_US",
     type: "website",

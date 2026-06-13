@@ -5,9 +5,11 @@ import { ASSIGNABLE_ROLES, isWorkspaceAdminRole } from '@/src/lib/workspace';
 
 export const dynamic = 'force-dynamic';
 
-function buildInviteUrl(token: string) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  return `${appUrl.replace(/\/$/, '')}/invite/${token}`;
+function buildInviteUrl(token: string, req: Request) {
+  // Prefer the configured app URL; otherwise use the host the admin is actually
+  // on (correct in prod and local even when NEXT_PUBLIC_APP_URL is unset).
+  const base = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+  return `${base.replace(/\/$/, '')}/invite/${token}`;
 }
 
 export async function GET(req: Request) {
@@ -32,7 +34,7 @@ export async function GET(req: Request) {
 
     const invitations = (data || []).map((invitation) => ({
       ...invitation,
-      invite_url: buildInviteUrl(invitation.token),
+      invite_url: buildInviteUrl(invitation.token, req),
     }));
 
     return Response.json({ invitations });
@@ -90,7 +92,7 @@ export async function POST(req: Request) {
     return Response.json({
       invitation: {
         ...data,
-        invite_url: buildInviteUrl(data.token),
+        invite_url: buildInviteUrl(data.token, req),
       },
     });
   } catch (error) {

@@ -162,7 +162,7 @@ export default function PrivacyPage() {
             For any questions, requests, or concerns regarding your privacy, please reach out to us at:
           </p>
           <div className="mt-2 bg-[var(--surface-2)] border border-[var(--line)] p-3 rounded-xl inline-block">
-            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:privacy@rekall-iq.com" className="text-[var(--accent-jade)] hover:underline">privacy@rekall-iq.com</a></p>
+            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:privacy@springvoxsl.com" className="text-[var(--accent-jade)] hover:underline">privacy@springvoxsl.com</a></p>
           </div>
         </LegalSection>
       </div>

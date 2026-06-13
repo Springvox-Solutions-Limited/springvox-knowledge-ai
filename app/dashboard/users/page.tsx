@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, Loader2, MailPlus, ShieldCheck, Users, UserCog, AlertCircle, Clock } from "lucide-react";
+import { Copy, Eye, Loader2, MailPlus, ShieldCheck, Users, UserCog, AlertCircle, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -46,6 +46,7 @@ import {
   AppTableRow,
 } from "@/src/components/ui/app-table";
 import { ConfirmDialog } from "@/src/components/ui/confirm-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type ManagedUser = {
   id: string;
@@ -124,6 +125,7 @@ export default function UsersPage() {
   const [inviteRole, setInviteRole] = useState<AppRole>("viewer");
   const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -465,7 +467,7 @@ export default function UsersPage() {
             />
           </div>
         ) : (
-          <AppTable className="min-w-[740px]">
+          <AppTable className="min-w-[620px]">
             <AppTableHeader>
               <AppTableRow>
                 <AppTableHead className="w-[32%]">User</AppTableHead>
@@ -483,24 +485,16 @@ export default function UsersPage() {
                 <AppTableRow key={user.id}>
                   <AppTableCell className="max-w-[18rem]">
                     <p
-                      className="truncate text-sm font-bold text-[var(--ink)]"
+                      className="truncate text-sm font-semibold text-[var(--ink)]"
+                      title={user.full_name || user.email || ""}
+                    >
+                      {user.full_name || (user.email ? user.email.split("@")[0] : "Anonymous")}
+                    </p>
+                    <p
+                      className="mt-0.5 truncate text-xs text-[var(--ink-muted)]"
                       title={user.email || ""}
                     >
-                      {user.email || "Anonymous"}
-                    </p>
-                    {user.full_name && (
-                      <p
-                        className="mt-1 truncate text-xs font-medium text-[var(--ink-muted)]"
-                        title={user.full_name}
-                      >
-                        {user.full_name}
-                      </p>
-                    )}
-                    <p
-                      className="mt-2 truncate text-[11px] font-medium text-[var(--ink-muted)]"
-                      title={user.workspace_name}
-                    >
-                      {user.workspace_name}
+                      {user.email}
                     </p>
                   </AppTableCell>
                   <AppTableCell>
@@ -524,27 +518,15 @@ export default function UsersPage() {
                   </AppTableCell>
                   <AppTableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      {ROLE_OPTIONS.map((roleOption) => (
-                        <AppButton
-                          key={roleOption}
-                          type="button"
-                          disabled={saving || roleOption === user.role}
-                          onClick={() => updateRole(user, roleOption, false)}
-                          tone={
-                            roleOption === user.role ? "ghost" : "secondary"
-                          }
-                          className={cn(
-                            "h-8 rounded-lg px-2.5 text-[11px]",
-                            roleOption === user.role
-                              ? "cursor-default border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-muted)]"
-                              : "",
-                          )}
-                        >
-                          {roleOption === "tenant_admin"
-                            ? "Make admin"
-                            : "Make viewer"}
-                        </AppButton>
-                      ))}
+                      <AppButton
+                        type="button"
+                        tone="secondary"
+                        onClick={() => setViewUser(user)}
+                        className="h-8 rounded-lg px-2.5 text-[11px]"
+                      >
+                        <Eye size={13} />
+                        View
+                      </AppButton>
                       {user.status === "active" ? (
                         <AppButton
                           type="button"
@@ -586,24 +568,16 @@ export default function UsersPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p
-                      className="truncate text-sm font-bold text-[var(--ink)]"
+                      className="truncate text-sm font-semibold text-[var(--ink)]"
+                      title={user.full_name || user.email || ""}
+                    >
+                      {user.full_name || (user.email ? user.email.split("@")[0] : "Anonymous")}
+                    </p>
+                    <p
+                      className="mt-0.5 truncate text-xs text-[var(--ink-muted)]"
                       title={user.email || ""}
                     >
-                      {user.email || "Anonymous"}
-                    </p>
-                    {user.full_name ? (
-                      <p
-                        className="mt-1 truncate text-xs text-[var(--ink-muted)]"
-                        title={user.full_name}
-                      >
-                        {user.full_name}
-                      </p>
-                    ) : null}
-                    <p
-                      className="mt-2 truncate text-[11px] font-medium text-[var(--ink-muted)]"
-                      title={user.workspace_name}
-                    >
-                      {user.workspace_name}
+                      {user.email}
                     </p>
                   </div>
                   <span
@@ -623,25 +597,15 @@ export default function UsersPage() {
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {ROLE_OPTIONS.map((roleOption) => (
-                    <AppButton
-                      key={`${user.id}-${roleOption}`}
-                      type="button"
-                      disabled={saving || roleOption === user.role}
-                      onClick={() => updateRole(user, roleOption, false)}
-                      tone={roleOption === user.role ? "ghost" : "secondary"}
-                      className={cn(
-                        "h-9 px-3 text-xs",
-                        roleOption === user.role
-                          ? "cursor-default border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-muted)]"
-                          : "",
-                      )}
-                    >
-                      {roleOption === "tenant_admin"
-                        ? "Make Admin"
-                        : "Make Viewer"}
-                    </AppButton>
-                  ))}
+                  <AppButton
+                    type="button"
+                    tone="secondary"
+                    onClick={() => setViewUser(user)}
+                    className="h-9 px-3 text-xs"
+                  >
+                    <Eye size={14} />
+                    View
+                  </AppButton>
                   {user.status === "active" ? (
                     <AppButton
                       type="button"
@@ -818,6 +782,104 @@ export default function UsersPage() {
           await updateRole(confirmState.user, confirmState.nextRole, true);
         }}
       />
+
+      <Sheet open={Boolean(viewUser)} onOpenChange={(open) => { if (!open) setViewUser(null); }}>
+        <SheetContent side="right" className="w-[min(100vw-1rem,28rem)] overflow-y-auto bg-[var(--surface)]">
+          <SheetHeader>
+            <SheetTitle>User details</SheetTitle>
+          </SheetHeader>
+          {viewUser ? (
+            <div className="mt-6 space-y-5 px-1">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-jade)] text-base font-bold text-[#04110e]">
+                  {(viewUser.full_name || viewUser.email || "U").slice(0, 1).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[var(--ink)]">
+                    {viewUser.full_name || (viewUser.email ? viewUser.email.split("@")[0] : "Anonymous")}
+                  </p>
+                  <p className="truncate text-xs text-[var(--ink-muted)]">{viewUser.email}</p>
+                </div>
+              </div>
+
+              <dl className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3">
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">Role</dt>
+                  <dd className="mt-1.5">
+                    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]", getRoleTone(viewUser.role))}>
+                      {getRoleLabel(viewUser.role)}
+                    </span>
+                  </dd>
+                </div>
+                <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3">
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">Status</dt>
+                  <dd className="mt-1.5"><UserStatusBadge status={viewUser.status} /></dd>
+                </div>
+                <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3">
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">Added</dt>
+                  <dd className="mt-1.5 text-sm text-[var(--ink)]">{new Date(viewUser.created_at).toLocaleDateString()}</dd>
+                </div>
+                <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3">
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">Updated</dt>
+                  <dd className="mt-1.5 text-sm text-[var(--ink)]">{new Date(viewUser.updated_at).toLocaleDateString()}</dd>
+                </div>
+              </dl>
+
+              <div className="border-t border-[var(--line)] pt-5">
+                <p className="mb-2.5 text-xs font-semibold text-[var(--ink)]">Change role</p>
+                <div className="flex flex-wrap gap-2">
+                  {ROLE_OPTIONS.map((roleOption) => (
+                    <AppButton
+                      key={roleOption}
+                      type="button"
+                      disabled={saving || roleOption === viewUser.role}
+                      tone={roleOption === viewUser.role ? "ghost" : "secondary"}
+                      onClick={async () => {
+                        await updateRole(viewUser, roleOption, false);
+                        setViewUser(null);
+                      }}
+                      className="h-9 px-3 text-xs"
+                    >
+                      {roleOption === viewUser.role ? "Current" : roleOption === "tenant_admin" ? "Make admin" : "Make viewer"}
+                    </AppButton>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-[var(--line)] pt-5">
+                <p className="mb-2.5 text-xs font-semibold text-[var(--ink)]">Account status</p>
+                {viewUser.status === "active" ? (
+                  <AppButton
+                    type="button"
+                    disabled={saving}
+                    tone="destructive"
+                    onClick={async () => {
+                      await updateUserStatus(viewUser, "suspended");
+                      setViewUser(null);
+                    }}
+                    className="h-9 px-3 text-xs"
+                  >
+                    Suspend user
+                  </AppButton>
+                ) : (
+                  <AppButton
+                    type="button"
+                    disabled={saving}
+                    tone="secondary"
+                    onClick={async () => {
+                      await updateUserStatus(viewUser, "active");
+                      setViewUser(null);
+                    }}
+                    className="h-9 px-3 text-xs"
+                  >
+                    Activate user
+                  </AppButton>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
 
       <Dialog
         open={inviteOpen}

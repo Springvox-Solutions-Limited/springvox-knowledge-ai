@@ -1,3 +1,5 @@
+import { renderBrandedEmail } from '../layout';
+
 export function buildPlatformNotificationEmail({
   title,
   message,
@@ -20,5 +22,13 @@ export function buildPlatformNotificationEmail({
       '',
       'Rekall-IQ Team',
     ].join('\n'),
+    html: renderBrandedEmail({
+      heading: title,
+      paragraphs: [
+        workspaceName ? `Workspace: ${workspaceName}` : 'Rekall-IQ platform notice',
+        message,
+      ],
+      button: { label: 'Open Rekall-IQ', url: `${appUrl}/dashboard` },
+    }),
   };
 }

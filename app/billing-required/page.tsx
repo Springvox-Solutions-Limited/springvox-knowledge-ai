@@ -40,7 +40,7 @@ export default function BillingRequiredPage() {
             Sign in
           </Link>
           <a
-            href="mailto:support@rekall-iq.com"
+            href="mailto:support@springvoxsl.com"
             className="inline-flex h-11 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface)] px-5 text-sm font-semibold text-[var(--ink-soft)] transition hover:bg-[var(--surface-2)]"
           >
             Contact support

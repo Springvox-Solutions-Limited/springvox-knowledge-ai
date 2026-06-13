@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/src/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Loader2, ArrowRight } from "lucide-react";
+import { Mail, Lock, Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { BrandLogo } from "@/src/components/brand/BrandLogo";
@@ -14,6 +14,7 @@ import { AppButton } from "@/src/components/ui/app-button";
 export default function AuthForm({ mode }: { mode: "login" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -88,14 +89,22 @@ export default function AuthForm({ mode }: { mode: "login" }) {
             />
             <Input
               id="login-password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               autoComplete="current-password"
-              className="h-12 rounded-xl border-[var(--line)] bg-[var(--surface-2)] py-3 pl-11 pr-4 text-sm text-[var(--ink)] focus-visible:border-teal-400 focus-visible:bg-[var(--surface)] focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)]"
+              className="h-12 rounded-xl border-[var(--line)] bg-[var(--surface-2)] py-3 pl-11 pr-12 text-sm text-[var(--ink)] focus-visible:border-teal-400 focus-visible:bg-[var(--surface)] focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)]"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)]"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
         </div>
 

@@ -19,6 +19,7 @@ import { compressSearchResults } from '@/src/lib/rag/context';
 import { calculateAnswerConfidence, sourceConfidenceFromScore, type AnswerConfidence } from '@/src/lib/rag/confidence';
 import { buildNoAnswerMessage, generateFollowUps } from '@/src/lib/rag/followups';
 import { getRetrievalSettings } from '@/src/lib/rag/intent';
+import { detectSmallTalk } from '@/src/lib/rag/smalltalk';
 import {
   getQdrantFetchK,
   getRerankTopK,
@@ -59,7 +60,7 @@ type ChatCompletePayload = {
   statusMessage: string;
   noAnswer: boolean;
   followUps: string[];
-  confidence: AnswerConfidence;
+  confidence?: AnswerConfidence;
 };
 
 function dedupeCitations(citations: Citation[]) {
@@ -339,6 +340,56 @@ export async function POST(req: Request) {
         };
 
         try {
+          // Greetings / thanks / "what can you do?" get a friendly reply instead
+          // of the strict no-answer. Only triggers when the whole message is small
+          // talk — real questions (even "hi, what's the policy?") fall through.
+          const smallTalk = detectSmallTalk(normalizedQuestion);
+          if (smallTalk) {
+            await streamTextFallback(
+              smallTalk.reply,
+              (delta) => sendEvent('chunk', { delta }),
+              () => clientAborted,
+            );
+
+            if (clientAborted) {
+              closeStream();
+              return;
+            }
+
+            await setSessionTitleFromFirstQuestionIfNeeded(supabase, {
+              sessionId: chatSession.id,
+              question: normalizedQuestion,
+            });
+
+            const { data: smallTalkMessage } = await supabase
+              .from('chat_messages')
+              .insert({
+                user_id: user.id,
+                workspace_id: profile.workspace_id,
+                session_id: chatSession.id,
+                question: normalizedQuestion,
+                answer: smallTalk.reply,
+                citations: [],
+              })
+              .select('id')
+              .maybeSingle();
+
+            await incrementWorkspaceUsage(profile.workspace_id!, { questions_count: 1 });
+
+            sendEvent('complete', {
+              answer: smallTalk.reply,
+              citations: [],
+              chatMessageId: smallTalkMessage?.id ?? '',
+              sessionId: chatSession.id,
+              statusMessage: 'Assistant reply',
+              noAnswer: false,
+              followUps: [],
+            } satisfies ChatCompletePayload);
+
+            closeStream();
+            return;
+          }
+
           const totalStartedAt = Date.now();
           const statuses = buildStatusMessages(profile.role);
           const retrievalSettings = getRetrievalSettings(normalizedQuestion);

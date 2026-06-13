@@ -1,3 +1,5 @@
+import { renderBrandedEmail } from '../layout';
+
 export function buildTrialReminderEmail({
   workspaceName,
   daysRemaining,
@@ -20,5 +22,13 @@ export function buildTrialReminderEmail({
       '',
       'Rekall-IQ Team',
     ].join('\n'),
+    html: renderBrandedEmail({
+      heading: `${dayLabel} left in your trial`,
+      paragraphs: [
+        `Your Rekall-IQ trial for ${workspaceName} ends in ${dayLabel}.`,
+        'Upgrade before the trial ends to keep uploads, chat, document search, and team access available without interruption.',
+      ],
+      button: { label: 'Open Rekall-IQ', url: `${appUrl}/dashboard` },
+    }),
   };
 }

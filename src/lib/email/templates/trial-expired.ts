@@ -1,3 +1,5 @@
+import { renderBrandedEmail } from '../layout';
+
 export function buildTrialExpiredEmail({
   workspaceName,
   appUrl,
@@ -16,5 +18,13 @@ export function buildTrialExpiredEmail({
       '',
       'Rekall-IQ Team',
     ].join('\n'),
+    html: renderBrandedEmail({
+      heading: 'Your trial has ended',
+      paragraphs: [
+        `Your 14-day Rekall-IQ trial for ${workspaceName} has ended.`,
+        'Workspace access is paused until the workspace is upgraded or reactivated. Your documents and data are safe.',
+      ],
+      button: { label: 'Reactivate Rekall-IQ', url: `${appUrl}/login` },
+    }),
   };
 }

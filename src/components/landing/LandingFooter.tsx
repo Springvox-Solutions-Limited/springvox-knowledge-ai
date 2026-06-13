@@ -17,7 +17,7 @@ const footerColumns = [
   {
     title: 'Company',
     links: [
-      { label: 'Contact', href: 'mailto:hello@rekall-iq.com' },
+      { label: 'Contact', href: 'mailto:hello@springvoxsl.com' },
       { label: 'Support', href: '/login' },
     ],
   },
@@ -41,7 +41,7 @@ const footerColumns = [
 ];
 
 const socialLinks = [
-  { label: 'Email us', href: 'mailto:hello@rekall-iq.com', icon: Mail },
+  { label: 'Email us', href: 'mailto:hello@springvoxsl.com', icon: Mail },
 ];
 
 export function LandingFooter() {
@@ -55,15 +55,10 @@ export function LandingFooter() {
               theme="light"
               imageClassName="h-9 w-auto max-w-[175px] object-contain object-left"
             />
-            <div className="space-y-2.5">
-              <h2 className="text-base font-semibold tracking-tight text-white">
-                Rekall-IQ
-              </h2>
-              <p className="max-w-md text-sm leading-6 text-slate-300">
-                An AI assistant that helps organisations turn approved documents
-                into clear answers for their teams.
-              </p>
-            </div>
+            <p className="max-w-md text-sm leading-6 text-slate-300">
+              An AI assistant that helps organisations turn approved documents
+              into clear answers for their teams.
+            </p>
 
             <div className="flex flex-wrap gap-2.5">
               {socialLinks.map((item) => (

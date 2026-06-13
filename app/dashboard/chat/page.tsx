@@ -1013,10 +1013,10 @@ export default function ChatPage() {
             ) : null}
 
             <div className={cn(
-              "relative isolate flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--brand-shadow)]",
+              "relative isolate flex min-w-0 flex-col overflow-hidden",
               isViewer
-                ? "mx-auto h-[calc(100dvh-155px)] max-w-4xl"
-                : "mx-auto h-[calc(100dvh-165px)] max-w-4xl lg:mx-0 lg:max-w-none sm:h-[calc(100dvh-170px)]"
+                ? "mx-auto h-[calc(100dvh-155px)] w-full"
+                : "mx-auto h-[calc(100dvh-165px)] w-full sm:h-[calc(100dvh-170px)]"
             )}>
               <div
                 ref={scrollRef}
@@ -1024,10 +1024,10 @@ export default function ChatPage() {
                 aria-live="polite"
                 aria-label="Chat conversation"
                 className={cn(
-                  "flex-1 overflow-y-auto scrollbar-hide",
+                  "mx-auto w-full max-w-3xl flex-1 overflow-y-auto scrollbar-hide px-4",
                   isViewer
-                    ? "px-1 pb-28 pt-4 sm:px-4 sm:pb-32"
-                    : "px-0 pb-32 pt-5 sm:px-2 sm:pb-36"
+                    ? "pb-28 pt-4 sm:pb-32"
+                    : "pb-32 pt-5 sm:pb-36"
                 )}
               >
                 {historyLoading ? (
@@ -1289,10 +1289,10 @@ export default function ChatPage() {
               </div>
 
               <div className={cn(
-                  "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(20,24,22,0)_0%,rgba(20,24,22,0.95)_24%,rgba(20,24,22,1)_100%)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6",
+                  "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(10,12,11,0)_0%,rgba(10,12,11,0.95)_24%,rgba(10,12,11,1)_100%)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6",
                 isViewer ? "px-3 pt-4 sm:px-5 sm:pb-6 sm:pt-5" : "px-3 pt-4 sm:px-5 sm:pb-5 sm:pt-5"
               )}>
-                <div className="mx-auto mb-3 flex max-w-4xl flex-wrap items-center gap-2">
+                <div className="mx-auto mb-3 flex max-w-3xl flex-wrap items-center gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
                     Answer mode
                   </span>
@@ -1333,10 +1333,7 @@ export default function ChatPage() {
                     </div>
                   ) : null}
                 </div>
-                <form onSubmit={handleSend} className={cn(
-                  "relative",
-                  isViewer ? "mx-auto max-w-4xl" : "mx-auto max-w-4xl"
-                )}>
+                <form onSubmit={handleSend} className="relative mx-auto max-w-3xl">
                   <div
                     className={cn(
                       "relative rounded-2xl border bg-[var(--surface)] shadow-[var(--brand-shadow)] backdrop-blur-xl transition",

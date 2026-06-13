@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Loader2, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AppButton } from '@/src/components/ui/app-button';
+import { BrandLogo } from '@/src/components/brand/BrandLogo';
 
 import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
 import { supabase } from '@/src/lib/supabase';
@@ -97,7 +98,19 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   };
 
   return (
-    <div className="public-shell px-4 py-10 text-[var(--ink)] sm:py-16">
+    <div className="public-shell px-4 py-8 text-[var(--ink)] sm:py-12">
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 pb-6">
+        <Link href="/" className="flex items-center" aria-label="Rekall-IQ home">
+          <BrandLogo variant="full" />
+        </Link>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)]"
+        >
+          <ArrowLeft size={14} />
+          Back to home
+        </Link>
+      </div>
       <div className="public-card mx-auto max-w-2xl p-5 sm:p-8">
         {loading ? (
           <div className="flex items-center gap-3 text-sm text-[var(--ink-muted)]">
@@ -158,19 +171,14 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
               <div className="text-xs text-[var(--ink-muted)]">
                 Expires {new Date(details.expires_at).toLocaleString()}
               </div>
-              <div className="flex gap-3">
-                <AppButton
-                  type="button"
-                  onClick={acceptInvitation}
-                  disabled={!userEmail || accepting}
-                >
-                  {accepting ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-                  Accept invitation
-                </AppButton>
-                <AppButton asChild tone="secondary">
-                  <Link href="/login">Go to login</Link>
-                </AppButton>
-              </div>
+              <AppButton
+                type="button"
+                onClick={acceptInvitation}
+                disabled={!userEmail || accepting}
+              >
+                {accepting ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                Accept invitation
+              </AppButton>
             </div>
           </div>
         ) : (

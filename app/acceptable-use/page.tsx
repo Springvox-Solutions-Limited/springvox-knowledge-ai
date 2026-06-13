@@ -74,7 +74,7 @@ export default function AcceptableUsePage() {
             If you witness or suspect any violations, please report them to:
           </p>
           <div className="mt-2 bg-[var(--surface-2)] border border-[var(--line)] p-3 rounded-xl inline-block">
-            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:support@rekall-iq.com" className="text-[var(--accent-jade)] hover:underline">support@rekall-iq.com</a></p>
+            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:support@springvoxsl.com" className="text-[var(--accent-jade)] hover:underline">support@springvoxsl.com</a></p>
           </div>
         </LegalSection>
       </div>

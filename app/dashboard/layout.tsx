@@ -16,6 +16,7 @@ import {
   PanelLeftOpen,
   Bell,
   BookOpen,
+  UserCircle,
 } from 'lucide-react';
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
 import { ViewerChatSidebarHistory } from '@/src/components/dashboard/ViewerChatSidebarHistory';
@@ -208,9 +209,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <BookOpen size={18} className="shrink-0 text-[var(--ink-muted)]" />
               <span>Help &amp; Guides</span>
             </Link>
-            <div className="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--canvas-soft)] px-3 py-2.5">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-jade)] text-[11px] font-bold text-white shadow-sm">
-                {(workspace?.name || user.email || 'S').slice(0, 1).toUpperCase()}
+            <Link
+              href="/dashboard/account"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--canvas-soft)] px-3 py-2.5 transition hover:border-[var(--accent-jade-100)] hover:bg-[var(--surface-2)]"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--accent-jade)] text-[11px] font-bold text-[#04110e] shadow-sm">
+                {(user.email || 'U').slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-[var(--ink)]" title={user.email || ''}>
@@ -220,7 +225,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {getRoleLabel(profile.role)}
                 </p>
               </div>
-            </div>
+            </Link>
             <button
               onClick={handleLogout}
               className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[10px] font-bold uppercase tracking-widest text-[var(--ink-muted)] transition-all hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-400"
@@ -388,7 +393,11 @@ function getDefaultPathForRole(role: UserProfile['role']) {
 
 function isAllowedPath(role: UserProfile['role'], pathname: string) {
   if (!isWorkspaceAdminRole(role)) {
-    return pathname === '/dashboard/chat' || pathname === '/dashboard/notifications';
+    return (
+      pathname === '/dashboard/chat' ||
+      pathname === '/dashboard/notifications' ||
+      pathname === '/dashboard/account'
+    );
   }
 
   return true;
@@ -399,6 +408,7 @@ function getNavItems(role: UserProfile['role']) {
     return [
       { name: 'Ask Questions', href: '/dashboard/chat', icon: MessageSquare },
       { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+      { name: 'Account', href: '/dashboard/account', icon: UserCircle },
     ];
   }
 

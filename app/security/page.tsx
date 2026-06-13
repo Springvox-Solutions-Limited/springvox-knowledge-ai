@@ -136,7 +136,7 @@ export default function SecurityPage() {
             To report a suspected vulnerability or discuss enterprise security requirements, please email:
           </p>
           <div className="mt-2 bg-[var(--surface-2)] border border-[var(--line)] p-3 rounded-xl inline-block">
-            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:security@rekall-iq.com" className="text-[var(--accent-jade)] hover:underline">security@rekall-iq.com</a></p>
+            <p className="font-semibold text-[var(--ink)]">Email: <a href="mailto:security@springvoxsl.com" className="text-[var(--accent-jade)] hover:underline">security@springvoxsl.com</a></p>
           </div>
         </LegalSection>
       </div>

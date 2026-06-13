@@ -7,8 +7,8 @@ export default function LandingPage() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Rekall-IQ',
-    url: 'https://rekall-iq.com',
-    logo: 'https://rekall-iq.com/brand/logo.png',
+    url: 'https://rekalliq.springvoxsl.com',
+    logo: 'https://rekalliq.springvoxsl.com/brand/rekall-mark.png',
     description: 'Enterprise AI knowledge platform that turns documents into instant answers.',
     sameAs: [
       'https://twitter.com/springvox',
@@ -21,7 +21,7 @@ export default function LandingPage() {
     '@type': 'SoftwareApplication',
     name: 'Rekall-IQ',
     description: 'Turn your company documents into instant AI answers. Secure, source-grounded knowledge for enterprise teams.',
-    url: 'https://rekall-iq.com',
+    url: 'https://rekalliq.springvoxsl.com',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     offers: {
