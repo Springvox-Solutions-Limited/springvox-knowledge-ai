@@ -513,13 +513,28 @@ export const deleteWorkspaceData = inngest.createFunction(
         if (error) throw error;
       }
 
+      // Permanently erase tenant members — auth account + profile (GDPR right-to-erasure).
+      // Platform admins are never deleted.
+      const { data: members } = await supabase
+        .from('profiles')
+        .select('id, role')
+        .eq('workspace_id', workspaceId);
+
+      for (const member of members || []) {
+        if (member.role === 'platform_admin') continue;
+        try {
+          await supabase.auth.admin.deleteUser(member.id);
+        } catch (authDeleteError) {
+          // Best-effort: a missing/already-deleted auth user must not abort the purge.
+          console.warn('Failed to delete auth user during workspace deletion:', member.id, authDeleteError);
+        }
+      }
+
       const { error: profilesError } = await supabase
         .from('profiles')
-        .update({
-          status: 'disabled',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('workspace_id', workspaceId);
+        .delete()
+        .eq('workspace_id', workspaceId)
+        .neq('role', 'platform_admin');
 
       if (profilesError) throw profilesError;
     });

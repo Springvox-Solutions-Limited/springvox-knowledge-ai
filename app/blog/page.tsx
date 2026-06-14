@@ -62,7 +62,7 @@ export default function BlogIndexPage() {
             </div>
           )}
 
-          <div className="mt-16 rounded-3xl border border-[var(--line)] bg-gradient-to-br from-teal-50/80 to-white p-8 sm:p-10 text-center">
+          <div className="mt-16 rounded-3xl border border-[var(--accent-jade-100)] bg-gradient-to-br from-[var(--accent-jade-50)] to-[var(--surface)] p-8 sm:p-10 text-center">
             <h2 className="text-xl font-bold tracking-tight text-[var(--ink)] sm:text-2xl">
               Want to see Rekall-IQ in action?
             </h2>
@@ -72,7 +72,7 @@ export default function BlogIndexPage() {
             </p>
             <Link
               href="/register"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)] transition hover:bg-[var(--accent-jade-hover)]"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[var(--accent-jade)] px-6 py-3 text-sm font-semibold text-[#04110e] shadow-[0_12px_28px_rgba(0,0,0,0.3)] transition hover:bg-[var(--accent-jade-hover)]"
             >
               Get Started Free
               <ArrowRight size={16} />

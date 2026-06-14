@@ -15,6 +15,7 @@ export async function GET(req: Request) {
       supabase
         .from('workspaces')
         .select('id, name, slug, status, plan, subscription_status, subscription_plan, billing_status, trial_started_at, trial_ends_at, payment_required_at, suspended_reason, suspension_reason, deletion_status, deletion_requested_at, deletion_scheduled_for, deleted_at, deletion_reason, created_at, updated_at')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false }),
       supabase
         .from('profiles')

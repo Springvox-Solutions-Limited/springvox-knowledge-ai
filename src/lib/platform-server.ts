@@ -206,6 +206,7 @@ async function loadPlatformBaseData() {
     supabase
       .from('workspaces')
       .select('id, name, slug, status, plan, suspension_reason, suspended_at, suspended_by, plan_updated_at, internal_notes, assistant_name, support_email, industry, website, created_at, updated_at')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false }),
     supabase
       .from('profiles')

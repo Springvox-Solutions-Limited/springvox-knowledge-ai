@@ -9,8 +9,19 @@ type SendEmailInput = {
   html?: string;
 };
 
+const FROM_DISPLAY_NAME = 'Rekall-IQ';
+
 function getEmailFrom() {
-  return process.env.EMAIL_FROM || 'Rekall-IQ <no-reply@example.com>';
+  const raw = (process.env.EMAIL_FROM || '').trim();
+  if (!raw) {
+    return `${FROM_DISPLAY_NAME} <no-reply@rekalliq.springvoxsl.com>`;
+  }
+  // Already includes a display name (e.g. "Rekall-IQ <no-reply@...>") — use as-is.
+  if (raw.includes('<')) {
+    return raw;
+  }
+  // Bare address (e.g. "no-reply@...") — prepend the brand so inboxes show "Rekall-IQ".
+  return `${FROM_DISPLAY_NAME} <${raw}>`;
 }
 
 export async function sendEmail({ to, subject, text, html }: SendEmailInput) {
