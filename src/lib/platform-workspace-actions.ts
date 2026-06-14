@@ -3,6 +3,39 @@ import 'server-only';
 import { createAuditLog } from '@/src/lib/audit-log';
 import { inngest } from '@/src/lib/inngest/client';
 import { getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { sendEmail } from '@/src/lib/email';
+import { buildWorkspaceStatusEmail } from '@/src/lib/email/templates/lifecycle';
+
+const FALLBACK_APP_URL = 'https://rekalliq.springvoxsl.com';
+
+async function notifyWorkspaceAdmin(
+  workspaceId: string,
+  build: (args: { workspaceName: string; appUrl: string }) => { subject: string; text: string; html?: string },
+) {
+  try {
+    const supabase = getSupabaseAdmin();
+    const [{ data: workspaceRow }, { data: admin }] = await Promise.all([
+      supabase.from('workspaces').select('name').eq('id', workspaceId).maybeSingle(),
+      supabase
+        .from('profiles')
+        .select('email')
+        .eq('workspace_id', workspaceId)
+        .in('role', ['tenant_admin', 'admin', 'content_manager'])
+        .eq('status', 'active')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (!admin?.email) return;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || FALLBACK_APP_URL;
+    await sendEmail({
+      to: admin.email,
+      ...build({ workspaceName: workspaceRow?.name || 'your workspace', appUrl }),
+    });
+  } catch (error) {
+    console.warn('Workspace admin notification email failed:', error);
+  }
+}
 
 export async function updatePlatformWorkspaceStatus({
   workspaceId,
@@ -68,6 +101,16 @@ export async function updatePlatformWorkspaceStatus({
     action: `workspace.${action}`,
     metadata: { reason: reason || null },
   });
+
+  if (action === 'suspend' || action === 'activate') {
+    await notifyWorkspaceAdmin(workspaceId, ({ workspaceName, appUrl }) =>
+      buildWorkspaceStatusEmail({
+        workspaceName,
+        status: action === 'suspend' ? 'suspended' : 'active',
+        appUrl,
+      }),
+    );
+  }
 }
 
 export async function scheduleWorkspaceDeletion({

@@ -3,6 +3,8 @@ import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
 import { isWorkspaceAdminRole, USER_STATUSES } from '@/src/lib/workspace';
+import { sendEmail } from '@/src/lib/email';
+import { buildAccountStatusEmail } from '@/src/lib/email/templates/lifecycle';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +89,28 @@ export async function PATCH(req: Request) {
         target_email: targetUser.email,
       },
     });
+
+    // Notify the affected user inline (best-effort; never fail the action on email).
+    if (targetUser.email) {
+      try {
+        const { data: workspaceRow } = await supabase
+          .from('workspaces')
+          .select('name')
+          .eq('id', profile.workspace_id)
+          .maybeSingle();
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+        await sendEmail({
+          to: targetUser.email,
+          ...buildAccountStatusEmail({
+            workspaceName: workspaceRow?.name || 'your workspace',
+            suspended: status !== 'active',
+            appUrl,
+          }),
+        });
+      } catch (statusEmailError) {
+        console.warn('User status updated, but notification email failed:', statusEmailError);
+      }
+    }
 
     return Response.json({ success: true });
   } catch (error) {

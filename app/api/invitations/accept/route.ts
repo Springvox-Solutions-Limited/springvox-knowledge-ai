@@ -1,6 +1,8 @@
 import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUser, getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
+import { sendEmail } from '@/src/lib/email';
+import { buildMemberWelcomeEmail } from '@/src/lib/email/templates/lifecycle';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +79,22 @@ export async function POST(req: Request) {
 
     if (inviteUpdateError) {
       throw inviteUpdateError;
+    }
+
+    // Welcome the new member inline (fast Resend call; never fail acceptance on email).
+    try {
+      const { data: workspaceRow } = await supabase
+        .from('workspaces')
+        .select('name')
+        .eq('id', invitation.workspace_id)
+        .maybeSingle();
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+      await sendEmail({
+        to: user.email!,
+        ...buildMemberWelcomeEmail({ workspaceName: workspaceRow?.name || 'your workspace', appUrl }),
+      });
+    } catch (welcomeError) {
+      console.warn('Invitation accepted, but member welcome email failed:', welcomeError);
     }
 
     return Response.json({ success: true });

@@ -9,6 +9,7 @@ import { sendEmail } from '@/src/lib/email';
 import { buildTrialExpiredEmail } from '@/src/lib/email/templates/trial-expired';
 import { buildTrialReminderEmail } from '@/src/lib/email/templates/trial-reminder';
 import { buildPlatformNotificationEmail } from '@/src/lib/email/templates/platform-notification';
+import { buildWorkspaceDeletedEmail } from '@/src/lib/email/templates/lifecycle';
 import { createAuditLog } from '@/src/lib/audit-log';
 import { deleteWorkspaceVectors } from '@/src/lib/qdrant';
 import { logSystemEvent } from '@/src/lib/system-events';
@@ -448,6 +449,28 @@ export const deleteWorkspaceData = inngest.createFunction(
         severity: force ? 'critical' : 'warning',
         message: 'Workspace deletion started.',
       });
+    });
+
+    // Email the admin before their profile is purged.
+    await step.run('notify-workspace-admin-deleted', async () => {
+      const supabase = getSupabaseAdmin();
+      const [{ data: workspaceRow }, { data: admin }] = await Promise.all([
+        supabase.from('workspaces').select('name').eq('id', workspaceId).maybeSingle(),
+        supabase
+          .from('profiles')
+          .select('email')
+          .eq('workspace_id', workspaceId)
+          .in('role', ['tenant_admin', 'admin', 'content_manager'])
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      if (admin?.email) {
+        await sendEmail({
+          to: admin.email,
+          ...buildWorkspaceDeletedEmail({ workspaceName: workspaceRow?.name || 'your workspace' }),
+        });
+      }
     });
 
     await step.run('delete-qdrant-vectors', () => deleteWorkspaceVectors(workspaceId));
