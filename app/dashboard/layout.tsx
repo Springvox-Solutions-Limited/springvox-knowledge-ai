@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   if (authLoading || !user || !profile) {
-    return <div className="flex h-screen w-screen items-center justify-center bg-[var(--surface)] text-sm font-medium text-[var(--ink-muted)]">Loading workspace...</div>;
+    return <div className="flex h-screen w-full items-center justify-center bg-[var(--surface)] text-sm font-medium text-[var(--ink-muted)]">Loading workspace...</div>;
   }
 
   const workspaceStatusMessage = workspace ? getWorkspaceStatusMessage(workspace.status) : null;
@@ -340,7 +340,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-[var(--canvas)]">
+        <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[var(--canvas)]">
           <div className="mx-auto w-full max-w-7xl min-w-0 p-4 sm:p-6 md:p-10">
               {workspaceBlocked ? (
                 <div className="admin-page">

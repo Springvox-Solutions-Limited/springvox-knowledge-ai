@@ -225,7 +225,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           <div className="mx-auto w-full max-w-7xl min-w-0 p-4 sm:p-6 md:p-10">{children}</div>
         </div>
       </main>

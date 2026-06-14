@@ -132,10 +132,11 @@ export default function AccountPage() {
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-jade)] text-lg font-bold text-[#04110e]">
                 {initial}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-lg font-semibold text-[var(--ink)]">{displayName}</p>
-                <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-[var(--ink-muted)]">
-                  <Mail size={13} /> {info.email}
+                <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm text-[var(--ink-muted)]">
+                  <Mail size={13} className="shrink-0" />
+                  <span className="truncate">{info.email}</span>
                 </p>
               </div>
             </div>

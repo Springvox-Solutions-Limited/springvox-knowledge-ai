@@ -1097,7 +1097,7 @@ export default function ChatPage() {
                     >
                       <div
                         className={cn(
-                      "space-y-3",
+                      "min-w-0 space-y-3",
                       message.role === "user"
                             ? "ml-auto max-w-[92%] sm:max-w-[70%]"
                             : "max-w-full",
@@ -1313,12 +1313,12 @@ export default function ChatPage() {
                     </button>
                   ))}
                   {collections.length > 0 ? (
-                    <div className="ml-auto flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
+                    <div className="flex w-full min-w-0 items-center gap-2 sm:ml-auto sm:w-auto">
+                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
                         Scope
                       </span>
                       <Select value={scopeCollectionId} onValueChange={setScopeCollectionId} disabled={loading}>
-                        <SelectTrigger className="h-8 w-44 rounded-full border-[var(--line)] bg-[var(--surface)] text-xs shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)]">
+                        <SelectTrigger className="h-8 w-full min-w-0 rounded-full border-[var(--line)] bg-[var(--surface)] text-xs shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)] sm:w-44">
                           <SelectValue placeholder="All documents" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-[var(--line)]">
