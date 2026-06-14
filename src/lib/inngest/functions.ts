@@ -8,8 +8,6 @@ import { parseDocument } from '@/src/lib/document-parsers';
 import { sendEmail } from '@/src/lib/email';
 import { buildTrialExpiredEmail } from '@/src/lib/email/templates/trial-expired';
 import { buildTrialReminderEmail } from '@/src/lib/email/templates/trial-reminder';
-import { buildTrialStartedEmail } from '@/src/lib/email/templates/trial-started';
-import { buildWelcomeEmail } from '@/src/lib/email/templates/welcome';
 import { buildPlatformNotificationEmail } from '@/src/lib/email/templates/platform-notification';
 import { createAuditLog } from '@/src/lib/audit-log';
 import { deleteWorkspaceVectors } from '@/src/lib/qdrant';
@@ -615,19 +613,11 @@ async function loadWorkspaceTrialRecipient(workspaceId: string) {
 export const sendTrialLifecycleEmails = inngest.createFunction(
   { id: 'send-trial-lifecycle-emails', retries: 2, triggers: [{ event: 'workspace/trial.started' }] },
   async ({ event, step }) => {
-    const { workspaceId, workspaceName, adminEmail, adminName, trialEndsAt } = event.data;
-    const appUrl = getAppUrl();
+    const { workspaceId, trialEndsAt } = event.data;
 
-    await step.run('send-welcome-email', async () => {
-      const email = buildWelcomeEmail({ name: adminName, workspaceName, appUrl });
-      await sendEmail({ to: adminEmail, ...email });
-    });
-
-    await step.run('send-trial-started-email', async () => {
-      const email = buildTrialStartedEmail({ workspaceName, trialEndsAt, appUrl });
-      await sendEmail({ to: adminEmail, ...email });
-    });
-
+    // Welcome + trial-started emails are sent inline at workspace creation
+    // (app/api/workspaces/create). This function now only schedules the
+    // time-delayed reminders, which genuinely need a background scheduler.
     const threeDayReminderAt = daysBefore(trialEndsAt, 3);
     const oneDayReminderAt = daysBefore(trialEndsAt, 1);
 

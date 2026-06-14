@@ -131,35 +131,75 @@ const principles = [
     title: "Improves with use",
     copy: "Built-in feedback and unanswered-question tracking show you precisely where your documentation needs work.",
   },
+  {
+    title: "Organised by department",
+    copy: "Group documents into collections — HR, Finance, Legal, Operations — and let staff scope a question to one area for sharper, less ambiguous answers.",
+  },
+  {
+    title: "See the original, instantly",
+    copy: "Open the source file in-app from any answer — PDF, Word, Excel, and more — to verify it yourself without downloads or leaving the chat.",
+  },
+  {
+    title: "Answers that fit the moment",
+    copy: "Switch between Summary, Detailed, Executive, and Technical so the same source reads right for a quick check or a deep dive.",
+  },
 ];
 
 const pricing = [
   {
-    name: "Free",
-    price: "$0/month",
-    copy: "For teams validating document AI with a controlled workspace. No credit card required.",
-    features: ["Workspace setup", "Document uploads", "Chat with sources", "Admin dashboard"],
+    name: "Essential",
+    price: "$0",
+    period: "free during beta",
+    copy: "For teams validating secure document AI in a controlled workspace. No credit card required.",
+    capacity: ["Up to 20 documents", "Up to 25 users", "1,000 questions / month"],
+    features: [
+      "Grounded chat with sources",
+      "Collections & document scoping",
+      "In-app file preview",
+      "Answer modes (Summary → Technical)",
+      "Admin dashboard & basic analytics",
+    ],
     highlighted: false,
-    cta: "Start Free",
+    badge: null,
+    cta: "Start free",
     ctaHref: "/register",
   },
   {
     name: "Business",
-    price: "$299/month",
-    copy: "For organisations rolling out Rekall-IQ across departments.",
-    features: ["Everything in Free", "Advanced parsing", "Analytics", "Users and invitations", "Knowledge gaps"],
+    price: "$299",
+    period: "per month",
+    copy: "For organisations rolling Rekall-IQ out across departments.",
+    capacity: ["Up to 200 documents", "Up to 250 users", "15,000 questions / month"],
+    features: [
+      "Everything in Essential",
+      "Advanced parsing (LlamaParse)",
+      "Full analytics & usage metering",
+      "Knowledge-gap tracking",
+      "Answer-quality evaluations",
+      "Roles, users & invitations",
+    ],
     highlighted: true,
-    cta: "Start Free Trial",
+    badge: "Most popular",
+    cta: "Start free trial",
     ctaHref: "/register",
   },
   {
     name: "Enterprise",
     price: "Custom",
-    copy: "For regulated teams needing rollout guidance and advanced controls.",
-    features: ["Platform admin controls", "Privacy reviews", "Custom workflows", "Priority support"],
+    period: "tailored to your org",
+    copy: "For regulated teams needing custom capacity, rollout guidance, and advanced controls.",
+    capacity: ["Custom document & user limits", "Custom monthly volume", "Dedicated onboarding"],
+    features: [
+      "Everything in Business",
+      "Configurable usage limits",
+      "Audit logs & security review",
+      "Priority support",
+      "Roadmap: SSO & source connectors",
+    ],
     highlighted: false,
+    badge: null,
     cta: "Book a 15-min call",
-    ctaHref: "/get-started",
+    ctaHref: "mailto:hello@springvoxsl.com",
   },
 ];
 
@@ -595,7 +635,7 @@ function HeroSection() {
               Start Free
               <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
             </Link>
-            <Link href="/get-started" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/12 sm:w-auto">
+            <Link href="/register" className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/12 sm:w-auto">
               Book a 15-min call
               <ChevronRight size={16} />
             </Link>
@@ -842,14 +882,29 @@ function TestimonialsPricingSection() {
         </div>
         <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {pricing.map((plan) => (
-            <motion.div key={plan.name} {...reveal} className={cn("rounded-3xl border p-6 transition hover:-translate-y-1", plan.highlighted ? "border-[var(--accent-jade-100)] bg-slate-950 text-white shadow-[0_30px_90px_rgba(20,184,166,0.16)]" : "border-[var(--line)] bg-[var(--surface)]")}>
+            <motion.div key={plan.name} {...reveal} className={cn("relative flex flex-col rounded-3xl border p-6 transition hover:-translate-y-1", plan.highlighted ? "border-[var(--accent-jade-100)] bg-slate-950 text-white shadow-[0_30px_90px_rgba(20,184,166,0.16)]" : "border-[var(--line)] bg-[var(--surface)]")}>
+              {plan.badge ? (
+                <span className="absolute -top-3 right-6 rounded-full bg-teal-300 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink)]">
+                  {plan.badge}
+                </span>
+              ) : null}
               <p className={cn("text-sm font-semibold", plan.highlighted ? "text-teal-200" : "text-[var(--accent-jade)]")}>{plan.name}</p>
-              <h3 className="mt-4 text-3xl font-semibold tracking-tight">{plan.price}</h3>
+              <div className="mt-4 flex items-baseline gap-2">
+                <h3 className="text-3xl font-semibold tracking-tight">{plan.price}</h3>
+                <span className={cn("text-xs", plan.highlighted ? "text-slate-400" : "text-[var(--ink-muted)]")}>{plan.period}</span>
+              </div>
               <p className={cn("mt-3 text-sm leading-6", plan.highlighted ? "text-slate-300" : "text-[var(--ink-soft)]")}>{plan.copy}</p>
-              <div className="mt-6 space-y-3">
+
+              <div className={cn("mt-5 space-y-1.5 rounded-2xl border p-4", plan.highlighted ? "border-white/10 bg-white/5" : "border-[var(--line)] bg-[var(--surface-2)]")}>
+                {plan.capacity.map((line) => (
+                  <p key={line} className={cn("text-xs font-medium", plan.highlighted ? "text-slate-200" : "text-[var(--ink-soft)]")}>{line}</p>
+                ))}
+              </div>
+
+              <div className="mt-5 space-y-3">
                 {plan.features.map((feature) => (
                   <div key={feature} className="flex items-center gap-3 text-sm">
-                    <Check size={16} className={plan.highlighted ? "text-teal-200" : "text-emerald-300"} />
+                    <Check size={16} className={cn("shrink-0", plan.highlighted ? "text-teal-200" : "text-emerald-300")} />
                     <span>{feature}</span>
                   </div>
                 ))}
@@ -876,19 +931,22 @@ function TestimonialsPricingSection() {
               <thead>
                 <tr className="border-b border-[var(--line)] bg-[var(--surface-2)]">
                   <th className="p-4 font-semibold text-[var(--ink-soft)] sm:p-5">Feature</th>
-                  <th className="p-4 text-center font-semibold text-[var(--ink-soft)] sm:p-5">Free</th>
+                  <th className="p-4 text-center font-semibold text-[var(--ink-soft)] sm:p-5">Essential</th>
                   <th className="p-4 text-center font-semibold text-[var(--accent-jade)] sm:p-5">Business</th>
                   <th className="p-4 text-center font-semibold text-[var(--ink-soft)] sm:p-5">Enterprise</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--line)]">
                 {[
-                  ["Workspace setup", "✓", "✓", "✓"],
-                  ["Document uploads", "✓", "✓", "✓"],
-                  ["Chat with sources", "✓", "✓", "✓"],
-                  ["Advanced parsing", "—", "✓", "✓"],
-                  ["Analytics & knowledge gaps", "—", "✓", "✓"],
-                  ["Platform admin controls", "—", "—", "✓"],
+                  ["Grounded chat with sources", "✓", "✓", "✓"],
+                  ["Collections & document scoping", "✓", "✓", "✓"],
+                  ["In-app file preview", "✓", "✓", "✓"],
+                  ["Advanced parsing (LlamaParse)", "—", "✓", "✓"],
+                  ["Analytics & usage metering", "—", "✓", "✓"],
+                  ["Knowledge-gap tracking", "—", "✓", "✓"],
+                  ["Answer-quality evaluations", "—", "✓", "✓"],
+                  ["Custom limits & audit review", "—", "—", "✓"],
+                  ["Priority support", "—", "—", "✓"],
                 ].map(([feature, free, business, enterprise]) => (
                   <tr key={feature} className="transition hover:bg-[var(--surface-2)]">
                     <td className="p-4 font-medium text-[var(--ink-soft)] sm:p-5">{feature}</td>
@@ -919,7 +977,7 @@ function FinalCTA() {
             Start Free
             <ArrowRight size={16} />
           </Link>
-          <Link href="/get-started" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/12">
+          <Link href="/register" className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/8 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/12">
             Book a 15-min call
           </Link>
         </div>

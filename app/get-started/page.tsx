@@ -1,16 +1,8 @@
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-import { SafePageContainer } from "@/src/components/layout/SafePageContainer";
-import WorkspaceOnboardingForm from "@/src/components/WorkspaceOnboardingForm";
-
+// `/get-started` is consolidated into the redesigned `/register` onboarding so
+// there is a single, consistent sign-up experience. Existing links/bookmarks
+// keep working via this redirect.
 export default function GetStartedPage() {
-  return (
-    <div className="public-page-wrap">
-      <SafePageContainer size="wide">
-        <Suspense fallback={<div className="public-card w-full max-w-3xl p-8 text-center text-sm text-[var(--ink-muted)]">Loading workspace setup...</div>}>
-          <WorkspaceOnboardingForm />
-        </Suspense>
-      </SafePageContainer>
-    </div>
-  );
+  redirect("/register");
 }

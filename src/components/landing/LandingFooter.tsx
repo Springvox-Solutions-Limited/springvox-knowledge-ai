@@ -11,7 +11,7 @@ const footerColumns = [
       { label: 'How It Works', href: '/#how-it-works' },
       { label: 'Use Cases', href: '/#use-cases' },
       { label: 'Blog', href: '/blog' },
-      { label: 'Get Started', href: '/get-started' },
+      { label: 'Get Started', href: '/register' },
     ],
   },
   {

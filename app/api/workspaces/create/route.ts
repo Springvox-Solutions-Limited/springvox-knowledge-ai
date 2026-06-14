@@ -2,6 +2,9 @@ import { getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { inngest } from '@/src/lib/inngest/client';
 import { isValidEmail, isValidUrl, validateWorkspaceSlug } from '@/src/lib/onboarding';
 import { assertRateLimit, BETA_RATE_LIMITS, getClientIp, maybeRateLimitResponse } from '@/src/lib/rate-limit';
+import { sendEmail } from '@/src/lib/email';
+import { buildWelcomeEmail } from '@/src/lib/email/templates/welcome';
+import { buildTrialStartedEmail } from '@/src/lib/email/templates/trial-started';
 
 export const dynamic = 'force-dynamic';
 
@@ -128,6 +131,19 @@ export async function POST(req: Request) {
       throw profileError;
     }
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Send the immediate welcome + trial-started emails INLINE (fast Resend calls).
+    // They must not depend on Inngest being up, and a mail failure must not fail signup.
+    try {
+      await sendEmail({ to: email, ...buildWelcomeEmail({ name: fullName, workspaceName: companyName, appUrl }) });
+      await sendEmail({ to: email, ...buildTrialStartedEmail({ workspaceName: companyName, trialEndsAt, appUrl }) });
+    } catch (emailError) {
+      console.warn('Workspace created, but welcome/trial email failed to send:', emailError);
+    }
+
+    // Inngest handles only the SCHEDULED reminders (3-day / 1-day before trial end).
     try {
       await inngest.send({
         name: 'workspace/trial.started',
@@ -137,11 +153,11 @@ export async function POST(req: Request) {
           adminUserId: createdUserId,
           adminEmail: email,
           adminName: fullName,
-          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          trialEndsAt,
         },
       });
     } catch (emailEventError) {
-      console.warn('Workspace created, but trial email event could not be queued:', emailEventError);
+      console.warn('Workspace created, but trial reminder schedule could not be queued:', emailEventError);
     }
 
     return Response.json({

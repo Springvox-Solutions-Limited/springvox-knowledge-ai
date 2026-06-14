@@ -157,6 +157,22 @@ export default function DocumentsPage() {
       return;
     }
 
+    // On a full load, fail any documents stuck in "processing" (e.g. the worker
+    // never ran) so they don't hang forever and can be re-uploaded. Best-effort.
+    if (!silent) {
+      try {
+        const token = await getAccessToken();
+        if (token) {
+          await fetch("/api/documents/reconcile", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+      } catch {
+        // Non-blocking: listing still proceeds if reconcile fails.
+      }
+    }
+
     const { data, error } = await supabase
       .from("documents")
       .select("*")

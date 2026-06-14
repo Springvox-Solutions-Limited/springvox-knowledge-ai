@@ -42,10 +42,48 @@ function SeverityBadge({ severity }: { severity: string }) {
   return <span className={className}>{severity}</span>;
 }
 
+function HealthChip({
+  label,
+  ok,
+  detail,
+  warnOnly = false,
+}: {
+  label: string;
+  ok: boolean;
+  detail: string;
+  warnOnly?: boolean;
+}) {
+  const tone = ok
+    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+    : warnOnly
+      ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+      : "border-red-500/30 bg-red-500/10 text-red-300";
+  return (
+    <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-3.5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ink-muted)]">{label}</p>
+      <span className={cn("mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold", tone)}>
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+        {ok ? "OK" : warnOnly ? "Check" : "Action needed"}
+      </span>
+      <p className="mt-2 truncate text-xs text-[var(--ink-soft)]" title={detail}>{detail}</p>
+    </div>
+  );
+}
+
+type PlatformHealth = {
+  resendConfigured: boolean;
+  emailFrom: string | null;
+  emailFromIsDefault: boolean;
+  inngestConfigured: boolean;
+  appUrlConfigured: boolean;
+  stuckDocuments: number;
+};
+
 export default function PlatformDiagnosticsPage() {
   const [events, setEvents] = useState<DiagnosticEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [health, setHealth] = useState<PlatformHealth | null>(null);
 
   useEffect(() => {
     fetchPlatformJson<{ events: DiagnosticEvent[] }>("/api/platform/diagnostics")
@@ -54,6 +92,10 @@ export default function PlatformDiagnosticsPage() {
         setError(loadError instanceof Error ? loadError.message : "Failed to load diagnostics"),
       )
       .finally(() => setLoading(false));
+
+    fetchPlatformJson<{ health: PlatformHealth }>("/api/platform/health")
+      .then((data) => setHealth(data.health))
+      .catch(() => setHealth(null));
   }, []);
 
   return (
@@ -67,6 +109,37 @@ export default function PlatformDiagnosticsPage() {
         <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {error}
         </p>
+      )}
+
+      {health && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <HealthChip
+            label="Email provider"
+            ok={health.resendConfigured}
+            detail={health.resendConfigured ? "Resend key set" : "RESEND_API_KEY missing"}
+          />
+          <HealthChip
+            label="Email sender"
+            ok={!health.emailFromIsDefault}
+            detail={health.emailFromIsDefault ? "Using placeholder" : health.emailFrom || "Set"}
+          />
+          <HealthChip
+            label="Inngest"
+            ok={health.inngestConfigured}
+            detail={health.inngestConfigured ? "Keys set" : "Not connected (dev only?)"}
+            warnOnly
+          />
+          <HealthChip
+            label="App URL"
+            ok={health.appUrlConfigured}
+            detail={health.appUrlConfigured ? "Configured" : "NEXT_PUBLIC_APP_URL missing"}
+          />
+          <HealthChip
+            label="Stuck documents"
+            ok={health.stuckDocuments === 0}
+            detail={health.stuckDocuments === 0 ? "None" : `${health.stuckDocuments} stuck`}
+          />
+        </div>
       )}
 
       {loading ? (

@@ -99,25 +99,95 @@ export default function AdminGuidePage() {
         </GuideCallout>
       </GuideSection>
 
-      <GuideSection id="quality" eyebrow="Keep it accurate" title="Analytics, gaps & evaluations">
-        <p>Three tools keep answer quality high over time:</p>
-        <ul className="list-disc space-y-1 pl-5">
-          <li>
-            <strong>Analytics</strong> — question volume, activity over time, and adoption. See whether the knowledge
-            base is being used and which areas get the most questions.
-          </li>
-          <li>
-            <strong>Unanswered Questions</strong> — when the assistant can&apos;t answer, or users mark answers
-            not-helpful, those surface here. Each gap usually means a document is missing, outdated, or unclear.
-          </li>
-          <li>
-            <strong>Evaluations</strong> — create a set of “golden” questions with the keywords/sources you expect, then
-            run it to confirm retrieval still returns the right material.
-          </li>
-        </ul>
-        <GuideCallout tone="tip" title="A simple weekly rhythm">
-          Review Unanswered Questions weekly and close gaps, and run an Evaluation set after major uploads to catch
-          regressions before your team does.
+      <GuideSection id="analytics" eyebrow="Measure" title="Analytics">
+        <p>
+          <strong>Analytics</strong> shows how your workspace is using Rekall-IQ — question volume, activity over time,
+          answer coverage, and engagement. Use it to see whether the knowledge base is being adopted and which areas
+          attract the most questions, so you know where to invest.
+        </p>
+      </GuideSection>
+
+      <GuideSection id="knowledge-gaps" eyebrow="Close the gaps" title="Unanswered questions (knowledge gaps)">
+        <p>
+          A <strong>knowledge gap</strong> is a question your team asked that Rekall-IQ <em>couldn&apos;t</em> answer
+          from your documents — or that a user marked “not helpful”. Instead of vanishing, each one is recorded here
+          with a count of how many times it&apos;s been asked.
+        </p>
+        <GuideFigure caption="Gaps are ranked by how often they're asked — tackle the top ones first.">
+          <div className="space-y-2">
+            {[
+              ['12', 'How do I reset my VPN token?'],
+              ['7', 'What is the 2026 travel per-diem?'],
+              ['4', 'Where is the incident-response runbook?'],
+            ].map(([count, q]) => (
+              <div key={q} className="flex items-center gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-2)] p-3">
+                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500/10 px-1.5 text-[11px] font-bold text-red-300">{count}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-[var(--ink-soft)]">{q}</span>
+                <span className="shrink-0 rounded-full border border-[var(--line)] px-2 py-0.5 text-[10px] text-[var(--ink-muted)]">open</span>
+              </div>
+            ))}
+          </div>
+        </GuideFigure>
+        <p>
+          <strong>Why it matters:</strong> a gap is a precise, demand-driven signal of what your documentation is
+          missing. It turns “we should improve the wiki someday” into a ranked to-do list based on what people actually
+          need right now.
+        </p>
+        <p><strong>How to use it</strong></p>
+        <GuideSteps>
+          <GuideStep title="Review the list regularly">Sorted by frequency, so the most-asked gaps sit at the top.</GuideStep>
+          <GuideStep title="Find the cause">Usually a document is missing, out of date, or worded unclearly.</GuideStep>
+          <GuideStep title="Upload or update the document">Add the missing source — or fix the existing one — so the answer now exists.</GuideStep>
+          <GuideStep title="Mark it resolved & re-ask">Close the gap, then ask the question again to confirm it answers with sources.</GuideStep>
+        </GuideSteps>
+        <GuideCallout tone="tip" title="This is your content roadmap">
+          Over a few weeks the gap list tells you exactly which policies and procedures to write next — driven by real
+          staff demand, not guesswork.
+        </GuideCallout>
+      </GuideSection>
+
+      <GuideSection id="evaluations" eyebrow="Protect quality" title="Evaluations">
+        <p>
+          <strong>Evaluations</strong> let you lock in answer quality so it doesn&apos;t quietly regress when documents
+          change. You create a set of <strong>golden questions</strong> — ones you know the right answer to — and tell
+          Rekall-IQ what a good answer should contain (expected keywords and/or which document it should come from).
+          Running the set checks that retrieval still surfaces the right material.
+        </p>
+        <GuideFigure caption="An evaluation set runs your golden questions and reports how many passed.">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-lg border border-[var(--line)] bg-[var(--surface-2)] p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[var(--ink)]">HR policy checks</p>
+                <p className="text-xs text-[var(--ink-muted)]">8 golden questions</p>
+              </div>
+              <span className="shrink-0 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">7 / 8 passed</span>
+            </div>
+            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-2)] p-3 text-xs text-[var(--ink-soft)]">
+              “How many days of PTO do I get?” → expected keywords <em>25 days, carryover</em> → <span className="font-semibold text-emerald-300">found in Employee-Handbook.pdf ✓</span>
+            </div>
+          </div>
+        </GuideFigure>
+        <p>
+          <strong>Why it matters:</strong> every upload, deletion, or re-index can shift what the AI retrieves.
+          Evaluations are a repeatable “did we break anything?” check — like automated tests for your knowledge base.
+        </p>
+        <p><strong>How to use it</strong></p>
+        <GuideSteps>
+          <GuideStep title="Create an evaluation set">Group related golden questions, e.g. “HR policy checks”.</GuideStep>
+          <GuideStep title="Add golden questions">For each, list the keywords you expect in a correct answer and/or the source document it should cite.</GuideStep>
+          <GuideStep title="Run the set">Rekall-IQ asks each question and scores whether the expected material was retrieved.</GuideStep>
+          <GuideStep title="Re-run after big changes">After major uploads or clean-ups, run it again to catch regressions before your team does.</GuideStep>
+        </GuideSteps>
+        <GuideCallout tone="note" title="Deterministic by design">
+          Evaluations check retrieval against your stated expectations — they don&apos;t subjectively “grade” the AI — so
+          results stay consistent and comparable from one run to the next.
+        </GuideCallout>
+      </GuideSection>
+
+      <GuideSection id="rhythm" eyebrow="Habit" title="A simple weekly rhythm">
+        <GuideCallout tone="tip" title="15 minutes a week keeps answers sharp">
+          Review <strong>Unanswered questions</strong> and close the top gaps, then run your <strong>Evaluation</strong>
+          sets after any major document change. That loop is what makes Rekall-IQ measurably better over time.
         </GuideCallout>
       </GuideSection>
 

@@ -50,10 +50,23 @@ export async function getTenantNotifications({
   const now = new Date().toISOString();
   const safeType = type && NOTIFICATION_TYPES.includes(type as NotificationType) ? type : null;
 
+  // Scope global broadcasts (workspace_id IS NULL) to those created on/after this
+  // workspace existed, so a brand-new workspace doesn't inherit notifications that
+  // were broadcast before it was created. Workspace-targeted notices always show.
+  let workspaceSince = '1970-01-01T00:00:00.000Z';
+  if (profile.workspace_id) {
+    const { data: workspaceRow } = await supabase
+      .from('workspaces')
+      .select('created_at')
+      .eq('id', profile.workspace_id)
+      .maybeSingle();
+    if (workspaceRow?.created_at) workspaceSince = workspaceRow.created_at as string;
+  }
+
   let query = supabase
     .from('platform_notifications')
     .select('id, type, title, message, channel, created_at')
-    .or(`workspace_id.is.null,workspace_id.eq.${profile.workspace_id}`)
+    .or(`workspace_id.eq.${profile.workspace_id},and(workspace_id.is.null,created_at.gte.${workspaceSince})`)
     .in('channel', ['in_app', 'both'])
     .eq('status', 'sent')
     .or(`scheduled_for.is.null,scheduled_for.lte.${now}`)

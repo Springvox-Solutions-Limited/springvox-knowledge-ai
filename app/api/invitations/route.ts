@@ -1,7 +1,9 @@
 import { getRequestErrorStatus } from '@/src/lib/api-errors';
 import { getAuthenticatedUserWithProfile, getSupabaseAdmin } from '@/src/lib/supabase-server';
 import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
-import { ASSIGNABLE_ROLES, isWorkspaceAdminRole } from '@/src/lib/workspace';
+import { ASSIGNABLE_ROLES, getRoleLabel, isWorkspaceAdminRole, type AnyAppRole } from '@/src/lib/workspace';
+import { sendEmail } from '@/src/lib/email';
+import { buildInvitationEmail } from '@/src/lib/email/templates/invitation';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,10 +91,32 @@ export async function POST(req: Request) {
       throw error || new Error('Failed to create invitation');
     }
 
+    const inviteUrl = buildInviteUrl(data.token, req);
+
+    // Email the invite link inline (fast Resend call). A mail failure must not
+    // fail the invite — the admin can still copy the link from the UI.
+    try {
+      const { data: workspaceRow } = await supabase
+        .from('workspaces')
+        .select('name')
+        .eq('id', profile.workspace_id)
+        .maybeSingle();
+      await sendEmail({
+        to: email,
+        ...buildInvitationEmail({
+          workspaceName: workspaceRow?.name || 'your workspace',
+          roleLabel: getRoleLabel(role as AnyAppRole),
+          inviteUrl,
+        }),
+      });
+    } catch (inviteEmailError) {
+      console.warn('Invitation created, but the invite email failed to send:', inviteEmailError);
+    }
+
     return Response.json({
       invitation: {
         ...data,
-        invite_url: buildInviteUrl(data.token, req),
+        invite_url: inviteUrl,
       },
     });
   } catch (error) {

@@ -109,6 +109,15 @@ export default function PlatformNotificationsPage() {
     }
   };
 
+  const deleteNotification = async (id: string) => {
+    try {
+      await fetchPlatformJson(`/api/platform/notifications/${id}`, { method: "DELETE" });
+      await load();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete notification");
+    }
+  };
+
   return (
     <div className="admin-page">
       <PlatformPageHeader title="Notifications" subtitle="Send workspace or global notices through in-app and email channels." />
@@ -159,7 +168,14 @@ export default function PlatformNotificationsPage() {
                   <AppTableCell className="text-sm text-[var(--ink-soft)]">{item.channel}</AppTableCell>
                   <AppTableCell className="text-sm text-[var(--ink-soft)]">{item.status}</AppTableCell>
                   <AppTableCell className="text-sm text-[var(--ink-soft)]">{new Date(item.created_at).toLocaleDateString()}</AppTableCell>
-                  <AppTableCell>{item.status === "queued" ? <AppButton tone="destructive" className="h-8 px-3 text-xs" onClick={() => cancelNotification(item.id)}>Cancel</AppButton> : <span className="text-xs text-[var(--ink-muted)]">No action</span>}</AppTableCell>
+                  <AppTableCell>
+                    <div className="flex justify-end gap-2">
+                      {item.status === "queued" ? (
+                        <AppButton tone="secondary" className="h-8 px-3 text-xs" onClick={() => cancelNotification(item.id)}>Cancel</AppButton>
+                      ) : null}
+                      <AppButton tone="destructive" className="h-8 px-3 text-xs" onClick={() => deleteNotification(item.id)}>Delete</AppButton>
+                    </div>
+                  </AppTableCell>
                 </AppTableRow>
               ))}
             </AppTableBody>
