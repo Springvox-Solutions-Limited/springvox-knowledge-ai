@@ -1016,8 +1016,8 @@ export default function ChatPage() {
             <div className={cn(
               "relative isolate flex min-w-0 flex-col overflow-hidden",
               isViewer
-                ? "mx-auto h-[calc(100dvh-155px)] w-full"
-                : "mx-auto h-[calc(100dvh-165px)] w-full sm:h-[calc(100dvh-170px)]"
+                ? "mx-auto h-[calc(100dvh-112px)] w-full"
+                : "mx-auto h-[calc(100dvh-150px)] w-full sm:h-[calc(100dvh-160px)]"
             )}>
               <div
                 ref={scrollRef}
@@ -1333,10 +1333,8 @@ export default function ChatPage() {
                 <form onSubmit={handleSend} className="relative mx-auto max-w-3xl">
                   <div
                     className={cn(
-                      "relative rounded-2xl border bg-[var(--surface)] shadow-[var(--brand-shadow)] backdrop-blur-xl transition",
-                      inputFocused
-                        ? "border-[var(--accent-jade)] ring-4 ring-[var(--accent-jade-100)]"
-                        : isRecording
+                      "flex items-end gap-1.5 rounded-3xl border bg-[var(--surface)] px-2 py-1.5 shadow-[var(--brand-shadow)] transition",
+                      inputFocused || isRecording
                         ? "border-[var(--accent-jade)] ring-4 ring-[var(--accent-jade-100)]"
                         : "border-[var(--line)]",
                     )}
@@ -1348,29 +1346,20 @@ export default function ChatPage() {
                       aria-label={isRecording ? "Stop recording speech" : "Start recording speech"}
                       title={isRecording ? "Stop recording speech" : "Start recording speech"}
                       className={cn(
-                        "absolute left-3.5 bottom-2.5 z-10 rounded-full p-2.5 outline-none transition active:scale-95",
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-full outline-none transition active:scale-95",
                         isRecording
-                          ? "bg-teal-700 text-white hover:bg-teal-800 focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)]"
-                          : "bg-[var(--surface-2)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)] focus-visible:ring-2 focus-visible:ring-slate-200",
-                        !speechSupported && "opacity-50 cursor-not-allowed hover:bg-[var(--surface-2)] hover:text-[var(--ink-muted)]"
+                          ? "bg-[var(--accent-jade)] text-[#04110e]"
+                          : "text-[var(--ink-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--ink-soft)] focus-visible:ring-2 focus-visible:ring-[var(--accent-jade-100)]",
+                        !speechSupported && "cursor-not-allowed opacity-50 hover:bg-transparent",
                       )}
                     >
-                      {isRecording ? <MicOff size={16} className="animate-pulse" /> : <Mic size={16} />}
+                      {isRecording ? <MicOff size={18} className="animate-pulse" /> : <Mic size={18} />}
                     </button>
                     <Textarea
                       ref={textareaRef}
                       rows={1}
-                      className={cn(
-                        "max-h-48 w-full resize-none border-0 bg-transparent text-[var(--ink)] shadow-none outline-none placeholder:text-[var(--ink-muted)] focus-visible:ring-0",
-                        isViewer
-                          ? "min-h-[52px] py-3.5 pl-12 pr-4 text-[15px] leading-7 sm:pr-28"
-                          : "min-h-[52px] py-3.5 pl-12 pr-4 text-sm leading-7 sm:pl-14 sm:pr-28"
-                      )}
-                      placeholder={
-                        isRecording
-                          ? "Listening…"
-                          : "Ask a question…"
-                      }
+                      className="max-h-40 w-full flex-1 resize-none border-0 bg-transparent py-2.5 text-base leading-6 text-[var(--ink)] shadow-none outline-none placeholder:text-[var(--ink-muted)] focus-visible:ring-0"
+                      placeholder={isRecording ? "Listening…" : "Ask a question…"}
                       aria-label="Ask a question from approved documents"
                       value={input}
                       onChange={(event) => {
@@ -1388,27 +1377,25 @@ export default function ChatPage() {
                       disabled={loading}
                       style={{ overflow: "hidden" }}
                     />
-                    <div className="flex items-center justify-end gap-2 border-t border-[var(--line)] px-4 py-3 sm:absolute sm:bottom-3 sm:right-3 sm:border-t-0 sm:bg-transparent sm:p-0">
-                      {loading && (
-                        <button
-                          aria-label="Stop generating answer"
-                          type="button"
-                          onClick={handleStopGenerating}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-2.5 py-2 text-[11px] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] sm:px-3"
-                        >
-                          <Square size={11} className="fill-current" />
-                          <span className="hidden sm:inline">Stop</span>
-                        </button>
-                      )}
+                    {loading ? (
+                      <button
+                        aria-label="Stop generating answer"
+                        type="button"
+                        onClick={handleStopGenerating}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--ink-muted)] transition hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+                      >
+                        <Square size={15} className="fill-current" />
+                      </button>
+                    ) : (
                       <button
                         aria-label="Send message"
                         type="submit"
-                        disabled={loading || !input.trim()}
-                        className="rounded-full bg-[var(--accent-jade)] p-2.5 text-[#04110e] shadow-[0_4px_12px_rgba(0,0,0,0.4)] transition hover:bg-[var(--accent-jade-hover)] focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)] active:scale-95 disabled:bg-[var(--surface-2)] disabled:text-[var(--ink-muted)] disabled:shadow-none"
+                        disabled={!input.trim()}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--accent-jade)] text-[#04110e] transition hover:bg-[var(--accent-jade-hover)] focus-visible:ring-4 focus-visible:ring-[var(--accent-jade-100)] active:scale-95 disabled:bg-[var(--surface-2)] disabled:text-[var(--ink-muted)]"
                       >
-                        <Send size={16} />
+                        <Send size={18} />
                       </button>
-                    </div>
+                    )}
                   </div>
                 </form>
                 <p className="mt-3 text-center text-xs text-[var(--ink-muted)]">
