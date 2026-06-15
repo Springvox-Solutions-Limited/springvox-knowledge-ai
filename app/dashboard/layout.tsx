@@ -17,6 +17,7 @@ import {
   Bell,
   BookOpen,
   UserCircle,
+  MoreHorizontal,
 } from 'lucide-react';
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
 import { ViewerChatSidebarHistory } from '@/src/components/dashboard/ViewerChatSidebarHistory';
@@ -103,6 +104,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = profile ? getNavItems(profile.role) : [];
   const visibleNavItems = navItems;
+  const isViewer = profile ? !isWorkspaceAdminRole(profile.role) : false;
+  // Chat is a focused full-screen surface with its own bottom composer, so the
+  // mobile tab bar is hidden there (nav stays reachable via the top-bar menu).
+  const isChatRoute = pathname === '/dashboard/chat';
+  // Mobile bottom-tab destinations (≤5). Viewers see all of theirs; admins get a
+  // curated set + a "More" tab that opens the full nav drawer.
+  const mobilePrimaryNav = isViewer
+    ? [
+        { name: 'Ask', href: '/dashboard/chat', icon: MessageSquare },
+        { name: 'Alerts', href: '/dashboard/notifications', icon: Bell },
+        { name: 'Account', href: '/dashboard/account', icon: UserCircle },
+      ]
+    : [
+        { name: 'Home', href: '/dashboard', icon: BarChart3 },
+        { name: 'Docs', href: '/dashboard/documents', icon: FileText },
+        { name: 'Ask', href: '/dashboard/chat', icon: MessageSquare },
+        { name: 'Insights', href: '/dashboard/analytics', icon: ChartColumnBig },
+      ];
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -314,34 +333,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
         </header>
 
-        
-        <div className={cn(
-          "hidden overflow-hidden border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3 sm:block lg:hidden",
-          isViewerRole && "sm:hidden"
-        )}>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            {visibleNavItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "whitespace-nowrap rounded-lg border px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest transition-all",
-                    isActive
-                      ? "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] text-[var(--accent-jade-hover)]"
-                      : "border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)]"
-                  )}
-                >
-                  {item.name}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
         <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[var(--canvas)]">
-          <div className="mx-auto w-full max-w-7xl min-w-0 p-4 sm:p-6 md:p-10">
+          <div className={cn(
+            "mx-auto w-full max-w-7xl min-w-0 p-4 sm:p-6 md:p-10",
+            !isChatRoute && "pb-24 lg:pb-10",
+          )}>
               {workspaceBlocked ? (
                 <div className="admin-page">
                   <div className="admin-hero-card rounded-xl border border-amber-500/30 bg-amber-500/10 p-5">
@@ -382,6 +378,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </main>
+
+      {/* Mobile bottom tab bar — native-app navigation on small screens (hidden on the focused chat surface) */}
+      <nav className={cn(
+        "fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[var(--brand-sidebar)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden",
+        isChatRoute && "hidden",
+      )}>
+        <div className="mx-auto flex max-w-md items-stretch justify-around px-1">
+          {mobilePrimaryNav.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors',
+                  active ? 'text-[var(--accent-jade)]' : 'text-[var(--ink-muted)] active:text-[var(--ink)]',
+                )}
+              >
+                <span className={cn('flex h-8 w-12 items-center justify-center rounded-full transition-colors', active && 'bg-[var(--accent-jade-50)]')}>
+                  <item.icon size={20} className="shrink-0" />
+                </span>
+                <span className="max-w-full truncate">{item.name}</span>
+              </Link>
+            );
+          })}
+          {!isViewer && (
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2 text-[10px] font-medium text-[var(--ink-muted)] active:text-[var(--ink)]"
+            >
+              <span className="flex h-8 w-12 items-center justify-center rounded-full">
+                <MoreHorizontal size={20} className="shrink-0" />
+              </span>
+              <span>More</span>
+            </button>
+          )}
+        </div>
+      </nav>
     </div>
   );
 }

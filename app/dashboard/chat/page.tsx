@@ -11,6 +11,7 @@ import {
   FileText,
   History,
   Loader2,
+  Sliders,
   MessageSquarePlus,
   Mic,
   MicOff,
@@ -1292,45 +1293,41 @@ export default function ChatPage() {
                   "sticky bottom-0 mt-auto bg-[linear-gradient(180deg,rgba(10,12,11,0)_0%,rgba(10,12,11,0.95)_24%,rgba(10,12,11,1)_100%)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-6",
                 isViewer ? "px-3 pt-4 sm:px-5 sm:pb-6 sm:pt-5" : "px-3 pt-4 sm:px-5 sm:pb-5 sm:pt-5"
               )}>
-                <div className="mx-auto mb-3 flex max-w-3xl flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                    Answer mode
-                  </span>
-                  {ANSWER_MODES.map((mode) => (
-                    <button
-                      key={mode.value}
-                      type="button"
-                      onClick={() => setAnswerMode(mode.value)}
-                      disabled={loading}
-                      className={cn(
-                        "rounded-full border px-3 py-1.5 text-xs font-semibold transition",
-                        answerMode === mode.value
-                          ? "border-[var(--accent-jade-200)] bg-[var(--accent-jade-50)] text-[var(--accent-jade-hover)]"
-                          : "border-[var(--line)] bg-[var(--surface)] text-[var(--ink-muted)] hover:bg-[var(--surface-2)]",
-                      )}
+                <div className="mx-auto mb-2.5 flex max-w-3xl items-center gap-2">
+                  <Select value={answerMode} onValueChange={(value) => setAnswerMode(value as typeof answerMode)} disabled={loading}>
+                    <SelectTrigger
+                      aria-label="Answer style"
+                      className="h-9 w-full min-w-0 rounded-full border-[var(--line)] bg-[var(--surface)] text-xs font-medium shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)] sm:w-40"
                     >
-                      {mode.label}
-                    </button>
-                  ))}
+                      <Sliders size={13} className="shrink-0 text-[var(--ink-muted)]" />
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-[var(--line)]">
+                      {ANSWER_MODES.map((mode) => (
+                        <SelectItem key={mode.value} value={mode.value}>
+                          {mode.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {collections.length > 0 ? (
-                    <div className="flex w-full min-w-0 items-center gap-2 sm:ml-auto sm:w-auto">
-                      <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                        Scope
-                      </span>
-                      <Select value={scopeCollectionId} onValueChange={setScopeCollectionId} disabled={loading}>
-                        <SelectTrigger className="h-8 w-full min-w-0 rounded-full border-[var(--line)] bg-[var(--surface)] text-xs shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)] sm:w-44">
-                          <SelectValue placeholder="All documents" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-[var(--line)]">
-                          <SelectItem value="all">All documents</SelectItem>
-                          {collections.map((collection) => (
-                            <SelectItem key={collection.id} value={collection.id}>
-                              {collection.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Select value={scopeCollectionId} onValueChange={setScopeCollectionId} disabled={loading}>
+                      <SelectTrigger
+                        aria-label="Document scope"
+                        className="h-9 w-full min-w-0 rounded-full border-[var(--line)] bg-[var(--surface)] text-xs font-medium shadow-sm focus-visible:border-teal-400 focus-visible:ring-[var(--accent-jade-100)] sm:w-48"
+                      >
+                        <FileText size={13} className="shrink-0 text-[var(--ink-muted)]" />
+                        <SelectValue placeholder="All documents" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-[var(--line)]">
+                        <SelectItem value="all">All documents</SelectItem>
+                        {collections.map((collection) => (
+                          <SelectItem key={collection.id} value={collection.id}>
+                            {collection.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : null}
                 </div>
                 <form onSubmit={handleSend} className="relative mx-auto max-w-3xl">
@@ -1366,13 +1363,13 @@ export default function ChatPage() {
                       className={cn(
                         "max-h-48 w-full resize-none border-0 bg-transparent text-[var(--ink)] shadow-none outline-none placeholder:text-[var(--ink-muted)] focus-visible:ring-0",
                         isViewer
-                          ? "min-h-[58px] py-3.5 pl-14 pr-5 text-[15px] leading-7 sm:pr-28"
-                          : "min-h-[56px] py-3.5 pl-12 pr-4 text-sm leading-7 sm:pl-14 sm:pr-28"
+                          ? "min-h-[52px] py-3.5 pl-12 pr-4 text-[15px] leading-7 sm:pr-28"
+                          : "min-h-[52px] py-3.5 pl-12 pr-4 text-sm leading-7 sm:pl-14 sm:pr-28"
                       )}
                       placeholder={
                         isRecording
-                          ? "Listening... Speak clearly now..."
-                          : "Ask anything from your approved documents..."
+                          ? "Listening…"
+                          : "Ask a question…"
                       }
                       aria-label="Ask a question from approved documents"
                       value={input}
