@@ -22,7 +22,7 @@ import {
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Rekall-IQ is built in Nigeria for organisations that need their answers to be checkable, wherever they operate.",
+    "Rekall-IQ is built in Nigeria for organizations that need their answers to be checkable, wherever they operate.",
   alternates: { canonical: "/about" },
 };
 
