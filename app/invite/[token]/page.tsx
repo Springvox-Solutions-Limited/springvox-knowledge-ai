@@ -1,0 +1,192 @@
+"use client";
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Loader2, Mail, ShieldCheck } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AppButton } from '@/src/components/ui/app-button';
+import { BrandLogo } from '@/src/components/brand/BrandLogo';
+
+import { getAccessToken, getCurrentUserProfile } from '@/src/lib/auth-client';
+import { supabase } from '@/src/lib/supabase';
+import { getDefaultRouteForRole, getRoleLabel, type AnyAppRole } from '@/src/lib/workspace';
+
+type InviteDetails = {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  expires_at: string;
+  accepted_at: string | null;
+  workspace_name: string;
+  assistant_name: string;
+};
+
+export default function InvitePage({ params }: { params: Promise<{ token: string }> }) {
+  const router = useRouter();
+  const [token, setToken] = useState('');
+  const [details, setDetails] = useState<InviteDetails | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [accepting, setAccepting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadInvitation(resolvedToken: string) {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/invitations/${resolvedToken}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Invitation not found');
+      }
+
+      setDetails(data.invitation);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUserEmail(user?.email || null);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Invitation not found');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+
+  useEffect(() => {
+    params.then(({ token: resolvedToken }) => {
+      setToken(resolvedToken);
+      loadInvitation(resolvedToken);
+    });
+  }, [params]);
+
+  const acceptInvitation = async () => {
+    try {
+      setAccepting(true);
+      setError(null);
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error('Please log in with the invited email before accepting.');
+      }
+
+      const response = await fetch('/api/invitations/accept', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ token }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to accept invitation');
+      }
+
+      const profile = await getCurrentUserProfile();
+      const nextRoute = profile ? getDefaultRouteForRole(profile.role) : '/dashboard/chat';
+      setMessage('Invitation accepted. Redirecting to your workspace.');
+      router.push(nextRoute);
+      router.refresh();
+    } catch (acceptError) {
+      setError(acceptError instanceof Error ? acceptError.message : 'Unable to accept invitation');
+    } finally {
+      setAccepting(false);
+    }
+  };
+
+  return (
+    <div className="public-shell px-4 py-8 text-[var(--ink)] sm:py-12">
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 pb-6">
+        <Link href="/" className="flex items-center" aria-label="Rekall-IQ home">
+          <BrandLogo variant="full" />
+        </Link>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)]"
+        >
+          <ArrowLeft size={14} />
+          Back to home
+        </Link>
+      </div>
+      <div className="public-card mx-auto max-w-2xl p-5 sm:p-8">
+        {loading ? (
+          <div className="flex items-center gap-3 text-sm text-[var(--ink-muted)]">
+            <Loader2 size={18} className="animate-spin text-[var(--accent-jade)]" />
+            Loading invitation...
+          </div>
+        ) : details ? (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--accent-jade)]">Workspace Invitation</p>
+              <h1 className="text-3xl font-bold tracking-tight text-[var(--ink)]">
+                Join {details.workspace_name}
+              </h1>
+              <p className="text-sm leading-7 text-[var(--ink-soft)]">
+                {details.assistant_name} is ready for invited users in this workspace.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--ink-muted)]">Invited email</p>
+                <p className="mt-2 text-sm text-[var(--ink)]">{details.email}</p>
+              </div>
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--ink-muted)]">Role</p>
+                <p className="mt-2 text-sm text-[var(--ink)]">{getRoleLabel(details.role as AnyAppRole)}</p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--ink-soft)]">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-[var(--accent-jade)]" />
+                <span>Sign in with the invited email to accept this workspace invitation.</span>
+              </div>
+              {userEmail ? (
+                <p className="mt-3 text-[var(--ink-soft)]">
+                  Signed in as <span className="font-semibold text-[var(--ink)]">{userEmail}</span>
+                </p>
+              ) : (
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Link href="/login" className="app-button-secondary px-4 py-3">
+                    Login
+                  </Link>
+                  <Link href={`/register?invite=${encodeURIComponent(token)}`} className="app-button-primary px-4 py-3">
+                    Create account
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {(message || error) && (
+              <Alert className={error ? 'rounded-2xl border-red-500/30 bg-red-500/10 text-red-300' : 'rounded-2xl border-emerald-500/30 bg-emerald-500/10 text-emerald-300'}>
+                <AlertDescription>{error || message}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="text-xs text-[var(--ink-muted)]">
+                Expires {new Date(details.expires_at).toLocaleString()}
+              </div>
+              <AppButton
+                type="button"
+                onClick={acceptInvitation}
+                disabled={!userEmail || accepting}
+              >
+                {accepting ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                Accept invitation
+              </AppButton>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm text-red-300">{error || 'Invitation unavailable.'}</div>
+        )}
+      </div>
+    </div>
+  );
+}

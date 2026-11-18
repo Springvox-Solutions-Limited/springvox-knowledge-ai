@@ -1,0 +1,73 @@
+"use client";
+
+import * as React from "react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AppButton } from "@/src/components/ui/app-button";
+
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  confirmTone = "destructive",
+  loading = false,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  confirmTone?: "primary" | "secondary" | "subtle" | "ghost" | "destructive";
+  loading?: boolean;
+  onConfirm: () => void | Promise<void>;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => {
+      if (!loading) {
+        onOpenChange(nextOpen);
+      }
+    }}>
+      <DialogContent
+        showCloseButton={!loading}
+        onEscapeKeyDown={(event) => {
+          if (loading) {
+            event.preventDefault();
+          }
+        }}
+        onInteractOutside={(event) => {
+          if (loading) {
+            event.preventDefault();
+          }
+        }}
+        className="rounded-[10px] border-[var(--line)] bg-[var(--surface)] sm:max-w-md"
+      >
+        <DialogHeader>
+          <DialogTitle className="text-[16px] font-semibold text-[var(--ink)]">{title}</DialogTitle>
+          <DialogDescription className="text-[12px] leading-5 text-[var(--ink-soft)]">
+            {description}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:justify-end">
+          <AppButton tone="secondary" disabled={loading} onClick={() => onOpenChange(false)} className="h-9 px-3 text-[12px]">
+            {cancelLabel}
+          </AppButton>
+          <AppButton tone={confirmTone} disabled={loading} onClick={() => void onConfirm()} className="h-9 px-3 text-[12px]">
+            {confirmLabel}
+          </AppButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

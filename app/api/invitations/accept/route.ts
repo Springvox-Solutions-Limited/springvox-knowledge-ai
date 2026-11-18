@@ -1,0 +1,121 @@
+import { getAppUrl } from '@/src/lib/app-url';
+import { createAuditLog } from '@/src/lib/audit-log';
+import { getRequestErrorStatus, safeErrorMessage } from '@/src/lib/api-errors';
+import { getAuthenticatedUser, getSupabaseAdmin } from '@/src/lib/supabase-server';
+import { assertWorkspaceOperational } from '@/src/lib/workspace-access';
+import { sendEmail } from '@/src/lib/email';
+import { buildMemberWelcomeEmail } from '@/src/lib/email/templates/lifecycle';
+
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: Request) {
+  try {
+    const user = await getAuthenticatedUser(req);
+    const body = await req.json();
+    const token = typeof body.token === 'string' ? body.token.trim() : '';
+
+    if (!token) {
+      return Response.json({ error: 'Invitation token is required' }, { status: 400 });
+    }
+
+    const supabase = getSupabaseAdmin();
+    const { data: invitation, error: invitationError } = await supabase
+      .from('invitations')
+      .select('id, workspace_id, email, role, status, expires_at, accepted_at')
+      .eq('token', token)
+      .single();
+
+    if (invitationError || !invitation) {
+      return Response.json({ error: 'Invitation not found' }, { status: 404 });
+    }
+
+    const now = Date.now();
+    const expired = new Date(invitation.expires_at).getTime() < now;
+
+    if (invitation.status === 'revoked') {
+      return Response.json({ error: 'This invitation has been revoked' }, { status: 400 });
+    }
+
+    if (invitation.status === 'accepted') {
+      return Response.json({ error: 'This invitation has already been accepted' }, { status: 400 });
+    }
+
+    if (expired) {
+      await supabase
+        .from('invitations')
+        .update({ status: 'expired', updated_at: new Date().toISOString() })
+        .eq('id', invitation.id);
+
+      return Response.json({ error: 'This invitation has expired' }, { status: 400 });
+    }
+
+    if ((user.email || '').toLowerCase() !== invitation.email.toLowerCase()) {
+      return Response.json({ error: 'You must sign in with the invited email address' }, { status: 403 });
+    }
+
+    await assertWorkspaceOperational(invitation.workspace_id);
+
+    const { error: profileUpdateError } = await supabase
+      .from('profiles')
+      .update({
+        email: user.email,
+        workspace_id: invitation.workspace_id,
+        role: invitation.role,
+        status: 'active',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+
+    if (profileUpdateError) {
+      throw profileUpdateError;
+    }
+
+    const { error: inviteUpdateError } = await supabase
+      .from('invitations')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', invitation.id);
+
+    if (inviteUpdateError) {
+      throw inviteUpdateError;
+    }
+
+    await createAuditLog({
+      workspaceId: invitation.workspace_id,
+      actorUserId: user.id,
+      targetUserId: user.id,
+      action: 'invitation.accepted',
+      metadata: {
+        invitation_id: invitation.id,
+        email: invitation.email,
+        role: invitation.role,
+      },
+    });
+
+    // Welcome the new member inline (fast Resend call; never fail acceptance on email).
+    try {
+      const { data: workspaceRow } = await supabase
+        .from('workspaces')
+        .select('name')
+        .eq('id', invitation.workspace_id)
+        .maybeSingle();
+      const appUrl = getAppUrl(req);
+      await sendEmail({
+        to: user.email!,
+        ...buildMemberWelcomeEmail({ workspaceName: workspaceRow?.name || 'your workspace', appUrl }),
+      });
+    } catch (welcomeError) {
+      console.warn('Invitation accepted, but member welcome email failed:', welcomeError);
+    }
+
+    return Response.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unexpected invitation acceptance error';
+    const status = getRequestErrorStatus(message);
+
+    return Response.json({ error: safeErrorMessage(message) }, { status });
+  }
+}

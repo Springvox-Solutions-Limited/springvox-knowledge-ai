@@ -1,0 +1,104 @@
+# dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+.vercel/
+
+# production
+build/
+dist/
+
+# env files
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# AI / local assistant / editor tooling (not needed for the app)
+.claude/
+.kilo/
+.skills/
+.continue/
+.cursor/
+.aider.conf.yml
+.clinerules
+.cursorrules
+.windsurfrules
+
+# local app state / generated build output
+.next/
+out/
+.vercel/
+node_modules/
+coverage/
+.qodo/
+*.log
+*.tsbuildinfo
+next-env.d.ts
+
+# env and secrets
+.env
+.env.local
+.env.*
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.key
+*.pem
+secrets/
+
+# local storage / sample / reference data
+qdrant_storage/
+.supabase/
+samples/
+RekallIQ-UI/
+
+# root-level metadata / operational docs / references not required for app runtime
+*.md
+!README.md
+AGENTS.md
+CLAUDE.md
+DESIGN.md
+GEMINI.md
+OPENCODE_SIMPLIFIED.sh
+memory-security.md
+metadata.json
+cursor_rekalliq_ui_ux_audit.md
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# === Reference codebases (analysis only, never part of the app build) ===
+onyx-main/
+pipeshub-ai-main/
+onyx/
+pipeshub-ai/
+
+# Design review captures and scratch artifacts
+.design-review/
+
+# Playwright screenshots and browser inspection artifacts
+.playwright-mcp/
+
+# Local assistant and generated working files
+.qodo/
+
+# Onyx research archive - not required for application deployment
+docs/onyx-research/
