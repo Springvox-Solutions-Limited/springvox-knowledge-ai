@@ -27,36 +27,26 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen w-full bg-[var(--canvas)]">
       {/* Brand panel — matches /login */}
-      <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden bg-[var(--brand-sidebar)] p-12 text-white lg:flex lg:min-h-screen">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-90 [background:radial-gradient(circle_at_20%_15%,rgba(20,184,166,0.22),transparent_42%),radial-gradient(circle_at_85%_75%,rgba(13,148,136,0.16),transparent_45%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:48px_48px]"
-        />
-        <div className="relative">
-          <BrandLogo variant="full" theme="light" imageClassName="h-10" />
+      <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden border-r border-[var(--line)] bg-[var(--brand-sidebar)] p-12 text-white lg:flex lg:min-h-screen">
+        <div>
+          <BrandLogo variant="full" theme="light" imageClassName="h-9" />
         </div>
 
-        <div className="relative max-w-md space-y-8">
-          <h1 className="text-3xl font-semibold leading-tight tracking-tight">
-            Set up your company workspace
-            <br />
-            in minutes.
+        <div className="max-w-md space-y-8">
+          <h1 className="max-w-md text-[32px] font-medium leading-[1.08] tracking-[-0.04em] text-[var(--ink)]">
+            Set up your company workspace.
           </h1>
           <div className="space-y-5">
             {highlights.map((item) => (
-              <div key={item.title} className="flex gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-teal-300">
-                  <item.icon size={18} />
+              <div key={item.title} className="flex gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[var(--line)] text-[var(--ink-soft)]">
+                  <item.icon size={16} strokeWidth={1.5} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-[13px] font-medium text-[var(--ink)]">
                     {item.title}
                   </p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--ink-muted)]">
+                  <p className="mt-1 text-[12px] leading-5 text-[var(--ink-soft)]">
                     {item.copy}
                   </p>
                 </div>
@@ -65,7 +55,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <p className="relative text-xs text-[var(--ink-muted)]">
+        <p className="text-[11px] text-[var(--ink-muted)]">
           © 2026 Rekall-IQ
         </p>
       </div>
@@ -81,11 +71,11 @@ export default function RegisterPage() {
             Back to home
           </Link>
         </div>
-        <div className="flex flex-1 items-start justify-center py-10">
+        <div className="flex flex-1 items-start justify-center py-8 sm:py-10">
           <Suspense
             fallback={
-              <div className="w-full max-w-2xl rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--ink-muted)]">
-                Loading workspace setup...
+              <div className="w-full max-w-[560px] rounded-[10px] border border-[var(--line)] bg-[var(--surface)] p-8 text-center text-[12px] text-[var(--ink-muted)]">
+                Loading workspace setup…
               </div>
             }
           >

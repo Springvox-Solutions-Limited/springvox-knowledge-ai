@@ -1,207 +1,289 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Activity, Building2, FileText, MessageSquare, Users } from "lucide-react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-} from 'recharts';
-import { BarChart3 } from 'lucide-react';
+} from "recharts";
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { fetchPlatformJson } from '@/src/lib/platform-client';
-import { PlanBadge, StatusBadge } from '@/src/components/platform/PlatformBadges';
-import { PlatformPageHeader } from '@/src/components/platform/PlatformPageHeader';
-import { AppCard } from '@/src/components/ui/app-card';
-import { EmptyState } from '@/src/components/ui/empty-state';
-import { StatCard } from '@/src/components/ui/stat-card';
-import { getRoleLabel } from '@/src/lib/workspace';
+import { fetchPlatformJson } from "@/src/lib/platform-client";
+import { PlatformPageHeader } from "@/src/components/platform/PlatformPageHeader";
+import { PlanBadge, StatusBadge } from "@/src/components/platform/PlatformBadges";
+import { EmptyState } from "@/src/components/ui/empty-state";
+import { StatCard } from "@/src/components/ui/stat-card";
 
-type AnalyticsResponse = {
+type Insights = {
+  windowDays: number;
   totals: {
     totalWorkspaces: number;
     activeWorkspaces: number;
-    suspendedWorkspaces: number;
-    trialWorkspaces: number;
-    inactiveWorkspaces: number;
     totalUsers: number;
-    totalTenantAdmins: number;
-    totalViewers: number;
-    totalPlatformAdmins: number;
     totalDocuments: number;
     totalQuestions: number;
-    totalUnansweredQuestions: number;
-    totalFeedback: number;
-    newCompaniesLast7Days: number;
-    questionsLast7Days: number;
+    openKnowledgeGaps: number;
+    newCompanies: number;
+    questionsPeriod: number;
+    activeUsersPeriod: number;
+    documentsPeriod: number;
   };
-  topCompaniesByQuestions: Array<{ id: string; name: string; slug: string; plan: string; status: string; totalQuestions: number }>;
-  companiesByOpenQuestions: Array<{ id: string; name: string; slug: string; openKnowledgeGaps: number }>;
-  recentCompanies: Array<{ id: string; name: string; slug: string; plan: string; status: string; created_at: string }>;
-  recentUserSignups: Array<{ id: string; email: string | null; role: string; workspace_name: string; created_at: string }>;
-  workspacesByPlan: Array<{ plan: string; count: number }>;
-  workspacesByStatus: Array<{ status: string; count: number }>;
+  daily: Array<{ date: string; questions: number; activeUsers: number; companies: number; documents: number }>;
+  hourly: Array<{ hour: number; questions: number }>;
+  status: Array<{ status: string; count: number }>;
+  plans: Array<{ plan: string; count: number }>;
+  topCompanies: Array<{ id: string; name: string; slug: string; plan: string; status: string; questions: number }>;
+  funnel: { companies: number; withDocuments: number; withQuestions: number; activeLast7: number };
+  ai: null | {
+    requests: number;
+    errors: number;
+    noAnswers: number;
+    errorRate: number | null;
+    noAnswerRate: number | null;
+    firstTokenP50: number | null;
+    firstTokenP95: number | null;
+    totalP95: number | null;
+  };
 };
 
+const RANGES = [7, 30, 90] as const;
+
 export default function PlatformAnalyticsPage() {
-  const [data, setData] = useState<AnalyticsResponse | null>(null);
+  const [days, setDays] = useState<(typeof RANGES)[number]>(30);
+  const [data, setData] = useState<Insights | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
+      setLoading(true);
+      setError(null);
       try {
-        const result = await fetchPlatformJson<AnalyticsResponse>('/api/platform/analytics');
-        setData(result);
+        const result = await fetchPlatformJson<Insights>(`/api/platform/insights?days=${days}`);
+        if (!cancelled) setData(result);
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : 'Failed to load analytics');
+        if (!cancelled) setError(loadError instanceof Error ? loadError.message : "Failed to load analytics");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [days]);
 
-    load();
-  }, []);
-
-  const totals = data?.totals || {
-    totalWorkspaces: 0,
-    activeWorkspaces: 0,
-    suspendedWorkspaces: 0,
-    trialWorkspaces: 0,
-    inactiveWorkspaces: 0,
-    totalUsers: 0,
-    totalTenantAdmins: 0,
-    totalViewers: 0,
-    totalPlatformAdmins: 0,
-    totalDocuments: 0,
-    totalQuestions: 0,
-    totalUnansweredQuestions: 0,
-    totalFeedback: 0,
-    newCompaniesLast7Days: 0,
-    questionsLast7Days: 0,
-  };
+  const totals = data?.totals;
+  const daily = data?.daily ?? [];
+  const hourly = data?.hourly ?? [];
+  const ai = data?.ai;
 
   return (
-    <div className="admin-page">
+    <div className="admin-page" aria-busy={loading}>
       <PlatformPageHeader
-        title="Platform Analytics"
-        subtitle="Track usage, activity, and workspace health."
+        title="Analytics"
+        subtitle="Platform usage, growth, and AI quality."
+        aside={
+          <div className="flex items-center gap-1 rounded-md border border-[var(--line)] p-1">
+            {RANGES.map((range) => (
+              <button
+                key={range}
+                type="button"
+                onClick={() => setDays(range)}
+                className={`h-7 rounded px-2.5 text-[11px] font-medium transition-colors ${
+                  days === range
+                    ? "bg-[var(--accent-jade-50)] text-[var(--ink)]"
+                    : "text-[var(--ink-muted)] hover:text-[var(--ink)]"
+                }`}
+              >
+                {range}d
+              </button>
+            ))}
+          </div>
+        }
       />
 
-      {error && <Alert className="rounded-2xl border-red-500/30 bg-red-500/10 text-red-300"><AlertDescription>{error}</AlertDescription></Alert>}
+      {error ? (
+        <div className="rounded-[10px] border border-red-500/30 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">{error}</div>
+      ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {[
-          ['Companies', totals.totalWorkspaces],
-          ['Active', totals.activeWorkspaces],
-          ['Suspended', totals.suspendedWorkspaces],
-          ['Users', totals.totalUsers],
-          ['Questions', totals.totalQuestions],
-        ].map(([label, value]) => (
-          <StatCard key={label} label={String(label)} value={value} />
-        ))}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Questions" value={totals?.questionsPeriod ?? 0} icon={MessageSquare} meta={`${days}d window`} />
+        <StatCard label="Active users" value={totals?.activeUsersPeriod ?? 0} icon={Users} meta={`${totals?.totalUsers ?? 0} total`} />
+        <StatCard label="New companies" value={totals?.newCompanies ?? 0} icon={Building2} meta={`${totals?.totalWorkspaces ?? 0} total`} />
+        <StatCard label="New documents" value={totals?.documentsPeriod ?? 0} icon={FileText} meta={`${totals?.totalDocuments ?? 0} total`} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <AnalyticsPanel title="Workspaces by plan" loading={loading}>
-          {(data?.workspacesByPlan || []).length === 0 ? (
-            <EmptyState icon={BarChart3} title="No plan data yet" description="Workspace plan distribution will appear here." className="border-0 bg-transparent py-8" />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,0.85fr)]">
+        <section className="admin-shell-card p-4 sm:p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[14px] font-semibold text-[var(--ink)]">Question volume</h2>
+              <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">Daily questions across every workspace.</p>
+            </div>
+            <div className="flex items-center gap-3 text-[10px] text-[var(--ink-muted)]">
+              <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-jade)]" />Questions</span>
+              <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[var(--ink-muted)]" />Users</span>
+            </div>
+          </div>
+          {daily.length === 0 ? (
+            <EmptyState icon={Activity} title="No activity yet" description="Question volume appears here after companies start asking." className="border-0 bg-transparent py-12" />
           ) : (
-            <div className="min-w-0">
-              <ResponsiveContainer width="100%" height={260} minWidth={1}>
-                <BarChart data={data?.workspacesByPlan || []}>
-                  <CartesianGrid vertical={false} stroke="#eef2f7" />
-                  <XAxis dataKey="plan" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#0d1f35" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={230} minWidth={1}>
+              <LineChart data={daily}>
+                <CartesianGrid vertical={false} stroke="var(--line-soft)" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--ink-muted)" }} tickFormatter={(value: string) => value.slice(5)} dy={8} />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={28} tick={{ fontSize: 10, fill: "var(--ink-muted)" }} />
+                <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid var(--line)", backgroundColor: "var(--surface)", fontSize: "12px", color: "var(--ink)" }} />
+                <Line type="monotone" dataKey="questions" stroke="var(--accent-jade)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="activeUsers" stroke="var(--sage)" strokeWidth={1.5} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </section>
+
+        <section className="admin-shell-card p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-[14px] font-semibold text-[var(--ink)]">AI quality</h2>
+              <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">{days} day window.</p>
+            </div>
+            <Link href="/platform/diagnostics" className="text-[11px] font-medium text-[var(--ink-muted)] hover:text-[var(--ink)]">Inspect</Link>
+          </div>
+          {!ai ? (
+            <p className="mt-8 rounded-md border border-dashed border-[var(--line)] px-3 py-6 text-center text-[12px] text-[var(--ink-muted)]">No AI metrics recorded yet.</p>
+          ) : (
+            <div className="mt-5 divide-y divide-[var(--line-soft)] text-[12px]">
+              <Row label="First token p95" value={formatMs(ai.firstTokenP95)} />
+              <Row label="Total p95" value={formatMs(ai.totalP95)} />
+              <Row label="Error rate" value={ai.errorRate === null ? "—" : `${Math.round(ai.errorRate * 100)}%`} />
+              <Row label="No-answer rate" value={ai.noAnswerRate === null ? "—" : `${Math.round(ai.noAnswerRate * 100)}%`} />
+              <Row label="Requests" value={String(ai.requests)} />
             </div>
           )}
-        </AnalyticsPanel>
+        </section>
+      </div>
 
-        <AnalyticsPanel title="Workspaces by status" loading={loading}>
-          {(data?.workspacesByStatus || []).length === 0 ? (
-            <EmptyState icon={BarChart3} title="No status data yet" description="Workspace status distribution will appear here." className="border-0 bg-transparent py-8" />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <section className="admin-shell-card p-4 sm:p-5">
+          <div className="mb-4">
+            <h2 className="text-[14px] font-semibold text-[var(--ink)]">Company growth</h2>
+            <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">New workspaces and documents per day.</p>
+          </div>
+          <ResponsiveContainer width="100%" height={210} minWidth={1}>
+            <BarChart data={daily}>
+              <CartesianGrid vertical={false} stroke="var(--line-soft)" />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "var(--ink-muted)" }} tickFormatter={(value: string) => value.slice(5)} dy={8} />
+              <YAxis allowDecimals={false} axisLine={false} tickLine={false} width={28} tick={{ fontSize: 10, fill: "var(--ink-muted)" }} />
+              <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid var(--line)", backgroundColor: "var(--surface)", fontSize: "12px", color: "var(--ink)" }} />
+              <Bar dataKey="companies" fill="var(--accent-jade)" radius={[3, 3, 0, 0]} maxBarSize={18} />
+              <Bar dataKey="documents" fill="var(--ink-muted)" radius={[3, 3, 0, 0]} maxBarSize={18} />
+            </BarChart>
+          </ResponsiveContainer>
+        </section>
+
+        <section className="admin-shell-card p-4 sm:p-5">
+          <div className="mb-4">
+            <h2 className="text-[14px] font-semibold text-[var(--ink)]">When people ask</h2>
+            <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">Questions by hour, UTC.</p>
+          </div>
+          {hourly.length === 0 ? (
+            <EmptyState icon={Activity} title="No hourly activity" description="Hourly usage appears after questions are asked." className="border-0 bg-transparent py-10" />
           ) : (
-            <div className="min-w-0">
-              <ResponsiveContainer width="100%" height={260} minWidth={1}>
-                <BarChart data={data?.workspacesByStatus || []}>
-                  <CartesianGrid vertical={false} stroke="#eef2f7" />
-                  <XAxis dataKey="status" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#14b8a6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="flex h-[180px] items-end gap-1">
+              {Array.from({ length: 24 }).map((_, hour) => {
+                const count = hourly.find((item) => item.hour === hour)?.questions ?? 0;
+                const max = Math.max(1, ...hourly.map((item) => item.questions));
+                return (
+                  <div key={hour} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                    <div className="flex h-[160px] w-full items-end">
+                      <div className="w-full rounded-t-[2px] bg-[var(--accent-jade)]" style={{ height: `${Math.max(2, (count / max) * 100)}%`, opacity: count ? 1 : 0.12 }} title={`${hour}:00 · ${count} questions`} />
+                    </div>
+                    <span className="text-[8px] tabular-nums text-[var(--ink-muted)]">{hour}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
-        </AnalyticsPanel>
+        </section>
+      </div>
 
-        <AnalyticsPanel title="Top active companies" loading={loading}>
-          <div className="space-y-4">
-            {(data?.topCompaniesByQuestions || []).map((item) => (
-              <div key={item.id} className="rounded-2xl border border-[var(--line)] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <Link href={`/platform/companies/${item.id}`} className="min-w-0 truncate font-semibold text-[var(--ink)] hover:text-[var(--accent-jade)]" title={item.name}>{item.name}</Link>
-                  <span className="shrink-0 text-sm font-bold text-[var(--ink-soft)]">{item.totalQuestions} questions</span>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[var(--ink-muted)]">
-                  <span className="max-w-full truncate" title={item.slug}>{item.slug}</span>
-                  <PlanBadge plan={item.plan} />
-                  <StatusBadge status={item.status} />
-                </div>
-              </div>
-            ))}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="admin-shell-card overflow-hidden">
+          <div className="border-b border-[var(--line)] px-4 py-3.5 sm:px-5">
+            <h2 className="text-[14px] font-semibold text-[var(--ink)]">Top companies</h2>
+            <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">Question volume in this window.</p>
           </div>
-        </AnalyticsPanel>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left">
+              <thead>
+                <tr className="border-b border-[var(--line)] text-[11px] text-[var(--ink-muted)]">
+                  <th className="px-4 py-2.5 font-medium sm:px-5">Company</th>
+                  <th className="px-3 py-2.5 font-medium">Plan</th>
+                  <th className="px-3 py-2.5 font-medium">Status</th>
+                  <th className="px-4 py-2.5 text-right font-medium sm:px-5">Questions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--line-soft)]">
+                {(data?.topCompanies ?? []).map((company) => (
+                  <tr key={company.id} className="transition-colors hover:bg-[var(--canvas-soft)]">
+                    <td className="px-4 py-3 sm:px-5">
+                      <Link href={`/platform/companies/${company.id}`} className="block truncate text-[12px] font-medium text-[var(--ink)] hover:text-[var(--accent-jade)]">{company.name}</Link>
+                      <span className="mt-0.5 block truncate text-[10px] text-[var(--ink-muted)]">{company.slug}</span>
+                    </td>
+                    <td className="px-3 py-3"><PlanBadge plan={company.plan} /></td>
+                    <td className="px-3 py-3"><StatusBadge status={company.status} /></td>
+                    <td className="px-4 py-3 text-right text-[12px] font-medium tabular-nums text-[var(--ink-soft)] sm:px-5">{company.questions}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <AnalyticsPanel title="Recent user signups" loading={loading}>
-          <div className="space-y-4">
-            {(data?.recentUserSignups || []).map((item) => (
-              <div key={item.id} className="flex items-start justify-between gap-3 rounded-2xl border border-[var(--line)] p-4">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[var(--ink)]" title={item.email || ''}>{item.email || 'No email'}</p>
-                  <p className="mt-1 truncate text-xs text-[var(--ink-muted)]" title={item.workspace_name}>{item.workspace_name}</p>
+        <section className="admin-shell-card p-4 sm:p-5">
+          <h2 className="text-[14px] font-semibold text-[var(--ink)]">Plan distribution</h2>
+          <div className="mt-4 space-y-3">
+            {(data?.plans ?? []).map((item) => {
+              const max = Math.max(1, ...(data?.plans ?? []).map((plan) => plan.count));
+              return (
+                <div key={item.plan}>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="capitalize text-[var(--ink-soft)]">{item.plan}</span>
+                    <span className="font-medium tabular-nums text-[var(--ink)]">{item.count}</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                    <div className="h-full rounded-full bg-[var(--accent-jade)]" style={{ width: `${(item.count / max) * 100}%` }} />
+                  </div>
                 </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">{getRoleLabel(item.role)}</p>
-                  <p className="mt-1 text-xs text-[var(--ink-muted)]">{formatDate(item.created_at)}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </AnalyticsPanel>
+        </section>
       </div>
     </div>
   );
 }
 
-function AnalyticsPanel({
-  title,
-  loading,
-  children,
-}: {
-  title: string;
-  loading: boolean;
-  children: React.ReactNode;
-}) {
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <AppCard className="p-6">
-      <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">{title}</p>
-      <div className="mt-5">
-        {loading ? <p className="text-sm text-[var(--ink-muted)]">Loading...</p> : children}
-      </div>
-    </AppCard>
+    <div className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+      <span className="text-[var(--ink-soft)]">{label}</span>
+      <span className="font-medium tabular-nums text-[var(--ink)]">{value}</span>
+    </div>
   );
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+function formatMs(value: number | null) {
+  if (value === null) return "—";
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}s`;
+  return `${Math.round(value)}ms`;
 }

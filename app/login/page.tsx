@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { ArrowLeft, FileText, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, FileText, MessageSquare, ShieldCheck } from 'lucide-react';
 import AuthForm from '@/src/components/AuthForm';
 import { BrandLogo } from '@/src/components/brand/BrandLogo';
 
 const highlights = [
   {
-    icon: Sparkles,
+    icon: MessageSquare,
     title: 'Source-grounded answers',
     copy: 'Every reply is drawn from your approved company documents — with citations.',
   },
@@ -25,32 +25,24 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full bg-[var(--canvas)]">
       {/* Brand panel */}
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-[var(--brand-sidebar)] p-12 text-white lg:flex">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-90 [background:radial-gradient(circle_at_20%_15%,rgba(20,184,166,0.22),transparent_42%),radial-gradient(circle_at_85%_75%,rgba(13,148,136,0.16),transparent_45%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:48px_48px]"
-        />
-        <div className="relative">
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-[var(--line)] bg-[var(--brand-sidebar)] p-12 text-white lg:flex">
+        <div>
           <BrandLogo variant="full" theme="light" imageClassName="h-10" />
         </div>
 
         <div className="relative max-w-md space-y-8">
-          <h1 className="text-3xl font-semibold leading-tight tracking-tight">
+          <h1 className="max-w-md text-[32px] font-medium leading-[1.08] tracking-[-0.04em] text-[var(--ink)]">
             Your company knowledge,<br />answered instantly.
           </h1>
           <div className="space-y-5">
             {highlights.map((item) => (
               <div key={item.title} className="flex gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-teal-300">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[var(--line)] text-[var(--ink-soft)]">
                   <item.icon size={18} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">{item.title}</p>
-                  <p className="mt-1 text-sm leading-6 text-[var(--ink-muted)]">{item.copy}</p>
+                  <p className="text-[13px] font-medium text-[var(--ink)]">{item.title}</p>
+                  <p className="mt-1 text-[12px] leading-5 text-[var(--ink-soft)]">{item.copy}</p>
                 </div>
               </div>
             ))}

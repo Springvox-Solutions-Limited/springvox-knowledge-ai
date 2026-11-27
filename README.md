@@ -39,6 +39,7 @@ SQL migrations live in `/sql/` and are applied in Supabase. Phase 6 added:
 - `sql/phase6d_collections.sql` — `collections` table, `documents.collection_id`, seeds the 8 default departments per workspace.
 - `sql/phase7_security_hardening.sql` — explicit client-access denial for server-only rate-limit, usage, system-event, and evaluation tables.
 - `sql/phase8_chat_performance.sql` — per-request chat timing and token metrics for the performance baseline.
+- `sql/phase9_platform_insights.sql` — aggregated platform activity, funnel, and distribution data for the platform dashboard.
 
 ## Architecture Diagram
 

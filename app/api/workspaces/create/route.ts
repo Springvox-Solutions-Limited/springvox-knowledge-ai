@@ -82,7 +82,7 @@ export async function POST(req: Request) {
     const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
       email,
       password,
-      email_confirm: true,
+      email_confirm: false,
       user_metadata: {
         full_name: fullName,
       },
@@ -139,6 +139,19 @@ export async function POST(req: Request) {
     const appUrl = getAppUrl(req);
     const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 
+    try {
+      const { error: verificationError } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: `${appUrl}/login?verified=1` },
+      });
+      if (verificationError) {
+        console.warn('Workspace created, but verification email failed:', verificationError.message);
+      }
+    } catch (verificationError) {
+      console.warn('Workspace created, but verification email could not be sent:', verificationError);
+    }
+
     // Send the immediate welcome + trial-started emails INLINE (fast Resend calls).
     // They must not depend on Inngest being up, and a mail failure must not fail signup.
     try {
@@ -174,6 +187,7 @@ export async function POST(req: Request) {
 
     return Response.json({
       success: true,
+      requiresEmailVerification: true,
       workspace: {
         id: workspace.id,
         slug: workspace.slug,

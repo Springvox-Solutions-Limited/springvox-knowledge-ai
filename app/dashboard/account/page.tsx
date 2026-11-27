@@ -14,6 +14,7 @@ import {
 import { getRoleLabel, type AnyAppRole } from "@/src/lib/workspace";
 import { Input } from "@/components/ui/input";
 import { validatePassword } from "@/src/lib/password-policy";
+import { MfaSettings } from "@/src/components/account/MfaSettings";
 
 type AccountInfo = {
   email: string | null;
@@ -237,6 +238,8 @@ export default function AccountPage() {
           </button>
         </form>
       </section>
+
+      <MfaSettings />
 
       <section className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>

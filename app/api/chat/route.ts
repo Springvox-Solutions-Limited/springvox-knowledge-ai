@@ -1,9 +1,12 @@
 import { getRequestErrorStatus, safeErrorMessage } from '@/src/lib/api-errors';
 import {
+  loadRecentChatHistory,
   resolveOwnedChatSession,
   setSessionTitleFromFirstQuestionIfNeeded,
 } from '@/src/lib/chat-sessions';
 import {
+  generateGroundedFollowUps,
+  rewriteStandaloneQuestion,
   streamStrictAnswer,
   embedOne,
   getEmbeddingDimensions,
@@ -273,6 +276,43 @@ async function streamTextFallback(
   }
 }
 
+
+function shouldRewriteConversationQuestion(question: string, historyCount: number) {
+  if (historyCount === 0 || process.env.AI_QUERY_REWRITE === '0') return false;
+
+  const normalized = question.trim();
+  if (!normalized) return false;
+
+  const hasReference = /\b(it|its|they|them|their|he|him|his|she|her|this|that|these|those|former|latter|previous|above|same|other|another|more|first|second|third)\b/i.test(
+    normalized,
+  );
+
+  if (hasReference) return true;
+
+  return /^(and|also|what about|how about|why|which one|who else|tell me more)\b/i.test(
+    normalized,
+  );
+}
+
+function buildConversationContext(
+  history: Array<{ question: string; answer: string }>,
+) {
+  return history
+    .map((turn, index) =>
+      [
+        `<turn index="${index + 1}">`,
+        `<user>${turn.question.slice(0, 700)}</user>`,
+        `<assistant>${turn.answer.slice(0, 1100)}</assistant>`,
+        '</turn>',
+      ].join('\n'),
+    )
+    .join('\n');
+}
+
+function uniqueFollowUps(items: string[]) {
+  return Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)));
+}
+
 function classifyChatError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   if (/GEMINI_API_KEY/i.test(message)) return 'provider_missing_key';
@@ -347,6 +387,18 @@ export async function POST(req: Request) {
       workspaceId: profile.workspace_id!,
       userId: user.id,
     });
+
+    let recentHistory: Awaited<ReturnType<typeof loadRecentChatHistory>> = [];
+    try {
+      recentHistory = await loadRecentChatHistory(supabase, {
+        sessionId: chatSession.id,
+        workspaceId: profile.workspace_id!,
+        limit: 4,
+      });
+    } catch (historyError) {
+      console.warn('[AI] Conversation history could not be loaded:', historyError);
+    }
+    const conversationContext = buildConversationContext(recentHistory);
     const encoder = new TextEncoder();
     let clientAborted = false;
     let retrievalMs: number | null = null;
@@ -487,14 +539,38 @@ export async function POST(req: Request) {
             return;
           }
 
+          let retrievalQuestion = normalizedQuestion;
+          if (shouldRewriteConversationQuestion(normalizedQuestion, recentHistory.length)) {
+            const rewriteStartedAt = Date.now();
+            try {
+              const rewritten = await rewriteStandaloneQuestion(
+                normalizedQuestion,
+                conversationContext,
+              );
+              if (rewritten && rewritten !== normalizedQuestion) {
+                retrievalQuestion = rewritten;
+              }
+              logPerformance('chat.query_rewrite', {
+                request_id: requestId,
+                history_turns: recentHistory.length,
+                duration_ms: Date.now() - rewriteStartedAt,
+                changed: retrievalQuestion !== normalizedQuestion,
+                original_length: normalizedQuestion.length,
+                rewritten_length: retrievalQuestion.length,
+              });
+            } catch (rewriteError) {
+              console.warn('[AI] Query rewrite skipped:', rewriteError);
+            }
+          }
+
           const totalStartedAt = Date.now();
           const statuses = buildStatusMessages(profile.role);
-          const retrievalSettings = getRetrievalSettings(normalizedQuestion);
+          const retrievalSettings = getRetrievalSettings(retrievalQuestion);
 
           sendEvent('status', { message: statuses.searching });
           await ensureQdrantCollection();
 
-          const queryVector = await embedOne(normalizedQuestion, 'query');
+          const queryVector = await embedOne(retrievalQuestion, 'query');
           const fetchK = Math.max(getQdrantFetchK(), retrievalSettings.topK);
           const rerankTopK = Math.max(getRerankTopK(), retrievalSettings.maxFinalChunks);
 
@@ -504,7 +580,7 @@ export async function POST(req: Request) {
             embedding_provider: getEmbeddingProvider(),
             embedding_model: getEmbeddingModelName(),
             embedding_dimensions: getEmbeddingDimensions(),
-            query: normalizedQuestion,
+            query: retrievalQuestion,
             query_vector_length: queryVector.length,
             intent: retrievalSettings.intent,
             qdrant_fetch_k: fetchK,
@@ -526,7 +602,7 @@ export async function POST(req: Request) {
           const keywordResults = await keywordSearch({
             supabase,
             workspaceId: profile.workspace_id!,
-            question: normalizedQuestion,
+            question: retrievalQuestion,
             limit: 12,
             documentIds: scopeDocumentIds,
           });
@@ -564,7 +640,7 @@ export async function POST(req: Request) {
 
           const rerankStartedAt = Date.now();
           const rerankResult = await rerankCandidates({
-            query: normalizedQuestion,
+            query: retrievalQuestion,
             candidates: searchResults,
           });
           if (rerankResult.rerankedCount > 0) {
@@ -714,10 +790,11 @@ export async function POST(req: Request) {
 
             const llmStartedAt = Date.now();
             const streamResult = await streamStrictAnswer(
-              normalizedQuestion,
+              retrievalQuestion,
               compressedContext.context,
               answerMode,
               answerIntelligenceInstructions,
+              conversationContext,
             );
             let generatedAnswer = '';
 
@@ -745,7 +822,7 @@ export async function POST(req: Request) {
 
             // Prefer Gemini's real token usage; fall back to a char estimate only
             // if the provider didn't return usage metadata.
-            llmInputTokens = estimateTokens(`${compressedContext.context}\n${normalizedQuestion}`);
+            llmInputTokens = estimateTokens(`${compressedContext.context}\n${retrievalQuestion}`);
             llmOutputTokens = estimateTokens(answer);
             try {
               const usage = (await streamResult.response)?.usageMetadata;
@@ -765,7 +842,10 @@ export async function POST(req: Request) {
               llm_output_tokens: llmOutputTokens,
             });
           } else {
-            answer = buildNoAnswerMessage(retrievedFilenames);
+            answer = buildNoAnswerMessage(
+              retrievedFilenames,
+              citations.map((citation) => citation.document_category || '').filter(Boolean),
+            );
             sendEvent('status', { message: statuses.matching });
             sendEvent('status', { message: statuses.preparing });
 
@@ -783,7 +863,10 @@ export async function POST(req: Request) {
           }
 
           if (answer === STRICT_NO_ANSWER) {
-            answer = buildNoAnswerMessage(retrievedFilenames);
+            answer = buildNoAnswerMessage(
+              retrievedFilenames,
+              citations.map((citation) => citation.document_category || '').filter(Boolean),
+            );
           }
 
           const noAnswer = answer.startsWith("I couldn't find support");
@@ -798,7 +881,7 @@ export async function POST(req: Request) {
             contextChunkCount: searchResults.length,
             noAnswer,
           });
-          followUps = generateFollowUps({
+          const fallbackFollowUps = generateFollowUps({
             question: normalizedQuestion,
             answer,
             intent: retrievalSettings.intent,
@@ -812,6 +895,35 @@ export async function POST(req: Request) {
             ),
             noAnswer,
           });
+
+          let groundedFollowUps: string[] = [];
+          if (!noAnswer && process.env.AI_GROUNDED_FOLLOWUPS !== '0') {
+            const followUpStartedAt = Date.now();
+            try {
+              const followUpContext = citations
+                .slice(0, 4)
+                .map((citation) => {
+                  const excerpt = citation.chunk_text || citation.preview || '';
+                  return `${citation.filename}: ${excerpt.slice(0, 700)}`;
+                })
+                .join('\n');
+              groundedFollowUps = await generateGroundedFollowUps({
+                question: normalizedQuestion,
+                answer,
+                context: followUpContext,
+                noAnswer,
+              });
+              logPerformance('chat.followups', {
+                request_id: requestId,
+                duration_ms: Date.now() - followUpStartedAt,
+                generated: groundedFollowUps.length,
+              });
+            } catch (followUpError) {
+              console.warn('[AI] Grounded follow-ups skipped:', followUpError);
+            }
+          }
+
+          followUps = uniqueFollowUps([...groundedFollowUps, ...fallbackFollowUps]).slice(0, 3);
 
           generationMs = Date.now() - generationStartedAt;
           console.info('[RAG] timings', {

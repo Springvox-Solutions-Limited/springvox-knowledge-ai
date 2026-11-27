@@ -15,7 +15,7 @@ export default function BillingRequiredPage() {
           Back to home
         </Link>
       </div>
-      <section className="w-full max-w-lg rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-6 text-center shadow-[0_18px_44px_rgba(15,23,42,0.08)] sm:p-8">
+      <section className="w-full max-w-lg rounded-[12px] border border-[var(--line)] bg-[var(--surface)] p-6 text-center sm:p-8">
         <div className="mb-6 flex justify-center">
           <BrandLogo
             variant="full"
@@ -23,25 +23,25 @@ export default function BillingRequiredPage() {
             imageClassName="h-10 w-auto object-contain"
           />
         </div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--accent-jade)]">
+        <p className="text-[11px] font-medium text-[var(--accent-jade)]">
           Trial ended
         </p>
-        <h1 className="mt-3 text-2xl font-bold tracking-tight text-[var(--ink)]">
+        <h1 className="mt-3 text-[24px] font-medium tracking-[-0.03em] text-[var(--ink)]">
           Your 14-day trial has ended.
         </h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--ink-soft)]">
-          To continue using Rekall-IQ, please contact your workspace administrator or reach out to Rekall-IQ support to discuss your options.
+        <p className="mt-3 text-[13px] leading-6 text-[var(--ink-soft)]">
+          To continue using Rekall-IQ, contact your workspace administrator or Rekall-IQ support. Plan activation is handled manually for now; include your workspace name in the message.
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
             href="/login"
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-[var(--accent-jade)] px-5 text-sm font-semibold text-[#04110e] transition-colors hover:bg-[var(--accent-jade-hover)]"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-[var(--accent-jade)] px-4 text-[13px] font-medium text-[#04110e] transition-colors hover:bg-[var(--accent-jade-hover)]"
           >
             Sign in
           </Link>
           <a
-            href="mailto:support@springvoxsl.com"
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface)] px-5 text-sm font-semibold text-[var(--ink-soft)] transition hover:bg-[var(--surface-2)]"
+            href="mailto:support@springvoxsl.com?subject=Manual%20plan%20activation"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-[var(--line)] bg-[var(--surface)] px-4 text-[13px] font-medium text-[var(--ink-soft)] transition hover:bg-[var(--surface-2)]"
           >
             Contact support
           </a>

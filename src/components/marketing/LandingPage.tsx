@@ -13,12 +13,10 @@ import {
   ListChecks,
   LockKeyhole,
   Presentation,
-  Quote,
   ScanLine,
   ShieldCheck,
   SlidersHorizontal,
   Table2,
-  Users,
 } from "lucide-react";
 
 import { FaqList } from "./FaqList";
@@ -33,7 +31,8 @@ import {
   SecurityDiagram,
   TrustFacts,
 } from "./product-visuals";
-import { ArrowLink, ButtonLink, CitationMark, SectionLabel } from "./ui";
+import { ArrowLink, ButtonLink, SectionLabel } from "./ui";
+import { TeamShowcase } from "./TeamShowcase";
 
 /* ------------------------------------------------------------------ */
 /* Content                                                             */
@@ -93,41 +92,6 @@ const CAPABILITIES = [
     icon: ClipboardCheck,
     title: "Answer evaluations",
     copy: "Run a question set against the workspace and keep a record of how answers hold up.",
-  },
-];
-
-const TEAMS = [
-  {
-    name: "People and HR",
-    question: "What does a new support hire complete in week one?",
-    answer:
-      "Orientation, the customer data policy, and a first-ticket review with the team lead.",
-    source: "Employee_Handbook.pdf · p. 14",
-    href: "/solutions#people",
-  },
-  {
-    name: "Support",
-    question: "What is the escalation path for a billing dispute?",
-    answer:
-      "Tier one logs the dispute, then routes to Billing Operations within one business day.",
-    source: "Support_Playbook.docx · § 3.2",
-    href: "/solutions#support",
-  },
-  {
-    name: "Legal and compliance",
-    question: "What is the approved wording for a data request?",
-    answer:
-      "Use the acknowledgement in Policy 12; do not paraphrase the response window.",
-    source: "Data_Requests_Policy.pdf · § 2",
-    href: "/solutions#legal",
-  },
-  {
-    name: "Operations",
-    question: "What is the sign-off for a purchase above the local limit?",
-    answer:
-      "Site lead approval first, then Finance for the amount above the regional threshold.",
-    source: "Procurement_SOP.pdf · p. 6",
-    href: "/solutions#operations",
   },
 ];
 
@@ -219,29 +183,13 @@ export function LandingPage() {
     <>
       {/* Hero ------------------------------------------------------- */}
       <section className="relative isolate overflow-hidden border-b border-[var(--line)]">
-        <div
-          aria-hidden="true"
-          className="mk-grid-bg mk-grid-fade pointer-events-none absolute inset-0 -z-20 opacity-60 [background-size:56px_56px]"
-        />
-        <div
-          aria-hidden="true"
-          className="mk-grain pointer-events-none absolute inset-0 -z-10"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -left-52 top-1/3 -z-10 h-[34rem] w-[34rem] rounded-full border border-[var(--line)] opacity-30"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-32 top-0 -z-10 h-[44rem] w-[44rem] rounded-full border border-[var(--line)] opacity-25"
-        />
 
         <div className="mk-shell">
           <div className="grid gap-14 pb-20 pt-14 sm:pt-16 xl:grid-cols-[minmax(0,1fr)_700px] xl:items-center xl:gap-10 xl:pb-28 xl:pt-20 2xl:grid-cols-[minmax(0,1fr)_740px]">
             <div className="max-w-[35rem]">
               <p
                 data-hero-line
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 font-meta text-[10px] text-[var(--ink-soft)]"
+                className="inline-flex items-center gap-2 text-[11px] text-[var(--ink-muted)]"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-jade)]" />
                 Approved documents only
@@ -278,7 +226,7 @@ export function LandingPage() {
                 </ButtonLink>
               </div>
 
-              <p data-hero-line className="mt-4 font-meta text-[10px] text-[var(--ink-muted)]">
+              <p data-hero-line className="mt-4 font-meta text-[11px] text-[var(--ink-muted)]">
                 Free during beta · No credit card · Workspace-isolated
               </p>
 
@@ -289,13 +237,13 @@ export function LandingPage() {
                 {[
                   ["6", "formats"],
                   ["0", "open-web answers"],
-                  ["1", "workspace per org"],
+                  ["1", "per organisation"],
                 ].map(([value, label]) => (
                   <div key={label}>
                     <dt className="text-[17px] font-medium leading-none tracking-[-0.03em] text-[var(--ink)] tabular-nums">
                       {value}
                     </dt>
-                    <dd className="mt-1.5 font-meta text-[9px] leading-3.5 text-[var(--ink-muted)]">
+                    <dd className="mt-1.5 font-meta text-[11px] leading-4 text-[var(--ink-muted)]">
                       {label}
                     </dd>
                   </div>
@@ -309,10 +257,6 @@ export function LandingPage() {
           </div>
         </div>
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(to_top,var(--canvas),transparent)]"
-        />
       </section>
 
       {/* Formats ---------------------------------------------------- */}
@@ -322,7 +266,7 @@ export function LandingPage() {
             <p className="text-[12px] font-medium text-[var(--ink)]">
               Built for the documents you already have
             </p>
-            <p className="font-meta text-[9px] text-[var(--ink-muted)]">
+            <p className="font-meta text-[11px] text-[var(--ink-muted)]">
               Six formats · parsed with page references
             </p>
           </div>
@@ -341,10 +285,10 @@ export function LandingPage() {
                     aria-hidden="true"
                   />
                   <span className="min-w-0">
-                    <span className="block font-meta text-[10px] text-[var(--ink)]">
+                    <span className="block font-meta text-[11px] text-[var(--ink)]">
                       {format.ext}
                     </span>
-                    <span className="mt-0.5 block truncate text-[9px] text-[var(--ink-muted)]">
+                    <span className="mt-0.5 block truncate text-[11px] text-[var(--ink-muted)]">
                       {format.label}
                     </span>
                   </span>
@@ -380,7 +324,7 @@ export function LandingPage() {
                 data-reveal
                 className="grid gap-3 border-b border-[var(--line)] py-6 sm:grid-cols-[48px_1fr]"
               >
-                <span className="font-meta text-[10px] text-[var(--ink-muted)] tabular-nums">
+                <span className="font-meta text-[11px] text-[var(--ink-muted)] tabular-nums">
                   0{index + 1}
                 </span>
                 <div>
@@ -415,7 +359,7 @@ export function LandingPage() {
 
           <div data-reveal className="mt-10">
             <ReceiptComparison />
-            <p className="mt-3 font-meta text-[9px] leading-4 text-[var(--ink-muted)]">
+            <p className="mt-3 font-meta text-[11px] leading-4 text-[var(--ink-muted)]">
               Preview of the citation view · sample content
             </p>
           </div>
@@ -532,7 +476,7 @@ export function LandingPage() {
                     Advanced parsing is available for complex files. It is optional,
                     and only runs on the files an admin chooses.
                   </p>
-                  <p className="mt-3 border-t border-[var(--line)] pt-2 font-meta text-[8px] text-[var(--ink-muted)]">
+                  <p className="mt-3 border-t border-[var(--line)] pt-2 font-meta text-[11px] text-[var(--ink-muted)]">
                     LlamaParse · optional
                   </p>
                 </div>
@@ -599,10 +543,10 @@ export function LandingPage() {
             <CoverageChart />
             <div className="flex flex-col rounded-[12px] border border-[var(--line)] bg-[var(--surface)] p-4">
               <div className="flex items-center justify-between">
-                <p className="font-meta text-[9px] text-[var(--ink-muted)]">
+                <p className="font-meta text-[11px] text-[var(--ink-muted)]">
                   Evaluation set
                 </p>
-                <span className="rounded-full border border-[var(--line)] px-2 py-0.5 font-meta text-[8px] text-[var(--ink-muted)]">
+                <span className="rounded-full border border-[var(--line)] px-2 py-0.5 font-meta text-[11px] text-[var(--ink-muted)]">
                   Preview
                 </span>
               </div>
@@ -622,14 +566,14 @@ export function LandingPage() {
                   ["Wrong source", "0"],
                 ].map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between">
-                    <span className="text-[10px] text-[var(--ink-muted)]">{label}</span>
-                    <span className="font-meta text-[9px] text-[var(--ink-soft)] tabular-nums">
+                    <span className="text-[11px] text-[var(--ink-muted)]">{label}</span>
+                    <span className="font-meta text-[11px] text-[var(--ink-soft)] tabular-nums">
                       {value}
                     </span>
                   </div>
                 ))}
               </div>
-              <p className="mt-auto pt-3 font-meta text-[8px] leading-3.5 text-[var(--ink-muted)]">
+              <p className="mt-auto pt-3 font-meta text-[11px] leading-4 text-[var(--ink-muted)]">
                 Illustrative preview. Evaluations run against your own question set.
               </p>
             </div>
@@ -722,66 +666,8 @@ export function LandingPage() {
             <ArrowLink href="/solutions">See all teams</ArrowLink>
           </div>
 
-          <div
-            data-reveal
-            className="mt-10 grid gap-px overflow-hidden rounded-[18px] border border-[var(--line)] bg-[var(--line)] lg:grid-cols-[0.72fr_1.28fr]"
-          >
-            <div className="flex flex-col justify-between bg-[var(--canvas)] p-6 sm:p-8">
-              <div>
-                <span className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-[var(--line)] bg-[var(--surface)]">
-                  <Users size={16} strokeWidth={1.5} className="text-[var(--accent-jade)]" aria-hidden="true" />
-                </span>
-                <p className="mt-6 max-w-[26ch] text-[19px] font-medium leading-7 tracking-[-0.02em] text-[var(--ink)]">
-                  One library.
-                  <br />
-                  Every team’s questions.
-                </p>
-                <p className="mt-3 max-w-[38ch] text-[12px] leading-5 text-[var(--ink-muted)]">
-                  Collections keep a question inside one department. The permissions
-                  stay the same; the answers get more specific.
-                </p>
-              </div>
-              <div className="mt-10 border-t border-[var(--line)] pt-4">
-                <p className="font-meta text-[9px] text-[var(--ink-muted)]">
-                  People · Support · Legal · Operations
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-px bg-[var(--line)] sm:grid-cols-2">
-              {TEAMS.map((team, index) => (
-                <Link
-                  key={team.name}
-                  href={team.href}
-                  className="group flex min-h-[188px] flex-col justify-between bg-[var(--canvas)] p-5 transition-colors hover:bg-[var(--surface)] sm:p-6"
-                >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-[13px] font-medium text-[var(--ink)]">
-                        {team.name}
-                      </p>
-                      <ArrowUpRight
-                        size={13}
-                        strokeWidth={1.5}
-                        className="text-[var(--ink-muted)] transition-colors group-hover:text-[var(--accent-jade)]"
-                        aria-hidden="true"
-                      />
-                    </div>
-                    <p className="mt-4 flex gap-2 text-[11px] leading-5 text-[var(--ink-muted)]">
-                      <Quote size={11} strokeWidth={1.5} className="mt-0.5 shrink-0" aria-hidden="true" />
-                      {team.question}
-                    </p>
-                    <p className="mt-2 text-[12px] leading-5 text-[var(--ink-soft)]">
-                      {team.answer}
-                      <CitationMark n={index + 1} />
-                    </p>
-                  </div>
-                  <p className="mt-4 truncate border-t border-[var(--line)] pt-2 font-meta text-[8px] text-[var(--ink-muted)]">
-                    {team.source}
-                  </p>
-                </Link>
-              ))}
-            </div>
+          <div data-reveal className="mt-10">
+            <TeamShowcase />
           </div>
         </div>
       </section>
@@ -815,7 +701,7 @@ export function LandingPage() {
                     {plan.name}
                   </h3>
                   <span
-                    className={`font-meta text-[9px] ${
+                    className={`font-meta text-[11px] ${
                       plan.featured ? "text-[var(--accent-jade)]" : "text-[var(--ink-muted)]"
                     }`}
                   >
@@ -825,7 +711,7 @@ export function LandingPage() {
                 <p className="mt-3 min-h-10 text-[12px] leading-5 text-[var(--ink-soft)]">
                   {plan.detail}
                 </p>
-                <p className="mt-4 border-y border-[var(--line)] py-2.5 font-meta text-[9px] leading-4 text-[var(--ink-muted)]">
+                <p className="mt-4 border-y border-[var(--line)] py-2.5 font-meta text-[11px] leading-4 text-[var(--ink-muted)]">
                   {plan.limits}
                 </p>
                 <ul className="mt-4 flex-1 space-y-2 text-[11px] leading-5 text-[var(--ink-soft)]">
@@ -854,7 +740,7 @@ export function LandingPage() {
               </article>
             ))}
           </div>
-          <p className="mt-4 font-meta text-[9px] leading-4 text-[var(--ink-muted)]">
+          <p className="mt-4 font-meta text-[11px] leading-4 text-[var(--ink-muted)]">
             Paid plans are quoted per workspace. Prices are confirmed before a workspace
             is upgraded.
           </p>
@@ -886,14 +772,6 @@ export function LandingPage() {
 
       {/* CTA ------------------------------------------------------- */}
       <section className="relative isolate overflow-hidden bg-[var(--surface-2)]">
-        <div
-          aria-hidden="true"
-          className="mk-grid-bg pointer-events-none absolute inset-0 -z-10 opacity-30 [background-size:48px_48px]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-56 -top-24 -z-10 h-[36rem] w-[36rem] rounded-full border border-[var(--line)] opacity-30"
-        />
         <div className="mk-shell py-20 lg:py-28">
           <div data-reveal className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
             <div>
@@ -919,15 +797,11 @@ export function LandingPage() {
             </div>
 
             <div className="hidden justify-self-end lg:block" aria-hidden="true">
-              <div className="relative h-64 w-80">
-                <div className="absolute right-8 top-3 h-48 w-40 rotate-6 rounded-[8px] border border-[var(--line)] bg-[var(--surface)]" />
-                <div className="absolute right-14 top-5 h-48 w-40 rotate-2 rounded-[8px] border border-[var(--line)] bg-[var(--surface)]" />
-                <div className="absolute right-20 top-0 w-44 rotate-0 rounded-[8px] border border-[var(--accent-jade-200)] bg-[var(--canvas)] p-2 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9)]">
-                  <DocumentPage compact page="8" section="People · policy 04" title="Parental leave" />
-                  <p className="mt-2 border-t border-[var(--line)] pt-2 font-meta text-[8px] leading-3.5 text-[var(--ink-muted)]">
-                    Every answer has a page behind it.
-                  </p>
-                </div>
+              <div className="w-64 rounded-[12px] border border-[var(--line)] bg-[var(--canvas)] p-3">
+                <DocumentPage compact page="8" section="People · policy 04" title="Parental leave" />
+                <p className="mt-3 border-t border-[var(--line)] pt-2 font-meta text-[11px] leading-4 text-[var(--ink-muted)]">
+                  Every answer has a page behind it.
+                </p>
               </div>
             </div>
           </div>

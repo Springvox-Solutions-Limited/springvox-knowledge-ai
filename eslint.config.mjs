@@ -11,6 +11,7 @@ export default defineConfig([
     "public/**",
     ".claude/skills/**",
     ".skills/**",
+    ".agents/**",
     "samples/**",
     "sql/**",
     "next-env.d.ts",

@@ -14,23 +14,21 @@ function uniqueItems(items: string[]) {
   return Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)));
 }
 
-function inferDocumentHints(filenames: string[]) {
-  const text = filenames.join(' ').toLowerCase();
+function cleanLabel(value: string) {
+  return value
+    .replace(/\.[a-z0-9]{2,5}$/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  return {
-    hasCisco: text.includes('cisco') || text.includes('phone') || text.includes('7800'),
-    hasCalls:
-      text.includes('call') ||
-      text.includes('record') ||
-      text.includes('report') ||
-      text.includes('xlsx') ||
-      text.includes('csv'),
-    hasPolicy:
-      text.includes('policy') ||
-      text.includes('handbook') ||
-      text.includes('onboarding') ||
-      text.includes('guide'),
-  };
+function sourceLabels(filenames: string[], categories: string[] = []) {
+  const labels = uniqueItems([
+    ...filenames.map(cleanLabel),
+    ...categories.map(cleanLabel),
+  ]);
+
+  return labels.filter((label) => label.length >= 2).slice(0, 3);
 }
 
 function inferCategoryHints(categories: string[] = []) {
@@ -44,18 +42,12 @@ function inferCategoryHints(categories: string[] = []) {
   };
 }
 
-export function buildNoAnswerMessage(filenames: string[]) {
-  const hints = inferDocumentHints(filenames);
-  const topics = [
-    hints.hasCisco ? 'Cisco phone setup and call handling features' : '',
-    hints.hasCalls ? 'call record patterns and failure reasons' : '',
-    hints.hasPolicy ? 'approved policy or handbook details' : '',
-  ].filter(Boolean);
-
+export function buildNoAnswerMessage(filenames: string[], categories: string[] = []) {
+  const labels = sourceLabels(filenames, categories);
   const suggestion =
-    topics.length > 0
-      ? `Try asking about ${topics.join(', ')}.`
-      : 'Try asking about the uploaded documents, specific file names, or the exact topic you want to find.';
+    labels.length > 0
+      ? `Try naming one of the available sources (${labels.join(', ')}) or a broader topic covered by them.`
+      : 'Try asking about a specific document, policy, process, or figure in the approved library.';
 
   return `I couldn't find support for that in the uploaded documents. I searched the most relevant approved documents for this workspace. ${suggestion}`;
 }
@@ -68,33 +60,26 @@ export function generateFollowUps({
   noAnswer,
   answer,
 }: FollowUpInput) {
-  const hints = inferDocumentHints(filenames);
   const categoryHints = inferCategoryHints(documentCategories);
+  const labels = sourceLabels(filenames, documentCategories);
+  const primaryLabel = labels[0];
   const answerText = answer.toLowerCase();
   const suggestions: string[] = [];
 
   if (noAnswer) {
-    suggestions.push('What topics are covered in the uploaded documents?');
-    suggestions.push('Which document is most relevant to this question?');
+    if (labels[0]) suggestions.push(`What does ${labels[0]} cover?`);
+    if (labels[1]) suggestions.push(`What does ${labels[1]} cover?`);
+    suggestions.push('Which approved documents are most relevant to this workspace?');
   }
 
-  if (hints.hasCisco) {
-    suggestions.push('How do I transfer a call?');
-    suggestions.push('What should I do if the phone loses connectivity?');
-    suggestions.push('What call handling features are available?');
-  }
-
-  if (hints.hasCalls || categoryHints.hasSpreadsheet || hasTableMetadata) {
-    suggestions.push('Which call failure reason appears most often?');
-    suggestions.push('What time period had the most call activity?');
-    suggestions.push('Which entries need investigation first?');
+  if (hasTableMetadata || categoryHints.hasSpreadsheet) {
     suggestions.push('Which status or category appears most often?');
     suggestions.push('What are the highest and lowest values in the retrieved rows?');
+    suggestions.push('Can you summarize this by day?');
   }
 
-  if (hints.hasPolicy || categoryHints.hasPolicy) {
+  if (categoryHints.hasPolicy) {
     suggestions.push('What are the key requirements in this document?');
-    suggestions.push('What should a new team member do first?');
     suggestions.push('What exceptions or approvals are mentioned?');
   }
 
@@ -105,7 +90,6 @@ export function generateFollowUps({
 
   if (categoryHints.hasPresentation) {
     suggestions.push('What are the main takeaways from this presentation?');
-    suggestions.push('What decisions or actions does it support?');
   }
 
   if (intent === 'summarization') {
@@ -119,7 +103,6 @@ export function generateFollowUps({
   }
 
   if (intent === 'analytics') {
-    suggestions.push('Can you summarize this by day?');
     suggestions.push('What operational pattern stands out most?');
     suggestions.push('Which entries are highest or lowest?');
     suggestions.push('What caveats apply to this analysis?');
@@ -138,11 +121,11 @@ export function generateFollowUps({
     suggestions.push('Who approves this process?');
   }
 
-  if (answerText.includes('trend') || answerText.includes('highest')) {
-    suggestions.push('Show trends over time.');
+  if (primaryLabel) {
+    suggestions.push(`What else does ${primaryLabel} cover?`);
   }
 
-  suggestions.push('Show me the sources for the answer.');
+  suggestions.push('Which section supports this answer?');
 
   return uniqueItems(suggestions).slice(0, 3);
 }

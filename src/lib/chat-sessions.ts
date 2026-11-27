@@ -175,3 +175,42 @@ export async function setSessionTitleFromFirstQuestionIfNeeded(
 
   await touchChatSession(supabase, sessionId);
 }
+
+export type ChatHistoryTurn = {
+  question: string;
+  answer: string;
+  created_at: string;
+};
+
+/**
+ * Load the most recent completed exchanges for one owned session. Query is
+ * explicitly workspace-scoped and capped; history is only used as context for
+ * query rewriting and is never treated as a source of truth.
+ */
+export async function loadRecentChatHistory(
+  supabase: SupabaseClient,
+  {
+    sessionId,
+    workspaceId,
+    limit = 4,
+  }: {
+    sessionId: string;
+    workspaceId: string;
+    limit?: number;
+  },
+) {
+  const safeLimit = Math.max(1, Math.min(8, Math.floor(limit)));
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('question, answer, created_at')
+    .eq('session_id', sessionId)
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+    .limit(safeLimit);
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data || []) as ChatHistoryTurn[]).reverse();
+}

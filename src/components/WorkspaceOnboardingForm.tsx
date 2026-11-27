@@ -1,24 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  ArrowLeft,
+  ArrowRight,
   Building2,
+  Check,
   CheckCircle2,
   Loader2,
-  Mail,
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
 
-import {
-  getDefaultRouteForRole,
-  getRoleLabel,
-  type AnyAppRole,
-} from "@/src/lib/workspace";
+import { getDefaultRouteForRole, getRoleLabel, type AnyAppRole } from "@/src/lib/workspace";
 import { supabase } from "@/src/lib/supabase";
-import { slugifyWorkspaceName } from "@/src/lib/onboarding";
+import { isValidEmail, slugifyWorkspaceName } from "@/src/lib/onboarding";
 import { validatePassword } from "@/src/lib/password-policy";
 import { getCurrentUserProfile } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
@@ -37,38 +35,47 @@ type InviteDetails = {
   assistant_name: string;
 };
 
+type SlugStatus = {
+  checking: boolean;
+  message: string | null;
+  available: boolean | null;
+};
+
+const inputClass =
+  "h-10 rounded-md border-[var(--line)] bg-[var(--canvas)] px-3 text-[13px] text-[var(--ink)] shadow-none placeholder:text-[var(--ink-muted)] focus-visible:border-[var(--accent-jade)] focus-visible:ring-2 focus-visible:ring-[var(--accent-jade-100)]";
+
 export default function WorkspaceOnboardingForm({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite") || "";
-  const [mode, setMode] = useState<"create" | "join">(
-    inviteToken ? "join" : "create",
-  );
-  const [slugStatus, setSlugStatus] = useState<{
-    checking: boolean;
-    message: string | null;
-    available: boolean | null;
-  }>({ checking: false, message: null, available: null });
+
+  const [mode, setMode] = useState<"create" | "join">(inviteToken ? "join" : "create");
+  const [step, setStep] = useState(0);
+  const [joinStep, setJoinStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [inviteDetails, setInviteDetails] = useState<InviteDetails | null>(
-    null,
-  );
+  const [inviteDetails, setInviteDetails] = useState<InviteDetails | null>(null);
+  const [inviteLink, setInviteLink] = useState("");
+  const [slugStatus, setSlugStatus] = useState<SlugStatus>({
+    checking: false,
+    message: null,
+    available: null,
+  });
 
   const [companyName, setCompanyName] = useState("");
   const [workspaceSlug, setWorkspaceSlug] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [website, setWebsite] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [website, setWebsite] = useState("");
-  const [inviteLink, setInviteLink] = useState("");
-  const stepLabels =
-    mode === "join"
-      ? ["Invitation", "Your details", "Access workspace"]
-      : ["Company setup", "Admin account", "Launch workspace"];
+
+  const createSteps = ["Workspace", "Your account", "Review"];
+  const joinSteps = ["Invitation", "Your account"];
+  const steps = mode === "join" ? joinSteps : createSteps;
+  const currentStep = mode === "join" ? joinStep : step;
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -78,103 +85,104 @@ export default function WorkspaceOnboardingForm({ embedded = false }: { embedded
   }, [inviteToken]);
 
   useEffect(() => {
-    if (!inviteToken) {
-      return;
-    }
-
+    if (!inviteToken) return;
     let cancelled = false;
 
     async function loadInvite() {
       try {
         const response = await fetch(`/api/invitations/${inviteToken}`);
         const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Invalid invite");
-        }
-
-        if (!cancelled) {
-          setInviteDetails(data.invitation);
-        }
+        if (!response.ok) throw new Error(data.error || "Invalid invite");
+        if (!cancelled) setInviteDetails(data.invitation);
       } catch (inviteError) {
         if (!cancelled) {
-          setError(
-            inviteError instanceof Error
-              ? inviteError.message
-              : "Invalid invite",
-          );
+          setError(inviteError instanceof Error ? inviteError.message : "Invalid invite");
         }
       }
     }
 
-    loadInvite();
-
+    void loadInvite();
     return () => {
       cancelled = true;
     };
   }, [inviteToken]);
 
-  const createDisabled = useMemo(
-    () => mode === "create" && slugStatus.available === false,
-    [mode, slugStatus.available],
-  );
+  function switchMode(next: "create" | "join") {
+    setMode(next);
+    setStep(0);
+    setJoinStep(0);
+    setFieldErrors({});
+    setError(null);
+    setSuccess(null);
+    if (next === "create") router.replace("/register");
+  }
 
   async function checkSlug(slug: string) {
     if (!slug) {
       setSlugStatus({ checking: false, message: null, available: null });
-      return;
+      return false;
     }
 
-    setSlugStatus({
-      checking: true,
-      message: "Checking slug...",
-      available: null,
-    });
+    setSlugStatus({ checking: true, message: "Checking availability…", available: null });
+
     try {
-      const response = await fetch(
-        `/api/workspaces/check-slug?slug=${encodeURIComponent(slug)}`,
-      );
+      const response = await fetch(`/api/workspaces/check-slug?slug=${encodeURIComponent(slug)}`);
       const data = await response.json();
-
       if (!response.ok) {
-        setSlugStatus({
-          checking: false,
-          message: data.error || "Slug unavailable",
-          available: false,
-        });
-        return;
+        setSlugStatus({ checking: false, message: data.error || "Slug unavailable", available: false });
+        return false;
       }
-
+      const available = Boolean(data.available);
       setSlugStatus({
         checking: false,
-        message: data.available ? "Slug is available" : "Slug is already taken",
-        available: data.available,
+        message: available ? "Available" : "Already taken",
+        available,
       });
+      return available;
     } catch {
-      setSlugStatus({
-        checking: false,
-        message: "Unable to check slug right now",
-        available: false,
-      });
+      setSlugStatus({ checking: false, message: "Could not check availability", available: false });
+      return false;
     }
   }
 
-  async function handleCreateWorkspace(event: React.FormEvent) {
-    event.preventDefault();
+  function validateCreateStep(current: number) {
     const nextErrors: Record<string, string> = {};
-    if (!companyName.trim()) nextErrors.companyName = "Company name is required.";
-    if (!workspaceSlug.trim()) nextErrors.workspaceSlug = "Workspace slug is required.";
-    if (!fullName.trim()) nextErrors.fullName = "Admin name is required.";
-    if (!email.trim()) nextErrors.email = "Admin email is required.";
-    if (!password) nextErrors.password = "Password is required.";
-    if (password) {
+
+    if (current === 0) {
+      if (!companyName.trim()) nextErrors.companyName = "Company name is required.";
+      if (!workspaceSlug.trim()) nextErrors.workspaceSlug = "Workspace URL is required.";
+    }
+
+    if (current === 1) {
+      if (!fullName.trim()) nextErrors.fullName = "Your name is required.";
+      if (!isValidEmail(email.trim())) nextErrors.email = "Enter a valid work email.";
       const passwordError = validatePassword(password);
       if (passwordError) nextErrors.password = passwordError;
     }
-    if (slugStatus.available === false) nextErrors.workspaceSlug = slugStatus.message || "Workspace slug is unavailable.";
 
     setFieldErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) {
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  async function continueCreate() {
+    if (!validateCreateStep(step)) return;
+
+    if (step === 0 && slugStatus.available !== true) {
+      const available = await checkSlug(workspaceSlug);
+      if (!available) {
+        setFieldErrors({ workspaceSlug: "Choose an available workspace URL." });
+        return;
+      }
+    }
+
+    setError(null);
+    setStep((current) => Math.min(current + 1, 2));
+  }
+
+  async function createWorkspace() {
+    if (!validateCreateStep(0) || !validateCreateStep(1)) return;
+    if (slugStatus.available === false) {
+      setFieldErrors({ workspaceSlug: "Choose an available workspace URL." });
       return;
     }
 
@@ -185,9 +193,7 @@ export default function WorkspaceOnboardingForm({ embedded = false }: { embedded
     try {
       const response = await fetch("/api/workspaces/create", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           companyName,
           slug: workspaceSlug,
@@ -200,120 +206,74 @@ export default function WorkspaceOnboardingForm({ embedded = false }: { embedded
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Unable to create workspace");
+      if (!response.ok) throw new Error(data.error || "Unable to create workspace");
+
+      if (data.requiresEmailVerification) {
+        setSuccess("Workspace created. Check your email to verify your account before signing in.");
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
       }
 
-      const signInResult = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const signInResult = await supabase.auth.signInWithPassword({ email, password });
+      if (signInResult.error) throw signInResult.error;
 
-      if (signInResult.error) {
-        throw signInResult.error;
-      }
-
-      setSuccess("Workspace created. Redirecting to your dashboard...");
       const profile = await getCurrentUserProfile();
-      router.push(
-        profile ? getDefaultRouteForRole(profile.role) : "/dashboard",
-      );
+      router.push(profile ? getDefaultRouteForRole(profile.role) : "/dashboard");
       router.refresh();
     } catch (createError) {
-      setError(
-        createError instanceof Error
-          ? createError.message
-          : "Unable to create workspace",
-      );
+      setError(createError instanceof Error ? createError.message : "Unable to create workspace");
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleJoinInvite(event: React.FormEvent) {
+  async function joinWorkspace(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
-    if (inviteToken && !fullName.trim()) nextErrors.fullName = "Full name is required.";
-    if (inviteToken && !password) nextErrors.password = "Password is required.";
-    if (password) {
-      const passwordError = validatePassword(password);
-      if (passwordError) nextErrors.password = passwordError;
-    }
+    if (!fullName.trim()) nextErrors.fullName = "Your name is required.";
+    const passwordError = validatePassword(password);
+    if (passwordError) nextErrors.password = passwordError;
     setFieldErrors(nextErrors);
-
-    if (Object.keys(nextErrors).length > 0) {
-      return;
-    }
+    if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      if (!inviteToken) {
-        throw new Error("Invite token is missing");
-      }
+      if (!inviteToken) throw new Error("Invite token is missing");
 
       const registerResponse = await fetch("/api/auth/register-invite", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token: inviteToken,
-          fullName,
-          password,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: inviteToken, fullName, password }),
       });
       const registerData = await registerResponse.json();
-
-      if (!registerResponse.ok) {
-        throw new Error(
-          registerData.error || "Unable to create invite account",
-        );
-      }
+      if (!registerResponse.ok) throw new Error(registerData.error || "Unable to create invite account");
 
       const signInResult = await supabase.auth.signInWithPassword({
         email: registerData.email,
         password,
       });
-
-      if (signInResult.error) {
-        throw signInResult.error;
-      }
+      if (signInResult.error) throw signInResult.error;
 
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
-      if (!accessToken) {
-        throw new Error("Authentication session expired");
-      }
+      if (!accessToken) throw new Error("Authentication session expired");
 
       const acceptResponse = await fetch("/api/invitations/accept", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ token: inviteToken }),
       });
       const acceptData = await acceptResponse.json();
+      if (!acceptResponse.ok) throw new Error(acceptData.error || "Unable to accept invitation");
 
-      if (!acceptResponse.ok) {
-        throw new Error(acceptData.error || "Unable to accept invitation");
-      }
-
-      setSuccess("Invitation accepted. Redirecting to workspace chat...");
       const profile = await getCurrentUserProfile();
-      router.push(
-        profile ? getDefaultRouteForRole(profile.role) : "/dashboard/chat",
-      );
+      router.push(profile ? getDefaultRouteForRole(profile.role) : "/dashboard/chat");
       router.refresh();
     } catch (inviteError) {
-      setError(
-        inviteError instanceof Error
-          ? inviteError.message
-          : "Unable to join workspace",
-      );
+      setError(inviteError instanceof Error ? inviteError.message : "Unable to join workspace");
     } finally {
       setLoading(false);
     }
@@ -321,517 +281,326 @@ export default function WorkspaceOnboardingForm({ embedded = false }: { embedded
 
   function handleInviteLinkSubmit() {
     const trimmed = inviteLink.trim();
-
     if (!trimmed) {
       setError("Paste your invite link or invite token");
       return;
     }
-
     try {
       const token = trimmed.includes("/invite/")
         ? trimmed.split("/invite/").pop()?.split(/[?#]/)[0]
         : trimmed;
-
-      if (!token) {
-        throw new Error("Invite token not found");
-      }
-
+      if (!token) throw new Error("Invite token not found");
       router.push(`/register?invite=${encodeURIComponent(token)}`);
     } catch {
       setError("Enter a valid invite link or token");
     }
   }
 
-  const formColumn = (
-        <div className="min-w-0 space-y-5">
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--accent-jade)]">
-              Secure onboarding
-            </p>
-            <h1 className="text-2xl font-bold tracking-tight text-[var(--ink)] sm:text-3xl">
-              {mode === "join"
-                ? "Join with invitation"
-                : "Create your company workspace"}
-            </h1>
-            <p className="text-sm leading-7 text-[var(--ink-soft)]">
-              {mode === "join"
-                ? "Create your account and join the workspace."
-                : "Set up a secure workspace for your team to ask questions about company documents."}
-            </p>
-          </div>
+  const panel = (
+    <div className="w-full">
+      <div className="flex items-center gap-2 text-[11px] text-[var(--ink-muted)]">
+        <ShieldCheck size={13} className="text-[var(--accent-jade)]" />
+        Secure workspace setup
+      </div>
+      <h1 className="mt-3 text-[28px] font-medium tracking-[-0.035em] text-[var(--ink)] sm:text-[32px]">
+        {mode === "join" ? "Join your workspace" : "Create your workspace"}
+      </h1>
+      <p className="mt-1.5 max-w-[52ch] text-[13px] leading-6 text-[var(--ink-soft)]">
+        {mode === "join"
+          ? "Use your invitation to create an account in the workspace you were invited to."
+          : "Set up the shared knowledge base your team will use. You can change most details later."}
+      </p>
 
-          <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-2)] p-3 sm:p-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-              {stepLabels.map((label, index) => (
-                <div
-                  key={label}
-                  className={cn(
-                    "relative flex items-center gap-3 rounded-2xl border px-3 py-2.5",
-                    index === 0
-                      ? "border-[var(--accent-jade-100)] bg-[var(--surface)] shadow-sm"
-                      : "border-[var(--line)] bg-[var(--surface)]",
-                  )}
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent-jade-50)] text-xs font-bold text-[var(--accent-jade)]">
-                    {index + 1}
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-muted)]">
-                      Step {index + 1}
-                    </p>
-                    <p className="text-sm font-semibold text-[var(--ink)]">
-                      {label}
-                    </p>
-                  </div>
+      {!inviteToken ? (
+        <div className="mt-5 flex gap-1 border-b border-[var(--line)]">
+          <button
+            type="button"
+            onClick={() => switchMode("create")}
+            className={cn(
+              "-mb-px border-b-2 px-1 pb-2 text-[12px] font-medium transition-colors",
+              mode === "create" ? "border-[var(--accent-jade)] text-[var(--ink)]" : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]",
+            )}
+          >
+            Create workspace
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("join")}
+            className={cn(
+              "-mb-px ml-4 border-b-2 px-1 pb-2 text-[12px] font-medium transition-colors",
+              mode === "join" ? "border-[var(--accent-jade)] text-[var(--ink)]" : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]",
+            )}
+          >
+            Join with invite
+          </button>
+        </div>
+      ) : null}
+
+      <div className="mt-5">
+        <StepRail steps={steps} current={currentStep} />
+      </div>
+
+      <div className="mt-4 rounded-[12px] border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5">
+        {mode === "create" ? (
+          <>
+            {step === 0 ? (
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-[14px] font-medium text-[var(--ink)]">Workspace details</h2>
+                  <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">This is how your team will find the workspace.</p>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("create");
-                router.replace("/register");
-              }}
-              className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                mode === "create"
-                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-sm"
-                  : "text-[var(--ink-muted)]"
-              }`}
-            >
-              Create workspace
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("join")}
-              className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                mode === "join"
-                  ? "bg-[var(--surface)] text-[var(--ink)] shadow-sm"
-                  : "text-[var(--ink-muted)]"
-              }`}
-            >
-              Join with invite
-            </button>
-          </div>
-
-          {mode === "create" ? (
-            <form onSubmit={handleCreateWorkspace} className="space-y-4">
-              <FormSection
-                step="Step 1"
-                title="Company details"
-                description="Set the organisation name your team will recognize."
-              >
-                <div className="grid gap-4 sm:grid-cols-[1.2fr_0.8fr]">
-                  <Field label="Company Name" required error={fieldErrors.companyName}>
+                <div className="grid gap-4 sm:grid-cols-[1.1fr_0.9fr]">
+                  <Field label="Company name" required error={fieldErrors.companyName}>
                     <Input
                       value={companyName}
                       onChange={(event) => {
-                        const nextCompany = event.target.value;
-                        setCompanyName(nextCompany);
-                        if (!workspaceSlug) {
-                          setWorkspaceSlug(slugifyWorkspaceName(nextCompany));
-                        }
+                        const next = event.target.value;
+                        setCompanyName(next);
+                        if (!workspaceSlug) setWorkspaceSlug(slugifyWorkspaceName(next));
                       }}
-                      className="admin-input"
-                      aria-invalid={Boolean(fieldErrors.companyName)}
+                      className={inputClass}
                       placeholder="Acme Corporation"
-                      required
+                      autoFocus
                     />
                   </Field>
-                  <Field label="Workspace Slug" required error={fieldErrors.workspaceSlug}>
-                    <Input
-                      value={workspaceSlug}
-                      onChange={(event) => {
-                        const nextSlug = slugifyWorkspaceName(
-                          event.target.value,
-                        );
-                        setWorkspaceSlug(nextSlug);
-                        void checkSlug(nextSlug);
-                      }}
-                      className="admin-input"
-                      aria-invalid={Boolean(fieldErrors.workspaceSlug)}
-                      placeholder="acme-corp"
-                      required
-                    />
+                  <Field label="Workspace URL" required error={fieldErrors.workspaceSlug}>
+                    <div className="flex h-10 items-center rounded-md border border-[var(--line)] bg-[var(--canvas)] px-3 transition-colors focus-within:border-[var(--accent-jade)] focus-within:ring-2 focus-within:ring-[var(--accent-jade-100)]">
+                      <span className="shrink-0 font-meta text-[11px] text-[var(--ink-muted)]">/</span>
+                      <Input
+                        value={workspaceSlug}
+                        onChange={(event) => {
+                          const nextSlug = slugifyWorkspaceName(event.target.value);
+                          setWorkspaceSlug(nextSlug);
+                          setSlugStatus({ checking: false, message: null, available: null });
+                        }}
+                        onBlur={() => void checkSlug(workspaceSlug)}
+                        className="h-9 min-w-0 flex-1 border-0 bg-transparent pl-1.5 pr-0 shadow-none focus-visible:ring-0"
+                        placeholder="acme-corp"
+                        aria-describedby="workspace-url-hint"
+                      />
+                    </div>
                   </Field>
                 </div>
-                {workspaceSlug && (
-                  <div
-                    className={cn(
-                      "rounded-xl border px-3 py-2 text-xs",
-                      slugStatus.available
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                        : slugStatus.available === false
-                          ? "border-red-500/30 bg-red-500/10 text-red-300"
-                          : "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-muted)]",
-                    )}
-                  >
-                    {slugStatus.message}
-                  </div>
-                )}
-              </FormSection>
+                <p id="workspace-url-hint" className="text-[10px] leading-4 text-[var(--ink-muted)]">
+                  Your team will open this workspace at <span className="font-meta text-[var(--ink-soft)]">/{workspaceSlug || "your-workspace"}</span>.
+                </p>
 
-              <FormSection
-                step="Step 2"
-                title="Workspace admin"
-                description="Create the first admin account for your company workspace."
-              >
+                {workspaceSlug ? (
+                  <div className={cn("flex items-center gap-1.5 text-[11px]", slugStatus.available === true ? "text-emerald-300" : slugStatus.available === false ? "text-red-300" : "text-[var(--ink-muted)]")}>
+                    {slugStatus.checking ? <Loader2 size={12} className="animate-spin" /> : slugStatus.available === true ? <Check size={12} /> : null}
+                    {slugStatus.message || "Checking availability…"}
+                  </div>
+                ) : null}
+
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Full Name" required error={fieldErrors.fullName}>
-                    <Input
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      className="admin-input"
-                      aria-invalid={Boolean(fieldErrors.fullName)}
-                      placeholder="Jane Doe"
-                      required
-                    />
+                  <Field label="Industry" optional>
+                    <Input value={industry} onChange={(event) => setIndustry(event.target.value)} className={inputClass} placeholder="Technology" />
                   </Field>
-                  <Field label="Work Email" required error={fieldErrors.email}>
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      className="admin-input"
-                      aria-invalid={Boolean(fieldErrors.email)}
-                      placeholder="jane@company.com"
-                      required
-                    />
+                  <Field label="Website" optional>
+                    <Input value={website} onChange={(event) => setWebsite(event.target.value)} className={inputClass} placeholder="https://company.com" />
+                  </Field>
+                </div>
+              </div>
+            ) : step === 1 ? (
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-[14px] font-medium text-[var(--ink)]">Your admin account</h2>
+                  <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">This account becomes the first workspace admin.</p>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Full name" required error={fieldErrors.fullName}>
+                    <Input value={fullName} onChange={(event) => setFullName(event.target.value)} className={inputClass} placeholder="Jane Doe" autoComplete="name" autoFocus />
+                  </Field>
+                  <Field label="Work email" required error={fieldErrors.email}>
+                    <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} placeholder="jane@company.com" autoComplete="email" />
                   </Field>
                 </div>
                 <Field label="Password" required error={fieldErrors.password}>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="admin-input"
-                    aria-invalid={Boolean(fieldErrors.password)}
-                    placeholder="10+ characters, letter and number"
-                    required
-                  />
+                  <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} placeholder="At least 10 characters" autoComplete="new-password" />
                 </Field>
-              </FormSection>
-
-              <FormSection
-                step="Step 3"
-                title="Optional company context"
-                description="Add a little extra information now or update it later from settings."
-              >
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Industry (Optional)">
-                    <Input
-                      value={industry}
-                      onChange={(event) => setIndustry(event.target.value)}
-                      className="admin-input"
-                      placeholder="Technology"
-                    />
-                  </Field>
-                  <Field label="Website (Optional)">
-                    <Input
-                      value={website}
-                      onChange={(event) => setWebsite(event.target.value)}
-                      className="admin-input"
-                      placeholder="https://company.com"
-                    />
-                  </Field>
+                <p className="flex items-start gap-1.5 text-[10px] leading-4 text-[var(--ink-muted)]">
+                  <CheckCircle2 size={12} className="mt-0.5 shrink-0" />
+                  Use at least 10 characters with a letter and a number. We will send a verification email before you can sign in.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-[14px] font-medium text-[var(--ink)]">Review and create</h2>
+                  <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">Everything is ready. The workspace will start on the free beta plan.</p>
                 </div>
-              </FormSection>
+                <dl className="divide-y divide-[var(--line-soft)] rounded-md border border-[var(--line)] bg-[var(--canvas)] px-3">
+                  <ReviewRow label="Company" value={companyName} onEdit={() => setStep(0)} />
+                  <ReviewRow label="Workspace" value={`/${workspaceSlug}`} onEdit={() => setStep(0)} />
+                  <ReviewRow label="Admin" value={`${fullName} · ${email}`} onEdit={() => setStep(1)} />
+                  {industry ? <ReviewRow label="Industry" value={industry} onEdit={() => setStep(0)} /> : null}
+                  {website ? <ReviewRow label="Website" value={website} onEdit={() => setStep(0)} /> : null}
+                </dl>
+                <p className="text-[10px] leading-4 text-[var(--ink-muted)]">
+                  By creating a workspace you agree to the <Link href="/terms" className="underline">terms</Link> and <Link href="/privacy" className="underline">privacy policy</Link>.
+                </p>
+              </div>
+            )}
 
-              <AppButton
-                type="submit"
-                disabled={loading || createDisabled}
-                className="flex w-full"
-              >
-                {loading ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Building2 size={18} />
-                )}
-                Create company workspace
-              </AppButton>
-            </form>
-          ) : (
-            <form onSubmit={handleJoinInvite} className="space-y-5">
-              <FormSection
-                step="Step 1"
-                title="Invitation details"
-                description="Confirm the invited workspace and role before creating your account."
-              >
-                <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4 text-sm text-[var(--ink-soft)]">
-                  {inviteDetails ? (
-                    <div className="space-y-2">
-                      <p className="wrap-anywhere font-semibold text-[var(--ink)]">
-                        Joining {inviteDetails.workspace_name}
-                      </p>
-                      <p className="wrap-anywhere">
-                        Invited email: {inviteDetails.email}
-                      </p>
-                      <p>
-                        Role: {getRoleLabel(inviteDetails.role as AnyAppRole)}
-                      </p>
-                    </div>
-                  ) : (
-                    <p>
-                      Have an invite link? Paste it below or open your invite
-                      URL first.
-                    </p>
-                  )}
-                </div>
-              </FormSection>
-              {!inviteToken && (
-                <FormSection
-                  step="Step 2"
-                  title="Open your invitation"
-                  description="Paste the invite link or token you received from your workspace admin."
+            <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--line)] pt-4 sm:flex-row sm:justify-between">
+              {step > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setStep((current) => current - 1)}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-2.5 text-[12px] text-[var(--ink-muted)] hover:bg-[var(--canvas-soft)] hover:text-[var(--ink)]"
                 >
+                  <ArrowLeft size={13} />
+                  Back
+                </button>
+              ) : <span />}
+              {step < 2 ? (
+                <AppButton type="button" onClick={() => void continueCreate()} disabled={slugStatus.checking} className="h-9 px-3 text-[12px]">
+                  Continue
+                  <ArrowRight size={13} />
+                </AppButton>
+              ) : (
+                <AppButton type="button" onClick={() => void createWorkspace()} disabled={loading} className="h-9 px-3 text-[12px]">
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : <Building2 size={14} />}
+                  Create workspace
+                </AppButton>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {joinStep === 0 ? (
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-[14px] font-medium text-[var(--ink)]">Invitation</h2>
+                  <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">Confirm the workspace and role before creating your account.</p>
+                </div>
+                {inviteDetails ? (
+                  <div className="rounded-md border border-[var(--line)] bg-[var(--canvas)] p-3 text-[12px]">
+                    <p className="font-medium text-[var(--ink)]">Joining {inviteDetails.workspace_name}</p>
+                    <p className="mt-1 text-[var(--ink-soft)]">{inviteDetails.email}</p>
+                    <p className="mt-1 text-[var(--ink-muted)]">Role: {getRoleLabel(inviteDetails.role as AnyAppRole)}</p>
+                  </div>
+                ) : (
                   <div className="space-y-3">
-                    <Field label="Invite Link or Token">
-                      <Input
-                        value={inviteLink}
-                        onChange={(event) => setInviteLink(event.target.value)}
-                        className="admin-input"
-                        placeholder="https://app.example.com/invite/..."
-                      />
+                    <Field label="Invite link or token">
+                      <Input value={inviteLink} onChange={(event) => setInviteLink(event.target.value)} className={inputClass} placeholder="Paste the invitation link" />
                     </Field>
-                    <AppButton
-                      type="button"
-                      onClick={handleInviteLinkSubmit}
-                      tone="secondary"
-                      className="w-full"
-                    >
+                    <AppButton type="button" tone="secondary" onClick={handleInviteLinkSubmit} className="h-9 px-3 text-[12px]">
                       Continue with invite
                     </AppButton>
                   </div>
-                </FormSection>
-              )}
-              {inviteToken && (
-                <FormSection
-                  step="Step 2"
-                  title="Create your account"
-                  description="Set the name and password you will use inside this workspace."
-                >
-                  <div className="space-y-4">
-                    <Field label="Full Name" required error={fieldErrors.fullName}>
-                      <Input
-                        value={fullName}
-                        onChange={(event) => setFullName(event.target.value)}
-                        className="admin-input"
-                        aria-invalid={Boolean(fieldErrors.fullName)}
-                        placeholder="Jane Doe"
-                        required
-                      />
-                    </Field>
-                    <Field label="Password" required error={fieldErrors.password}>
-                      <Input
-                        type="password"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        className="admin-input"
-                        aria-invalid={Boolean(fieldErrors.password)}
-                        placeholder="10+ characters, letter and number"
-                        required
-                      />
-                    </Field>
-                  </div>
-                </FormSection>
-              )}
+                )}
+              </div>
+            ) : (
+              <form id="join-form" onSubmit={joinWorkspace} className="space-y-4">
+                <div>
+                  <h2 className="text-[14px] font-medium text-[var(--ink)]">Your account</h2>
+                  <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">Set the name and password you will use in this workspace.</p>
+                </div>
+                <Field label="Full name" required error={fieldErrors.fullName}>
+                  <Input value={fullName} onChange={(event) => setFullName(event.target.value)} className={inputClass} placeholder="Jane Doe" autoComplete="name" autoFocus />
+                </Field>
+                <Field label="Password" required error={fieldErrors.password}>
+                  <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} placeholder="At least 10 characters" autoComplete="new-password" />
+                </Field>
+              </form>
+            )}
 
-              {inviteToken ? (
-                <AppButton
-                  type="submit"
-                  disabled={loading || !inviteDetails}
-                  className="flex w-full"
-                >
-                  {loading ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <UserPlus size={18} />
-                  )}
-                  Join with invitation
+            <div className="mt-5 flex flex-col-reverse gap-2 border-t border-[var(--line)] pt-4 sm:flex-row sm:justify-between">
+              <button
+                type="button"
+                onClick={() => (joinStep === 0 ? router.push("/login") : setJoinStep(0))}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-2.5 text-[12px] text-[var(--ink-muted)] hover:bg-[var(--canvas-soft)] hover:text-[var(--ink)]"
+              >
+                <ArrowLeft size={13} />
+                {joinStep === 0 ? "Sign in" : "Back"}
+              </button>
+              {joinStep === 0 ? (
+                <AppButton type="button" onClick={() => setJoinStep(1)} disabled={!inviteDetails} className="h-9 px-3 text-[12px]">
+                  Continue
+                  <ArrowRight size={13} />
                 </AppButton>
-              ) : null}
-            </form>
-          )}
-
-          {(error || success) && (
-            <Alert
-              className={`rounded-2xl ${
-                error
-                  ? "border-red-500/30 bg-red-500/10 text-red-300"
-                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-              }`}
-            >
-              <AlertDescription>{error || success}</AlertDescription>
-            </Alert>
-          )}
-        </div>
-  );
-
-  const summaryColumn = (
-        <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface-2)] p-5 sm:p-6">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--surface)] text-[var(--accent-jade)] shadow-sm">
-              {mode === "join" ? <Mail size={20} /> : <ShieldCheck size={20} />}
+              ) : (
+                <AppButton type="submit" form="join-form" disabled={loading || !inviteDetails} className="h-9 px-3 text-[12px]">
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+                  Join workspace
+                </AppButton>
+              )}
             </div>
-            <div>
-              <p className="text-sm font-bold text-[var(--ink)]">
-                {mode === "join" ? "Invitation overview" : "Setup summary"}
-              </p>
-              <p className="text-xs text-[var(--ink-muted)]">
-                {mode === "join"
-                  ? "Stay inside the invited workspace."
-                  : "Your first user becomes the workspace admin."}
-              </p>
-            </div>
-          </div>
+          </>
+        )}
+      </div>
 
-          {mode === "join" ? (
-            <div className="space-y-3 text-sm text-[var(--ink-soft)]">
-              <ChecklistItem>
-                Join your organisation&apos;s existing workspace with the role
-                assigned in your invite.
-              </ChecklistItem>
-              <ChecklistItem>
-                Your invite email stays linked to the account that accepts the
-                invitation.
-              </ChecklistItem>
-              <ChecklistItem>
-                After setup, you will land directly inside the invited
-                workspace.
-              </ChecklistItem>
-            </div>
-          ) : (
-            <div className="space-y-3 text-sm text-[var(--ink-soft)]">
-              <ChecklistItem>
-                After creation, you become the Workspace Admin for your company
-                workspace.
-              </ChecklistItem>
-              <ChecklistItem>
-                Your team can upload approved documents and ask questions from
-                one shared knowledge base.
-              </ChecklistItem>
-              <ChecklistItem>
-                You can invite more staff, manage access, and review analytics
-                from the dashboard.
-              </ChecklistItem>
-            </div>
-          )}
+      {(error || success) ? (
+        <Alert className={cn("mt-3 rounded-md", error ? "border-red-500/30 bg-red-500/10 text-red-300" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300")}>
+          <AlertDescription className="text-[12px]">{error || success}</AlertDescription>
+        </Alert>
+      ) : null}
 
-          <div className="mt-8 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-jade-50)] text-[var(--accent-jade)]">
-                <CheckCircle2 size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-[var(--ink)]">
-                  What you will see after setup
-                </p>
-                <p className="mt-1 text-xs leading-6 text-[var(--ink-muted)]">
-                  A clean workspace with documents, users, analytics, and chat
-                  ready for your team.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 border-t border-[var(--line)] pt-6 text-sm text-[var(--ink-soft)]">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-[var(--accent-jade)] hover:underline"
-            >
-              Login
-            </Link>
-          </div>
-        </div>
+      <p className="mt-5 text-[11px] text-[var(--ink-muted)]">
+        Already have an account?{" "}
+        <Link href="/login" className="font-medium text-[var(--accent-jade)] hover:text-[var(--accent-jade-hover)]">Sign in</Link>
+      </p>
+    </div>
   );
 
   if (embedded) {
-    return (
-      <div className="mx-auto w-full max-w-2xl min-w-0">
-        {formColumn}
-        <div className="mt-8 border-t border-[var(--line)] pt-6 text-sm text-[var(--ink-soft)]">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-semibold text-[var(--accent-jade)] hover:underline"
-          >
-            Login
-          </Link>
-        </div>
-      </div>
-    );
+    return <div className="mx-auto w-full max-w-[560px] min-w-0">{panel}</div>;
   }
 
+  return <div className="public-card w-full max-w-[640px] p-5 sm:p-7">{panel}</div>;
+}
+
+function StepRail({ steps, current }: { steps: string[]; current: number }) {
   return (
-    <div className="public-card w-full max-w-5xl min-w-0 p-4 sm:p-6 lg:p-8">
-      <div className="grid gap-6 lg:grid-cols-[1.12fr_0.88fr]">
-        {formColumn}
-        {summaryColumn}
-      </div>
-    </div>
+    <ol className="flex items-center gap-2" aria-label="Signup progress">
+      {steps.map((label, index) => {
+        const complete = index < current;
+        const active = index === current;
+        return (
+          <li key={label} className="flex min-w-0 flex-1 items-center gap-2">
+            <span
+              className={cn(
+                "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium",
+                complete || active
+                  ? "border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)] text-[var(--accent-jade)]"
+                  : "border-[var(--line)] text-[var(--ink-muted)]",
+              )}
+              aria-current={active ? "step" : undefined}
+            >
+              {complete ? <Check size={12} /> : index + 1}
+            </span>
+            <span className={cn("truncate text-[11px]", active ? "text-[var(--ink)]" : "text-[var(--ink-muted)]")}>{label}</span>
+            {index < steps.length - 1 ? <span className="h-px flex-1 bg-[var(--line)]" /> : null}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
-function FormSection({
-  step,
-  title,
-  description,
-  children,
-}: {
-  step: string;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children, required, optional, error }: { label: string; children: React.ReactNode; required?: boolean; optional?: boolean; error?: string }) {
   return (
-    <div className="rounded-[24px] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-sm sm:p-5">
-      <div className="mb-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--accent-jade)]">
-          {step}
-        </p>
-        <h2 className="mt-1 text-lg font-bold tracking-tight text-[var(--ink)]">
-          {title}
-        </h2>
-        <p className="mt-1 text-sm text-[var(--ink-muted)]">{description}</p>
-      </div>
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-  required,
-  error,
-}: {
-  label: string;
-  children: React.ReactNode;
-  required?: boolean;
-  error?: string;
-}) {
-  return (
-    <label className="block space-y-2">
-      <span className="ml-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--ink-muted)]">
+    <label className="block space-y-1.5">
+      <span className="block text-[12px] font-medium text-[var(--ink-soft)]">
         {label}
         {required ? <span className="ml-1 text-red-300">*</span> : null}
+        {optional ? <span className="ml-1 text-[10px] font-normal text-[var(--ink-muted)]">Optional</span> : null}
       </span>
       {children}
-      {error ? (
-        <span className="ml-1 block text-xs font-medium text-red-300">{error}</span>
-      ) : null}
+      {error ? <span className="block text-[11px] text-red-300" role="alert">{error}</span> : null}
     </label>
   );
 }
 
-function ChecklistItem({ children }: { children: React.ReactNode }) {
+function ReviewRow({ label, value, onEdit }: { label: string; value: string; onEdit: () => void }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="mt-1 h-2.5 w-2.5 rounded-full bg-teal-500" />
-      <p>{children}</p>
+    <div className="flex items-center justify-between gap-4 py-2.5">
+      <dt className="text-[11px] text-[var(--ink-muted)]">{label}</dt>
+      <dd className="flex min-w-0 items-center gap-2 text-right text-[12px] text-[var(--ink-soft)]">
+        <span className="truncate">{value}</span>
+        <button type="button" onClick={onEdit} className="shrink-0 text-[10px] text-[var(--accent-jade)] hover:text-[var(--accent-jade-hover)]">Edit</button>
+      </dd>
     </div>
   );
 }

@@ -65,6 +65,14 @@
   --accent-jade-50: rgba(20, 184, 166, 0.1);
   --accent-jade-100: rgba(20, 184, 166, 0.2);
   --accent-jade-200: rgba(20, 184, 166, 0.32);
+  /* Direction 1 material palette: bone paper for documents, sage for secondary data. */
+  --paper: #e7e1d5;
+  --paper-raised: #f0ebe2;
+  --paper-ink: #1b1f1c;
+  --paper-muted: #62675f;
+  --paper-line: #c9c1b2;
+  --sage: #8fa89b;
+  --amber-signal: #d6a756;
   --card: #141816;
   --card-foreground: #f3f5f4;
   --popover: #141816;
@@ -867,4 +875,22 @@ body {
   border-radius: 999px;
   background-clip: padding-box;
   background-color: #2a312d;
+}
+
+/* Keep browser autofill inside the dark interface instead of painting fields white. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset !important;
+  -webkit-text-fill-color: var(--ink) !important;
+  caret-color: var(--ink);
+  transition:
+    background-color 999999s ease-in-out 0s,
+    color 999999s ease-in-out 0s;
+}
+
+input:autofill {
+  background-color: var(--surface) !important;
+  color: var(--ink) !important;
 }

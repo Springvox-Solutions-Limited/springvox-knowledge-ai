@@ -45,22 +45,42 @@ export function SectionLabel({
 export function CitationMark({
   n,
   className,
+  onClick,
+  active = false,
 }: {
   n: number;
   className?: string;
+  onClick?: () => void;
+  active?: boolean;
 }) {
   const glyph = SUPERSCRIPT[n] ?? `(${n})`;
-  return (
-    <sup
-      className={cn(
-        "ml-0.5 font-meta text-[0.68em] leading-none text-[var(--accent-jade)]",
-        className,
-      )}
-    >
+  const mark = (
+    <>
       <span aria-hidden="true">{glyph}</span>
       <span className="sr-only"> (source {n})</span>
-    </sup>
+    </>
   );
+  const markClass = cn(
+    "ml-0.5 font-meta text-[0.68em] leading-none text-[var(--accent-jade)] transition-colors",
+    active && "text-[var(--accent-jade-hover)]",
+    className,
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={`Open source ${n}`}
+        aria-pressed={active}
+        className={cn("inline cursor-pointer rounded-[2px] border-0 bg-transparent p-0 align-baseline", markClass)}
+      >
+        {mark}
+      </button>
+    );
+  }
+
+  return <sup className={markClass}>{mark}</sup>;
 }
 
 export function FileRail({ className }: { className?: string }) {

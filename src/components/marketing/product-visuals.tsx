@@ -14,7 +14,6 @@ import {
   Paperclip,
   Search,
   ShieldCheck,
-  Sparkles,
   Upload,
 } from "lucide-react";
 
@@ -183,7 +182,7 @@ export function WorkspaceSidebar({
         <div className="rounded-[8px] border border-[var(--line)] bg-[var(--canvas)] p-2.5">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-medium text-[var(--ink-soft)]">
-              Beta workspace
+              Isolated workspace
             </span>
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           </div>
@@ -216,6 +215,68 @@ export const HERO_SOURCES = [
     match: "94",
   },
 ];
+
+
+export type AskScenario = "people" | "support" | "legal";
+
+const ASK_SCENARIOS: Record<
+  AskScenario,
+  {
+    collection: string;
+    question: string;
+    answer: string;
+    sources: Array<{
+      index: number;
+      file: string;
+      location: string;
+      collection: string;
+      match: string;
+    }>;
+    related: string[];
+    relatedCollection: string;
+    evidence: string;
+  }
+> = {
+  people: {
+    collection: "People operations",
+    question: "How much parental leave is available to a new employee?",
+    answer:
+      "Eligible employees may take up to 16 weeks of parental leave. The policy applies after 90 days of employment and should be submitted to People Operations at least 30 days before the leave begins.",
+    sources: [
+      { index: 1, file: "Parental_Leave_Policy.pdf", location: "p. 8 · section 4", collection: "People", match: "98" },
+      { index: 2, file: "Employee_Handbook.pdf", location: "§ 6.3 · p. 24", collection: "People", match: "94" },
+    ],
+    related: ["Who approves leave?", "Does it apply to contractors?"],
+    relatedCollection: "People",
+    evidence: "16 weeks · 30 days before leave",
+  },
+  support: {
+    collection: "Support operations",
+    question: "What is the escalation path for a billing dispute?",
+    answer:
+      "Tier one logs the dispute with the account and invoice details, then routes it to Billing Operations within one business day. Do not promise a refund before Billing Operations reviews the account.",
+    sources: [
+      { index: 1, file: "Support_Playbook.docx", location: "§ 3.2 · p. 18", collection: "Support", match: "96" },
+      { index: 2, file: "Escalation_Matrix.pdf", location: "p. 4 · Billing", collection: "Support", match: "92" },
+    ],
+    related: ["Who owns a billing escalation?", "What counts as a billing dispute?"],
+    relatedCollection: "Support",
+    evidence: "Log · route within one business day",
+  },
+  legal: {
+    collection: "Legal and compliance",
+    question: "What is the approved wording for a data request?",
+    answer:
+      "Use the acknowledgement in Policy 12. Do not paraphrase the response window or promise a completion date outside the published process.",
+    sources: [
+      { index: 1, file: "Data_Requests_Policy.pdf", location: "§ 2 · p. 6", collection: "Legal", match: "97" },
+      { index: 2, file: "Legal_Playbook.docx", location: "p. 4 · Requests", collection: "Legal", match: "91" },
+    ],
+    related: ["What is the response window?", "Who signs off on a request?"],
+    relatedCollection: "Legal",
+    evidence: "Policy 12 · approved wording",
+  },
+};
 
 export function SourceRail({
   active = 1,
@@ -363,47 +424,47 @@ export function DocumentPage({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[6px] border border-black/10 bg-[#e9e9e2] text-[#20241f] shadow-[0_14px_34px_rgba(0,0,0,0.45)]",
+        "relative overflow-hidden rounded-[6px] border border-[var(--paper-line)] bg-[var(--paper)] text-[var(--paper-ink)] shadow-[0_14px_34px_rgba(0,0,0,0.45)]",
         className,
       )}
     >
       <div className="mk-grain pointer-events-none absolute inset-0 opacity-[0.05]" aria-hidden="true" />
       <div className={cn("relative", compact ? "p-3.5" : "p-5")}>
-        <div className="flex items-center justify-between border-b border-black/10 pb-2">
-          <span className="font-meta text-[8px] text-black/55">
+        <div className="flex items-center justify-between border-b border-[var(--paper-line)] pb-2">
+          <span className="font-meta text-[8px] text-[var(--paper-muted)]">
             {section}
           </span>
-          <span className="font-meta text-[7px] text-black/40">{page} / 32</span>
+          <span className="font-meta text-[7px] text-[var(--paper-muted)]">{page} / 32</span>
         </div>
         <p
           className={cn(
-            "mt-3 font-medium tracking-[-0.01em] text-[#1a1f1a]",
+            "mt-3 font-medium tracking-[-0.01em] text-[var(--paper-ink)]",
             compact ? "text-[11px]" : "text-[14px]",
           )}
         >
           {title}
         </p>
         <div className="mt-2.5 space-y-1.5" aria-hidden="true">
-          <span className="block h-[3px] w-full rounded-full bg-black/10" />
-          <span className="block h-[3px] w-[91%] rounded-full bg-black/10" />
-          <span className="block h-[3px] w-[78%] rounded-full bg-black/10" />
+          <span className="block h-[3px] w-full rounded-full bg-[color-mix(in_srgb,var(--paper-ink)_12%,transparent)]" />
+          <span className="block h-[3px] w-[91%] rounded-full bg-[color-mix(in_srgb,var(--paper-ink)_12%,transparent)]" />
+          <span className="block h-[3px] w-[78%] rounded-full bg-[color-mix(in_srgb,var(--paper-ink)_12%,transparent)]" />
         </div>
         <p
           className={cn(
-            "mt-3 border-l-2 border-[#0f8f7f] bg-[#14b8a6]/15 px-2.5 py-2 leading-4 text-[#1b2620]",
+            "mt-3 border-l-2 border-[#0f8f7f] bg-[#14b8a6]/15 px-2.5 py-2 leading-4 text-[var(--paper-ink)]",
             compact ? "text-[8px]" : "text-[9px]",
           )}
         >
           {highlight}
         </p>
         <div className="mt-2.5 space-y-1.5" aria-hidden="true">
-          <span className="block h-[3px] w-[95%] rounded-full bg-black/10" />
-          <span className="block h-[3px] w-[86%] rounded-full bg-black/10" />
-          <span className="block h-[3px] w-[64%] rounded-full bg-black/10" />
+          <span className="block h-[3px] w-[95%] rounded-full bg-[color-mix(in_srgb,var(--paper-ink)_12%,transparent)]" />
+          <span className="block h-[3px] w-[86%] rounded-full bg-[color-mix(in_srgb,var(--paper-ink)_12%,transparent)]" />
+          <span className="block h-[3px] w-[64%] rounded-full bg-[color-mix(in_srgb,var(--paper-ink)_12%,transparent)]" />
         </div>
         <div className="mt-4 flex items-center justify-between border-t border-black/10 pt-2">
-          <span className="font-meta text-[7px] text-black/40">Approved · v4.2</span>
-          <span className="font-meta text-[7px] text-black/40">p. {page}</span>
+          <span className="font-meta text-[7px] text-[var(--paper-muted)]">Approved · v4.2</span>
+          <span className="font-meta text-[7px] text-[var(--paper-muted)]">p. {page}</span>
         </div>
       </div>
     </div>
@@ -417,10 +478,14 @@ export function DocumentPage({
 export function AskWorkspace({
   className,
   compact = false,
+  scenario = "people",
 }: {
   className?: string;
   compact?: boolean;
+  scenario?: AskScenario;
 }) {
+  const content = ASK_SCENARIOS[scenario];
+
   return (
     <AppWindow className={className} status={compact ? "Preview" : "Preview · sample data"}>
       <div className="grid min-h-[340px] grid-cols-1 md:grid-cols-[148px_minmax(0,1fr)] lg:grid-cols-[148px_minmax(0,1fr)_208px]">
@@ -429,7 +494,7 @@ export function AskWorkspace({
         <div className="min-w-0 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 font-meta text-[9px] text-[var(--ink-muted)]">
-              <span>People operations</span>
+              <span>{content.collection}</span>
               <span aria-hidden="true">/</span>
               <span>Ask</span>
             </div>
@@ -441,14 +506,11 @@ export function AskWorkspace({
 
           <div className="mt-4 flex justify-end">
             <p className="max-w-[85%] rounded-[10px] rounded-br-[3px] border border-[var(--line)] bg-[var(--surface-2)] px-3 py-2 text-[11px] leading-5 text-[var(--ink)]">
-              How much parental leave is available to a new employee?
+              {content.question}
             </p>
           </div>
 
           <div className="mt-4 flex items-center gap-2">
-            <span className="flex h-5 w-5 items-center justify-center rounded-[5px] border border-[var(--accent-jade-100)] bg-[var(--accent-jade-50)]">
-              <Sparkles size={10} strokeWidth={1.5} className="text-[var(--accent-jade)]" aria-hidden="true" />
-            </span>
             <span className="text-[10px] font-medium text-[var(--ink)]">Rekall-IQ</span>
             <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 font-meta text-[7px] text-emerald-300">
               Grounded
@@ -459,23 +521,21 @@ export function AskWorkspace({
           </div>
 
           <p className="mt-2 text-[11px] leading-5 text-[var(--ink-soft)]">
-            Eligible employees may take up to{" "}
-            <strong className="font-medium text-[var(--ink)]">16 weeks</strong> of
-            parental leave. The policy applies after 90 days of employment and should be
-            submitted to People Operations at least 30 days before the leave begins.
+            {content.answer}
             <CitationMark n={1} />
             <CitationMark n={2} />
           </p>
 
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-[5px] border border-[var(--line)] bg-[var(--surface)] px-2 py-1 font-meta text-[8px] text-[var(--ink-soft)]">
-              <FileText size={9} strokeWidth={1.5} className="text-[var(--accent-jade)]" aria-hidden="true" />
-              Parental_Leave_Policy.pdf · p.8
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-[5px] border border-[var(--line)] bg-[var(--surface)] px-2 py-1 font-meta text-[8px] text-[var(--ink-soft)]">
-              <FileText size={9} strokeWidth={1.5} className="text-[var(--accent-jade)]" aria-hidden="true" />
-              Employee_Handbook.pdf · §6.3
-            </span>
+            {content.sources.map((source) => (
+              <span
+                key={source.file}
+                className="inline-flex items-center gap-1 rounded-[5px] border border-[var(--line)] bg-[var(--surface)] px-2 py-1 font-meta text-[8px] text-[var(--ink-soft)]"
+              >
+                <FileText size={9} strokeWidth={1.5} className="text-[var(--accent-jade)]" aria-hidden="true" />
+                {source.file} · {source.location.split(" · ")[0]}
+              </span>
+            ))}
           </div>
 
           <div className="mt-3 border-t border-[var(--line)] pt-2">
@@ -483,7 +543,7 @@ export function AskWorkspace({
               Related questions
             </p>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {["Who approves leave?", "Does it apply to contractors?"].map((q) => (
+              {content.related.map((q) => (
                 <span
                   key={q}
                   className="rounded-full border border-[var(--line)] px-2 py-0.5 text-[8px] text-[var(--ink-soft)]"
@@ -497,7 +557,7 @@ export function AskWorkspace({
           <AnswerComposer className="mt-3" />
         </div>
 
-        <SourceRail active={1} sources={HERO_SOURCES} />
+        <SourceRail active={1} sources={content.sources} />
       </div>
     </AppWindow>
   );

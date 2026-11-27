@@ -5,6 +5,8 @@ import {
   embedManyWithGemini,
   generateStrictAnswer,
   generateDocumentIntelligence,
+  generateGroundedFollowUps,
+  rewriteStandaloneQuestion,
   streamStrictAnswer,
   STRICT_NO_ANSWER,
 } from './providers/gemini';
@@ -23,7 +25,14 @@ type EmbeddingProvider = 'gemini' | 'voyage';
 type ChatProvider = 'gemini';
 type EmbeddingInputType = 'document' | 'query';
 
-export { generateStrictAnswer, generateDocumentIntelligence, streamStrictAnswer, STRICT_NO_ANSWER };
+export {
+  generateGroundedFollowUps,
+  generateStrictAnswer,
+  generateDocumentIntelligence,
+  rewriteStandaloneQuestion,
+  streamStrictAnswer,
+  STRICT_NO_ANSWER,
+};
 export { VOYAGE_RERANK_MODEL, rerankWithVoyage };
 
 export function getChatProvider(): ChatProvider {

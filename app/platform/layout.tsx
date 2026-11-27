@@ -10,6 +10,7 @@ import {
   Activity,
   LayoutGrid,
   Menu,
+  Search,
   Monitor,
   ReceiptText,
   ScrollText,
@@ -110,6 +111,23 @@ export default function PlatformLayout({
           router.replace(getDefaultRouteForRole(currentProfile.role));
           return;
         }
+
+        if (process.env.NEXT_PUBLIC_PLATFORM_MFA_REQUIRED === "true") {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const hasVerifiedFactor = (factors?.totp ?? []).some(
+            (factor) => factor.status === "verified",
+          );
+          if (!hasVerifiedFactor) {
+            router.replace("/dashboard/account?mfa=required");
+            return;
+          }
+
+          const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (assurance?.nextLevel === "aal2" && assurance.currentLevel !== "aal2") {
+            router.replace("/login?mfa=1");
+            return;
+          }
+        }
       } finally {
         setAuthLoading(false);
       }
@@ -130,6 +148,22 @@ export default function PlatformLayout({
       </div>
     );
   }
+
+  const pageLabelFallbacks: Record<string, string> = {
+    "/platform/companies": "Companies",
+    "/platform/workspaces": "Workspaces",
+    "/platform/users": "Users",
+    "/platform/audit-logs": "Audit logs",
+    "/platform/usage": "Usage",
+    "/platform/diagnostics": "Diagnostics",
+    "/platform/notifications": "Notifications",
+    "/platform/analytics": "Analytics",
+    "/platform/plans": "Plans",
+  };
+  const currentPageLabel =
+    platformNavGroups.flatMap((group) => group.items).find((item) => item.href === pathname)?.name ||
+    pageLabelFallbacks[pathname] ||
+    (pathname.startsWith("/platform/companies/") ? "Company detail" : "Overview");
 
   const commandActions: CommandAction[] = [
     {
@@ -154,24 +188,22 @@ export default function PlatformLayout({
 
   const navContent = (
     <>
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <BrandLogo
-            variant="full"
-            theme="light"
-            className="h-11"
-            imageClassName="h-10 w-auto max-w-[190px] object-contain object-left"
-          />
-          <p className="mt-4 px-1 text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--accent-jade)]">
-            Platform Admin
-          </p>
-        </div>
+      <div className="mb-5 px-2">
+        <BrandLogo
+          variant="full"
+          theme="light"
+          className="h-9"
+          imageClassName="h-8 w-auto max-w-[170px] object-contain object-left"
+        />
+        <p className="mt-1.5 text-[11px] font-medium text-[var(--ink-muted)]">
+          Platform admin
+        </p>
       </div>
 
-      <nav className="flex-1 space-y-5 overflow-y-auto">
+      <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1 scrollbar-hide">
         {platformNavGroups.map((group) => (
           <div key={group.label}>
-            <p className="px-3.5 pb-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--ink-muted)]">
+            <p className="px-2 pb-1.5 text-[11px] font-medium text-[var(--ink-muted)]">
               {group.label}
             </p>
             <div className="space-y-0.5">
@@ -186,18 +218,19 @@ export default function PlatformLayout({
                     href={item.href}
                     onClick={() => setSidebarOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition",
+                      "group flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-colors",
                       active
-                        ? "bg-[var(--accent-jade-50)] text-[var(--accent-jade-hover)]"
-                        : "text-[var(--ink-muted)] hover:bg-[var(--canvas-soft)] hover:text-[var(--ink)]",
+                        ? "bg-[var(--accent-jade-50)] text-[var(--ink)]"
+                        : "text-[var(--ink-soft)] hover:bg-[var(--canvas-soft)] hover:text-[var(--ink)]",
                     )}
                   >
                     <item.icon
-                      size={18}
+                      size={15}
+                      strokeWidth={1.5}
                       className={
                         active
                           ? "text-[var(--accent-jade)]"
-                          : "text-[var(--ink-muted)]"
+                          : "text-[var(--ink-muted)] group-hover:text-[var(--ink-soft)]"
                       }
                     />
                     <span>{item.name}</span>
@@ -213,7 +246,7 @@ export default function PlatformLayout({
         <Link
           href="/dashboard"
           onClick={() => setSidebarOpen(false)}
-          className="mb-4 flex items-center gap-3 rounded-lg border border-[var(--line)] px-4 py-3 text-sm font-semibold text-[var(--ink-soft)] transition hover:border-[var(--accent-jade-100)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
+          className="mb-4 flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[12px] font-medium text-[var(--ink-muted)] transition-colors hover:bg-[var(--canvas-soft)] hover:text-[var(--ink)]"
         >
           <Monitor size={16} className="text-[var(--accent-jade)]" />
           <span>My workspace</span>
@@ -230,14 +263,9 @@ export default function PlatformLayout({
   );
 
   return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)] lg:flex">
-      <aside
-        className={cn(
-          "hidden border-r border-[var(--line)] bg-[var(--brand-sidebar)] lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:overflow-y-auto",
-          "w-72",
-        )}
-      >
-        <div className="flex w-full flex-col p-4">{navContent}</div>
+    <div className="flex h-dvh overflow-hidden bg-[var(--canvas)] text-[var(--ink)] lg:flex">
+      <aside className="hidden w-[15rem] border-r border-[var(--line)] bg-[var(--brand-sidebar)] lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:overflow-hidden">
+        <div className="flex h-full w-full flex-col p-3">{navContent}</div>
       </aside>
 
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -249,46 +277,59 @@ export default function PlatformLayout({
           <SheetHeader className="sr-only">
             <SheetTitle>Platform navigation</SheetTitle>
           </SheetHeader>
-          <div className="flex h-full flex-col p-4">{navContent}</div>
+          <div className="flex h-full flex-col p-3">{navContent}</div>
         </SheetContent>
       </Sheet>
 
-      <main className="flex min-h-screen min-w-0 flex-1 flex-col overflow-hidden lg:ml-72">
-        <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[var(--surface)] backdrop-blur-xl">
-          <div className="flex min-h-16 items-center justify-between gap-3 px-4 py-3 md:px-8">
-            <div className="flex min-w-0 items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open platform navigation"
-                className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-2.5 text-[var(--ink-muted)] lg:hidden"
-              >
-                <Menu size={18} />
-              </button>
-              <Link href="/platform" className="flex items-center lg:hidden">
-                <BrandLogo
-                  variant="full"
-                  theme="light"
-                  imageClassName="h-8 w-auto max-w-[120px] object-contain object-left"
-                />
-              </Link>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-[var(--ink)]">
-                  Platform admin
-                </p>
-              </div>
+      <main className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:ml-[15rem]">
+        <header className="z-20 flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[var(--line)] bg-[var(--surface)] px-4 md:px-7">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open platform navigation"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--ink-muted)] hover:bg-[var(--canvas-soft)] hover:text-[var(--ink)] lg:hidden"
+            >
+              <Menu size={18} />
+            </button>
+            <Link href="/platform" className="flex items-center lg:hidden">
+              <BrandLogo
+                variant="full"
+                theme="light"
+                imageClassName="h-8 w-auto max-w-[120px] object-contain object-left"
+              />
+            </Link>
+            <div className="flex min-w-0 items-center gap-1.5 text-[12px]">
+              <span className="truncate font-medium text-[var(--ink-soft)]">Platform</span>
+              <span aria-hidden="true" className="text-[var(--ink-muted)]">/</span>
+              <span className="truncate font-medium text-[var(--ink)]">{currentPageLabel}</span>
             </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("open-platform-palette"))}
+              className="hidden h-8 items-center gap-2 rounded-md border border-[var(--line)] bg-[var(--canvas-soft)] px-2.5 text-[11px] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink)] sm:inline-flex"
+              aria-label="Search platform pages and actions"
+            >
+              <Search size={13} />
+              Search
+              <kbd className="ml-2 rounded border border-[var(--line)] px-1 text-[9px]">⌘K</kbd>
+            </button>
+            <span className="hidden rounded-md border border-[var(--line)] px-2 py-1 text-[10px] font-medium text-[var(--ink-muted)] sm:inline-flex">
+              {process.env.NODE_ENV === "production" ? "Production" : "Development"}
+            </span>
           </div>
         </header>
 
-        <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
-          <div className="mx-auto w-full max-w-7xl min-w-0 p-4 sm:p-6 md:p-8">
+        <div className="admin-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="mx-auto w-full max-w-[1440px] min-w-0 p-4 sm:p-6 md:p-7">
             {children}
           </div>
         </div>
       </main>
 
-      <CommandPalette actions={commandActions} />
+      <CommandPalette actions={commandActions} openEvent="open-platform-palette" />
     </div>
   );
 }
